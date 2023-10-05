@@ -3,8 +3,13 @@ cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
 project(shrimp)
 enable_language(CXX)
 
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O2")
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 set(PROJECT_ROOT ${PROJECT_SOURCE_DIR})
 set(PROJECT_BINARY_ROOT ${PROJECT_BINARY_DIR})
@@ -33,6 +38,12 @@ add_custom_target(
 )
 
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+	${PROJECT_SOURCE_DIR}/runtime
+)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE runtime)
 
 add_subdirectory(third-party/googletest)
 add_subdirectory(runtime)

@@ -1,6 +1,8 @@
 # Ignored directories
 build/
 third-party/
+.cache/
+.vscode/
 
 # Prerequisites
 *.d
