@@ -1,3 +1,7 @@
+# Ignored directories
+build/
+third-party/
+
 # Prerequisites
 *.d
 
