@@ -8,18 +8,9 @@ def write_file_open(out: TextIOWrapper) :
     out.write("#ifndef RUNTIME_INST_GEN_HPP\n")
     out.write("#define RUNTIME_INST_GEN_HPP\n\n")
 
-    out.write("#include <cstdint>\n\n")
+    out.write("#include <inst_opcode.gen.hpp>\n\n")
 
     out.write("namespace shrimp {\n\n")
-
-def write_enum_open(out: TextIOWrapper) :
-    out.write("enum class InstOpcode : uint8_t {\n")
-
-def write_enum_value(out: TextIOWrapper, name: str, opcode: int) :
-    out.write("%s = %d,\n" % (name.replace('.', '_'), opcode))
-
-def write_enum_close(out: TextIOWrapper) :
-    out.write("};\n\n")
 
 def write_inst_primary_templ(out: TextIOWrapper) :
     out.write("template<InstOpcode op>\n")
@@ -70,12 +61,6 @@ if __name__ == "__main__" :
     out = open(OUT_NAME, 'w')
 
     write_file_open(out)
-
-    write_enum_open(out)
-    for name, inst in insts.items() :
-        write_enum_value(out, name, inst["opcode"])
-
-    write_enum_close(out)
 
     write_inst_primary_templ(out)
     for name, inst in insts.items() :
