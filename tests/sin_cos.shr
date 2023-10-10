@@ -1,0 +1,11 @@
+intrinsic scanf
+sta r0
+intrinsic scanf
+sta r1
+intrinsic cosf, r0
+sta r2
+intrinsic sinf, r1
+addf r2
+sta r3
+intrinsic printf, r3
+return

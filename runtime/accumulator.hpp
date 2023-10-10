@@ -7,7 +7,7 @@ namespace shrimp {
 
 class Accumulator final {
 public:
-    explicit Accumulator (uint64_t val) : val_{val} {}
+    explicit Accumulator(uint64_t val) : val_ {val} {}
     uint64_t getValue()
     {
         return val_;
@@ -23,4 +23,4 @@ private:
 
 }  // namespace shrimp
 
-#endif // RUNTIME_ACCUMULATOR_HPP
+#endif  // RUNTIME_ACCUMULATOR_HPP

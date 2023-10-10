@@ -12,7 +12,7 @@ namespace shrimp {
 
 class ShrimpVM final {
 public:
-    ShrimpVM(std::vector<InstType> code) : code_(code), pc_{code_.data()} {}
+    ShrimpVM(std::vector<InstType> code) : code_(code), pc_ {code_.data()} {}
     InstType *getPc()
     {
         return pc_;
@@ -33,7 +33,7 @@ public:
     }
     void deleteFrame()
     {
-        Frame* frame = stk_frames_.top();
+        Frame *frame = stk_frames_.top();
         stk_frames_.pop();
         delete frame;
     }
@@ -42,7 +42,7 @@ private:
     std::vector<InstType> code_ {};
     InstType *pc_;
     Runtime *runtime_ = nullptr;
-    std::stack<Frame*> stk_frames_;
+    std::stack<Frame *> stk_frames_;
 };
 
 }  // namespace shrimp

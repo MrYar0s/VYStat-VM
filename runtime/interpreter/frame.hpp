@@ -19,7 +19,10 @@ public:
     {
         return *acc_;
     }
-    Frame *getPrevFrame() {return prev_frame_;}
+    Frame *getPrevFrame()
+    {
+        return prev_frame_;
+    }
     void setReg(uint64_t val, uint8_t reg_num)
     {
         regs_[reg_num].setValue(val);
@@ -34,7 +37,7 @@ private:
     /*  Doesn't need now */
     //  Method *curr_method_;
     Accumulator *acc_;
-    std::vector<Register> regs_;
+    std::vector<Register> regs_ {16};
 };
 
 }  // namespace shrimp

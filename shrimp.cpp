@@ -27,7 +27,7 @@ std::vector<uint64_t> readFromFile(std::string file_name)
     fseek(file, 0, SEEK_END);
     size_t len = ftell(file);
     fseek(file, 0L, SEEK_SET);
-    uint64_t *buf = (uint64_t*)calloc(sizeof(uint64_t), len);
+    uint64_t *buf = (uint64_t *)calloc(sizeof(uint64_t), len);
     fread(buf, sizeof(uint64_t), len, file);
     std::vector<uint64_t> code;
     code.assign(buf, buf + len);

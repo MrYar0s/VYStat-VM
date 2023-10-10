@@ -1,4 +1,4 @@
-add_library(interpreter STATIC interpreter.cpp)
+add_library(interpreter STATIC interpreter.cpp intrinsics.cpp)
 
 target_include_directories(interpreter PUBLIC
 	${RUNTIME_DIR}

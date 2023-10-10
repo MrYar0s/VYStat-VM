@@ -2,6 +2,7 @@
 #define COMMON_BITOPS_HPP
 
 #include <cstdint>
+#include <bit>
 
 template <uint64_t MASK>
 uint64_t applyMask(uint64_t input)
@@ -26,13 +27,23 @@ uint64_t applyRightShift(uint64_t input)
 template <typename Type>
 uint64_t castToWritable(Type val)
 {
-    return *reinterpret_cast<uint64_t *>(&val);
+    if constexpr (sizeof(uint64_t) == sizeof(Type)) {
+        return std::bit_cast<uint64_t>(val);
+    } else {
+        uint32_t res = std::bit_cast<uint32_t>(val);
+        return static_cast<uint64_t>(res);
+    }
 }
 
 template <typename Type>
 Type getValue(uint64_t val)
 {
-    return *reinterpret_cast<Type *>(&val);
+    if constexpr (sizeof(uint64_t) == sizeof(Type)) {
+        return std::bit_cast<Type>(val);
+    } else {
+        uint32_t res = static_cast<uint32_t>(val & 0xffffffff);
+        return std::bit_cast<Type>(res);
+    }
 }
 
-#endif // COMMON_BITOPS_HPP
+#endif  // COMMON_BITOPS_HPP
