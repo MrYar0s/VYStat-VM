@@ -1,0 +1,63 @@
+NOP:
+    descr: "Do nothing."
+    opcode: 1
+
+MOV:
+    descr: "Move value from rs to rd."
+    opcode: 2
+    fields:
+        rs: [0, 7]
+        rd: [8, 15]
+
+MOV.IMM:
+    descr: "Move immediate to rd."
+    opcode: 3
+    fields:
+        rd: [0, 7]
+        imm: [8, 55]
+
+LDA:
+    descr: "Load value from rs to acc."
+    opcode: 4
+    fields:
+        rs: [0, 7]
+
+LDA.IMM:
+    descr: "Move immediate to acc."
+    opcode: 5
+    fields:
+        imm: [0, 55]
+
+STA:
+    descr: "Store value from acc to rd."
+    opcode: 6
+    fields:
+        rd: [0, 7]
+
+ADD.I32:
+    descr: "acc = (acc as i32) + (rs as i32)"
+    opcode: 7
+    fields:
+        rs: [0, 7]
+
+ADD.I64:
+    descr: "acc = (acc as i64) + (rs as i64)"
+    opcode: 8
+    fields:
+        rs1: [0, 7]
+
+ADD.F:
+    descr: "acc = (acc as float) + (rs as float)"
+    opcode: 9
+    fields:
+        rs1: [0, 7]
+
+ADD.D:
+    descr: "acc = (acc as double) + (rs as double)"
+    opcode: 10
+    fields:
+        rs1: [0, 7]
+
+RET:
+    descr: "Return from current frame. Return value is passed in acc"
+    opcode: 11
