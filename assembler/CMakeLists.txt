@@ -1,3 +1,4 @@
+# Define assembler module build
 
 find_package(FLEX REQUIRED)
 
@@ -6,14 +7,39 @@ flex_target(lexer
     ${CMAKE_CURRENT_BINARY_DIR}/lexer.gen.cpp
 )
 
+set(ASSEMBLER_GEN_ROOT ${CMAKE_CURRENT_BINARY_DIR}/include/shrimp/assembler)
+set(INST ${PROJECT_ROOT}/inst.yaml)
+
+file(MAKE_DIRECTORY ${ASSEMBLER_GEN_ROOT})
+
+add_custom_command(
+    OUTPUT ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py ${INST} ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
+    DEPENDS ${INST} ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py
+)
+
+add_custom_command(
+    OUTPUT ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_parser.py ${INST} ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
+    DEPENDS ${INST} ${CMAKE_CURRENT_SOURCE_DIR}/gen_parser.py
+)
+
 add_executable(assembler
     src/lexer.cpp
+    ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
+    ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
     ${FLEX_lexer_OUTPUTS}
 )
 
 target_include_directories(assembler
 PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(assembler
+PRIVATE
+    common
 )
 
 target_compile_features(assembler PRIVATE cxx_std_20)
