@@ -9,12 +9,12 @@ MOV:
         rs: [0, 7]
         rd: [8, 15]
 
-MOV.IMM:
+MOV.IMM.I32:
     descr: "Move immediate to rd."
     opcode: 3
     fields:
         rd: [0, 7]
-        imm: [8, 55]
+        imm_i32: [8, 39]
 
 LDA:
     descr: "Load value from rs to acc."
@@ -26,7 +26,7 @@ LDA.IMM:
     descr: "Move immediate to acc."
     opcode: 5
     fields:
-        imm: [0, 55]
+        imm_i32: [0, 31]
 
 STA:
     descr: "Store value from acc to rd."
@@ -61,3 +61,10 @@ ADD.D:
 RET:
     descr: "Return from current frame. Return value is passed in acc"
     opcode: 11
+
+JUMP:
+    descr: "pc = pc + offset"
+    opcode: 12
+    is_jump: true
+    fields:
+        jump_offset: [0, 55]

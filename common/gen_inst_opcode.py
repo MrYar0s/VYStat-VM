@@ -27,8 +27,8 @@ def write_file_close(out: TextIOWrapper) :
     out.write("#endif // COMMON_INST_OPCODE_GEN_HPP\n\n")
 
 if __name__ == "__main__" :
-    IN_NAME = sys.argv[0]
-    OUT_NAME = sys.argv[1]
+    IN_NAME = sys.argv[1]
+    OUT_NAME = sys.argv[2]
 
     with open(IN_NAME, 'r') as file :
         insts = yaml.safe_load(file)
