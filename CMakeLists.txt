@@ -46,4 +46,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 target_link_libraries(${PROJECT_NAME} PRIVATE runtime)
 
 add_subdirectory(third-party/googletest)
+
+add_subdirectory(common)
 add_subdirectory(runtime)
+add_subdirectory(assembler)
