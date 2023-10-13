@@ -65,11 +65,11 @@ def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
 
     if is_jump :
         jump_offset = fields["jump_offset"]
-        # Skip opcode
-        lo = jump_offset[0] + 8
-        hi = jump_offset[1] + 8
 
-        jump_word = lo / 64
+        lo = jump_offset[0]
+        hi = jump_offset[1]
+
+        jump_word = int(lo / 64)
         lo = lo - jump_word * 64
         hi = hi - jump_word * 64
 
@@ -77,7 +77,7 @@ def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
 
         out.write("void setOffset(InstWordNumber offset) noexcept override {\n")
         out.write("offset &= (uint64_t{ 1 } << %d) - 1;\n" % field_len)
-        out.write("m_bin_code[%d] &= offset << %d;\n" % (jump_word, lo))
+        out.write("m_bin_code[%d] |= offset << %d;\n" % (jump_word, lo))
         out.write("}\n\n")
 
     if fields == None :
@@ -98,24 +98,24 @@ def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
     out.write(") {\n")
 
     for field_name, field_bits in fields.items() :
-        # Skip opcode
-        lo = field_bits[0] + 8
-        hi = field_bits[1] + 8
+        lo = field_bits[0]
+        hi = field_bits[1]
 
         assert(type(lo) == int)
         assert(type(hi) == int)
         assert(lo <= hi)
-        assert(hi < 64)
+        assert(hi < 64 * size)
 
-        field_word = lo / 64
+        field_word = int(lo / 64)
         lo = lo - field_word * 64
         hi = hi - field_word * 64
 
         field_len = hi - lo + 1
 
         out.write("    // Write %s\n" % field_name)
-        out.write("%s &= (uint64_t{ 1 } << %d) - 1;\n" % (field_name, field_len))
-        out.write("m_bin_code[%d] &= %s << %d;\n\n" % (field_word, field_name, lo))
+        if field_len != 64 :
+            out.write("%s &= (uint64_t{ 1 } << %d) - 1;\n" % (field_name, field_len))
+        out.write("m_bin_code[%d] |= %s << %d;\n\n" % (field_word, field_name, lo))
 
     out.write("}\n")
     out.write("};\n\n")

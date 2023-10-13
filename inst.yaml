@@ -6,65 +6,142 @@ MOV:
     descr: "Move value from rs to rd."
     opcode: 2
     fields:
-        rs: [0, 7]
-        rd: [8, 15]
+        rs: [8, 15]
+        rd: [16, 23]
 
 MOV.IMM.I32:
-    descr: "Move immediate to rd."
+    descr: "Move i32 immediate to rd."
     opcode: 3
     fields:
-        rd: [0, 7]
-        imm_i32: [8, 39]
+        rd: [8, 15]
+        imm_i32: [32, 63]
+
+MOV.IMM.I64:
+    descr: "Move i64 immediate to rd."
+    opcode: 4
+    size: 2
+    fields:
+        rd: [8, 15]
+        imm_i64: [64, 127]
+
+MOV.IMM.F:
+    descr: "Move float immediate to rd."
+    opcode: 5
+    fields:
+        rd: [8, 15]
+        imm_f: [32, 63]
+
+MOV.IMM.D:
+    descr: "Move double immediate to rd."
+    opcode: 6
+    size: 2
+    fields:
+        rd: [8, 15]
+        imm_i64: [64, 127]
 
 LDA:
     descr: "Load value from rs to acc."
-    opcode: 4
+    opcode: 7
     fields:
-        rs: [0, 7]
+        rs: [8, 15]
 
-LDA.IMM:
-    descr: "Move immediate to acc."
-    opcode: 5
+LDA.IMM.I32:
+    descr: "Load i32 immediate to acc."
+    opcode: 8
     fields:
-        imm_i32: [0, 31]
+        imm_i32: [32, 63]
+
+LDA.IMM.I64:
+    descr: "Load i64 immediate to acc."
+    opcode: 9
+    size: 2
+    fields:
+        imm_i64: [64, 127]
+
+LDA.IMM.F:
+    descr: "Load float immediate to acc."
+    opcode: 10
+    fields:
+        imm_f: [32, 63]
+
+LDA.IMM.D:
+    descr: "Load double immediate to acc."
+    opcode: 11
+    size: 2
+    fields:
+        imm_d: [64, 127]
 
 STA:
     descr: "Store value from acc to rd."
-    opcode: 6
+    opcode: 12
     fields:
-        rd: [0, 7]
+        rd: [8, 15]
 
 ADD.I32:
     descr: "acc = (acc as i32) + (rs as i32)"
-    opcode: 7
+    opcode: 13
     fields:
-        rs: [0, 7]
+        rs: [8, 15]
 
 ADD.I64:
     descr: "acc = (acc as i64) + (rs as i64)"
-    opcode: 8
+    opcode: 14
     fields:
-        rs1: [0, 7]
+        rs1: [8, 15]
 
 ADD.F:
     descr: "acc = (acc as float) + (rs as float)"
-    opcode: 9
+    opcode: 15
     fields:
-        rs1: [0, 7]
+        rs1: [8, 15]
 
 ADD.D:
     descr: "acc = (acc as double) + (rs as double)"
-    opcode: 10
+    opcode: 16
     fields:
-        rs1: [0, 7]
-
-RET:
-    descr: "Return from current frame. Return value is passed in acc"
-    opcode: 11
+        rs1: [8, 15]
 
 JUMP:
     descr: "pc = pc + offset"
-    opcode: 12
+    opcode: 17
     is_jump: true
     fields:
-        jump_offset: [0, 55]
+        jump_offset: [8, 63]
+
+JUMP.GG:
+    descr: "acc > rs ? pc = pc + offset : pc = pc + 8"
+    opcode: 18
+    is_jump: true
+    fields:
+        rs: [8, 15]
+        jump_offset: [16, 63]
+
+JUMP.EQ:
+    descr: "acc == rs ? pc = pc + offset : pc = pc + 8"
+    opcode: 19
+    is_jump: true
+    fields:
+        rs: [8, 15]
+        jump_offset: [16, 63]
+
+JUMP.LL:
+    descr: "acc < rs ? pc = pc + offset : pc = pc + 8"
+    opcode: 20
+    is_jump: true
+    fields:
+        rs: [8, 15]
+        jump_offset: [16, 63]
+
+RET:
+    descr: "Return from current frame. Return value is passed in acc"
+    opcode: 21
+
+INTRINSIC:
+    descr: "call intrinsic"
+    opcode: 22
+    fields:
+        intrinsic_code: [8, 15]
+        opt_reg_arg1: [16, 23]
+        opt_reg_arg2: [24, 31]
+        opt_reg_arg3: [32, 39]
+        opt_reg_arg4: [40, 47]
