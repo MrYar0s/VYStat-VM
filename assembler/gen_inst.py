@@ -15,9 +15,6 @@ def write_file_open(out: TextIOWrapper) :
     out.write("namespace shrimp {\n")
     out.write("namespace assembler {\n\n")
 
-    out.write("using InstWord = uint64_t;\n")
-    out.write("using InstWordNumber = int64_t;\n\n")
-
 def write_inst_primary_templ(out: TextIOWrapper) :
     out.write("template<InstOpcode op>\n")
     out.write("class Inst;\n\n")
@@ -27,18 +24,18 @@ def write_inst_interface(out: TextIOWrapper) :
         "struct InterfaceInst {\n"
         "// Get instruction size in words.\n"
         "// Note: Some instructions are several words long\n"
-        "virtual std::size_t getWordSize() const noexcept = 0;\n"
+        "virtual std::size_t getDWordSize() const noexcept = 0;\n"
 
         "// Get ptr to buff with instruction binary code\n"
-        "virtual const InstWord *getBinCode() const noexcept = 0;\n"
+        "virtual const DWord *getBinCode() const noexcept = 0;\n"
         "};\n\n"
     )
 
 def write_jump_interface(out: TextIOWrapper) :
     out.write(
         "struct InterfaceJump : public InterfaceInst {\n"
-        "// Set instruction target in offset in InstWordNumber.\n"
-        "virtual void setOffset(InstWordNumber offset) noexcept = 0;\n"
+        "// Set instruction target in offset in DWordOffset.\n"
+        "virtual void setOffset(DWordOffset offset) noexcept = 0;\n"
         "};\n\n"
     )
 
@@ -57,11 +54,11 @@ def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
     else :
         out.write("InterfaceInst {\n")
 
-    out.write("std::array<InstWord, %d> m_bin_code = { static_cast<InstWord>(InstOpcode::%s) };\n\n" % (size, fixed_name))
+    out.write("std::array<DWord, %d> m_bin_code = { static_cast<DWord>(InstOpcode::%s) };\n\n" % (size, fixed_name))
 
     out.write("public:\n")
-    out.write("std::size_t getWordSize() const noexcept override { return m_bin_code.size(); }\n")
-    out.write("const InstWord *getBinCode() const noexcept override { return m_bin_code.data(); }\n\n")
+    out.write("std::size_t getDWordSize() const noexcept override { return m_bin_code.size(); }\n")
+    out.write("const DWord *getBinCode() const noexcept override { return m_bin_code.data(); }\n\n")
 
     if is_jump :
         jump_offset = fields["jump_offset"]
@@ -75,7 +72,7 @@ def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
 
         field_len = hi - lo + 1
 
-        out.write("void setOffset(InstWordNumber offset) noexcept override {\n")
+        out.write("void setOffset(DWordOffset offset) noexcept override {\n")
         out.write("offset &= (uint64_t{ 1 } << %d) - 1;\n" % field_len)
         out.write("m_bin_code[%d] |= offset << %d;\n" % (jump_word, lo))
         out.write("}\n\n")

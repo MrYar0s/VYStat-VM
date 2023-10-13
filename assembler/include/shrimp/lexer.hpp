@@ -8,7 +8,7 @@
 namespace shrimp {
 
 struct Lexer final : public yyFlexLexer {
-    enum class LexemType { NUMBER, COMMA, COLON, IDENTIFIER, NEW_LINE };
+    enum class LexemType { NUMBER, COMMA, LABEL, IDENTIFIER };
 
     static constexpr int LEXING_OK = 1;
     static constexpr int LEXING_ERROR_CODE = -1;
@@ -28,21 +28,15 @@ private:
         return LEXING_OK;
     }
 
-    int processColon() noexcept
+    int processLabel() noexcept
     {
-        m_curr_lexem_type = LexemType::COLON;
+        m_curr_lexem_type = LexemType::LABEL;
         return LEXING_OK;
     }
 
     int processIdentifier() noexcept
     {
         m_curr_lexem_type = LexemType::IDENTIFIER;
-        return LEXING_OK;
-    }
-
-    int processNewLine() noexcept
-    {
-        m_curr_lexem_type = LexemType::NEW_LINE;
         return LEXING_OK;
     }
 

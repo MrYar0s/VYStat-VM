@@ -8,6 +8,8 @@ def write_file_open(out: TextIOWrapper) :
     out.write("#ifndef PARSER_GEN_HPP\n")
     out.write("#define PARSER_GEN_HPP\n\n")
 
+    out.write("#include <algorithm>\n")
+    out.write("#include <types.hpp>\n")
     out.write("#include <shrimp/common/inst_opcode.gen.hpp>\n\n")
 
     out.write("namespace shrimp {\n")
@@ -38,18 +40,17 @@ def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | N
             case "imm_f" | "imm_d" :
                 out.write("double %s = parseImmD();\n" % field_name)
             case "jump_offset" :
-                out.write("InstWordNumber jump_offset = 0;")
+                out.write("DWordOffset jump_offset = 0;")
                 out.write("parseJumpDst();")
             case "intrinsic_code" :
-                out.write("uint64_t intrinsic_code = parseIntrinsicName();")
-            case "opt_reg_arg1" :
-                parse_opt = True
-                out.write("uint64_t opt_reg_arg1 = parseOptRegArg();")
-                out.write("uint64_t prev_reg_arg = opt_reg_arg1;")
-            case "opt_reg_arg2" | "opt_reg_arg3" | "opt_reg_arg4" :
-                out.write("uint64_t %s = (prev_reg_arg == NO_OPT_REG_ARG) ? NO_OPT_REG_ARG :\
-                          parseOptRegArg();" % field_name)
-                out.write("prev_reg_arg = %s;" % field_name)
+                out.write("auto intrinsic_code_enum = parseIntrinsicName();")
+                out.write("auto intrinsic_args = parseIntrinsicArgs(intrinsic_code_enum);")
+                out.write("auto intrinsic_code = static_cast<uint8_t>(intrinsic_code_enum);")
+            case "opt_reg_arg1" | "opt_reg_arg2" | "opt_reg_arg3" | "opt_reg_arg4" :
+                out.write("R8Id %s = intrinsic_args[%c];" % (field_name, field_name[-1]))
+
+            case _:
+                raise RuntimeError("Unknown field")
 
     out.write("\n")
     out.write("m_insts.push_back(std::make_unique<Inst<InstOpcode::%s>>(" % fixed_name)
@@ -62,31 +63,53 @@ def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | N
         out.write("%s" % field_name)
 
     out.write("));\n\n")
-    out.write("m_curr_inst_word_number += m_insts.back()->getWordSize();\n")
+    out.write("m_curr_dword_offset += m_insts.back()->getDWordSize();\n")
     out.write("}\n\n")
 
 def write_first_pass(out: TextIOWrapper, insts: dict) :
     out.write(
         "void Assembler::first_pass()\n"
         "{\n"
-            "int lexing_status = Lexer::LEXING_ERROR_CODE;\n\n"
+        "static std::unordered_map<std::string, InstOpcode> insts = {"
+    )
 
-            "while ((lexing_status = m_lexer.yylex()) == Lexer::LEXING_OK) {\n"
-                "if (m_lexer.currLexemType() == Lexer::LexemType::NEW_LINE) { continue; }\n"
-                "assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);\n\n"
+    first = True
+    for inst_name in insts.keys() :
+        if not first :
+            out.write(", ")
+        first = False
 
-                "std::string id = m_lexer.YYText();\n\n"
+        fixed_name = inst_name.replace('.', '_')
+        out.write("{\"%s\", InstOpcode::%s}" % (inst_name, fixed_name))
+
+    out.write("};\n\n")
+
+    out.write(
+        "int lexing_status = Lexer::LEXING_ERROR_CODE;\n\n"
+
+        "while ((lexing_status = m_lexer.yylex()) == Lexer::LEXING_OK) {\n"
+            "assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);\n\n"
+
+            "std::string id = m_lexer.YYText();\n"
+            "std::transform(id.begin(), id.end(), id.begin(), ::toupper);\n\n"
+
+            "auto it = insts.find(id);\n"
+            "assertParseError(it != insts.end());\n\n"
+
+            "switch(it->second) {\n"
     )
 
     for inst_name in insts.keys() :
         fixed_name = inst_name.replace('.', '_')
 
-        out.write("if (std::strcmp(\"%s\", id.c_str()) == 0) {\n" % inst_name)
+        out.write("case InstOpcode::%s:\n" % fixed_name)
         out.write("parseInst<InstOpcode::%s>();\n" % fixed_name)
-        out.write("continue;")
-        out.write("}")
+        out.write("break;\n")
 
     out.write(
+        "default: assert(0);"
+
+                "}"
             "}"
         "}"
     )
