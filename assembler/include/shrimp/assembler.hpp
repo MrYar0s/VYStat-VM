@@ -34,6 +34,8 @@ struct LableError : std::runtime_error {
 };
 
 class Assembler final {
+    static constexpr uint64_t NO_OPT_REG_ARG = 0xff;
+
     Lexer m_lexer;
 
     InstWordNumber m_curr_inst_word_number = 0;
@@ -56,7 +58,8 @@ class Assembler final {
         }
     }
 
-    uint64_t parseReg() {
+    uint64_t parseReg()
+    {
         assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
 
         assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);
@@ -70,7 +73,8 @@ class Assembler final {
         return reg_id;
     }
 
-    int64_t parseImmI() {
+    int64_t parseImmI()
+    {
         assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
 
         assertParseError(m_lexer.currLexemType() == Lexer::LexemType::NUMBER);
@@ -83,7 +87,8 @@ class Assembler final {
         return imm;
     }
 
-    double parseImmD() {
+    double parseImmD()
+    {
         assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
 
         assertParseError(m_lexer.currLexemType() == Lexer::LexemType::NUMBER);
@@ -96,24 +101,28 @@ class Assembler final {
         return imm;
     }
 
-    void parseComma() {
+    void parseComma()
+    {
         assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
         assertParseError(m_lexer.currLexemType() == Lexer::LexemType::COMMA);
     }
 
-    void parseColon() {
+    void parseColon()
+    {
         assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
         assertParseError(m_lexer.currLexemType() == Lexer::LexemType::COLON);
     }
 
-    void parseLabel() {
+    void parseLabel()
+    {
         std::string label_name = m_lexer.YYText();
         parseColon();
 
         m_labels.insert(std::make_pair(label_name, m_curr_inst_word_number));
     }
 
-    void parseJumpDst() {
+    void parseJumpDst()
+    {
         assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
 
         assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);
@@ -123,11 +132,50 @@ class Assembler final {
         m_labels.insert(std::make_pair(dst_name, m_curr_inst_word_number));
     }
 
-    template<InstOpcode>
+    uint64_t parseIntrinsicName()
+    {
+        static std::unordered_map<std::string, uint64_t> intrinsics = {
+            {"print", 0}, {"scan", 1}, {"sin", 2}, {"cos", 3}, {"sqrt", 4}};
+
+        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+
+        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);
+
+        std::string intrinsic_name = m_lexer.YYText();
+
+        auto it = intrinsics.find(intrinsic_name);
+        assertParseError(it != intrinsics.end());
+
+        return it->second;
+    }
+
+    uint64_t parseOptRegArg() {
+        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+        if (m_lexer.currLexemType() == Lexer::LexemType::NEW_LINE) {
+            return NO_OPT_REG_ARG;
+        }
+
+        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::COMMA);
+        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+
+        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);
+        assertParseError(m_lexer.YYText()[0] == 'r');
+
+        char *end = nullptr;
+        int reg_id = std::strtol(m_lexer.YYText() + 1, &end, 10);
+
+        assertParseError(end == m_lexer.YYText() + m_lexer.YYLeng());
+        assertParseError(reg_id != NO_OPT_REG_ARG);
+
+        return reg_id;
+    }
+
+    template <InstOpcode>
     void parseInst();
 
     void first_pass();
-    void reslove_jumps() {
+    void reslove_jumps()
+    {
         for (auto &&jump : m_jumps) {
             auto &lable_name = jump.second;
             auto it = m_labels.find(lable_name);
@@ -139,16 +187,18 @@ class Assembler final {
         }
     }
 
-    void write(std::ofstream &out) {
+    void write(std::ofstream &out)
+    {
         for (auto &&inst_ptr : m_insts) {
-            const char *bin_code = reinterpret_cast<const char*>(inst_ptr->getBinCode());
+            const char *bin_code = reinterpret_cast<const char *>(inst_ptr->getBinCode());
             int size = inst_ptr->getWordSize() * sizeof(InstWord);
             out.write(bin_code, size);
         }
     }
 
 public:
-    void assemble(std::ofstream &out) {
+    void assemble(std::ofstream &out)
+    {
         first_pass();
         reslove_jumps();
         write(out);

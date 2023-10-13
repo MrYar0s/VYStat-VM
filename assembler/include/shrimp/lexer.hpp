@@ -12,7 +12,8 @@ struct Lexer final : public yyFlexLexer {
         NUMBER,
         COMMA,
         COLON,
-        IDENTIFIER
+        IDENTIFIER,
+        NEW_LINE
     };
 
     static constexpr int LEXING_OK = 1;
@@ -38,6 +39,11 @@ struct Lexer final : public yyFlexLexer {
 
     int processIdentifier() noexcept {
         m_curr_lexem_type = LexemType::IDENTIFIER;
+        return LEXING_OK;
+    }
+
+    int processNewLine() noexcept {
+        m_curr_lexem_type = LexemType::NEW_LINE;
         return LEXING_OK;
     }
 

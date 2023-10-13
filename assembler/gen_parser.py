@@ -20,12 +20,13 @@ def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | N
     out.write("void Assembler::parseInst<InstOpcode::%s>() {\n" % fixed_name)
 
     if fields == None :
+        out.write("m_insts.push_back(std::make_unique<Inst<InstOpcode::%s>>());\n" % fixed_name)
         out.write("}\n\n")
         return
 
     first = True
     for field_name in fields.keys() :
-        if not first :
+        if not first and field_name.find("opt_reg_arg") == -1 :
             out.write("parseComma();\n")
         first = False
 
@@ -39,6 +40,16 @@ def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | N
             case "jump_offset" :
                 out.write("InstWordNumber jump_offset = 0;")
                 out.write("parseJumpDst();")
+            case "intrinsic_code" :
+                out.write("uint64_t intrinsic_code = parseIntrinsicName();")
+            case "opt_reg_arg1" :
+                parse_opt = True
+                out.write("uint64_t opt_reg_arg1 = parseOptRegArg();")
+                out.write("uint64_t prev_reg_arg = opt_reg_arg1;")
+            case "opt_reg_arg2" | "opt_reg_arg3" | "opt_reg_arg4" :
+                out.write("uint64_t %s = (prev_reg_arg == NO_OPT_REG_ARG) ? NO_OPT_REG_ARG :\
+                          parseOptRegArg();" % field_name)
+                out.write("prev_reg_arg = %s;" % field_name)
 
     out.write("\n")
     out.write("m_insts.push_back(std::make_unique<Inst<InstOpcode::%s>>(" % fixed_name)
@@ -61,6 +72,7 @@ def write_first_pass(out: TextIOWrapper, insts: dict) :
             "int lexing_status = Lexer::LEXING_ERROR_CODE;\n\n"
 
             "while ((lexing_status = m_lexer.yylex()) == Lexer::LEXING_OK) {\n"
+                "if (m_lexer.currLexemType() == Lexer::LexemType::NEW_LINE) { continue; }\n"
                 "assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);\n\n"
 
                 "std::string id = m_lexer.YYText();\n\n"
