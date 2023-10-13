@@ -25,7 +25,7 @@ add_custom_command(
 )
 
 add_executable(assembler
-    src/lexer.cpp
+    src/assembler.cpp
     ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
     ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
     ${FLEX_lexer_OUTPUTS}
