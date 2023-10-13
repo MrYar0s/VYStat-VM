@@ -149,7 +149,8 @@ class Assembler final {
         return it->second;
     }
 
-    uint64_t parseOptRegArg() {
+    uint64_t parseOptRegArg()
+    {
         assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
         if (m_lexer.currLexemType() == Lexer::LexemType::NEW_LINE) {
             return NO_OPT_REG_ARG;

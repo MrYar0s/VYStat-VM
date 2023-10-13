@@ -5,14 +5,16 @@
 
 #include <shrimp/assembler.hpp>
 
-int yyFlexLexer::yywrap() {
+int yyFlexLexer::yywrap()
+{
     return 1;
 }
 
 using namespace shrimp;
 
-int main() {
-    assembler::Assembler assembler{};
+int main()
+{
+    assembler::Assembler assembler {};
 
     std::ofstream out {"a.out", std::ios_base::binary};
 
