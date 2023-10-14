@@ -23,39 +23,32 @@
 namespace shrimp {
 namespace assembler {
 
-struct LexError : std::runtime_error {
+class LexError : public std::runtime_error {
+public:
     LexError(size_t lineno) : std::runtime_error("Lexing error on line: " + std::to_string(lineno)) {}
 };
 
-struct ParseError : std::runtime_error {
+class ParseError : public std::runtime_error {
+public:
     ParseError(size_t lineno) : std::runtime_error("Parse error on line: " + std::to_string(lineno)) {}
 };
 
-struct UnresolvedLableError : std::runtime_error {
+class UnresolvedLableError : public std::runtime_error {
+public:
     UnresolvedLableError(std::string lable_name) : std::runtime_error("Unresolved lable: " + lable_name) {}
 };
 
-struct DuplicatedLableError : std::runtime_error {
+class DuplicatedLableError : public std::runtime_error {
+public:
     DuplicatedLableError(std::string lable_name) : std::runtime_error("Duplicated lable: " + lable_name) {}
 };
 
 class Assembler final {
-    Lexer m_lexer;
-
-    DWordOffset m_curr_dword_offset = 0;
-
-    // Parsed instructions
-    std::vector<std::unique_ptr<InterfaceInst>> m_insts {};
-    // Parsed jumps: {Inst *, Label name}
-    std::vector<std::pair<InterfaceJump *, std::string>> m_jumps {};
-    // Parsed labels: [Label name -> offset]
-    std::unordered_map<std::string, DWordOffset> m_labels {};
-
     // Throw lexing error if condition is not true
     void assertLexError(bool cond)
     {
         if (!cond) {
-            throw LexError(m_lexer.lineno());
+            throw LexError(lexer_.lineno());
         }
     }
 
@@ -63,20 +56,20 @@ class Assembler final {
     void assertParseError(bool cond)
     {
         if (!cond) {
-            throw ParseError(m_lexer.lineno());
+            throw ParseError(lexer_.lineno());
         }
     }
 
     // Parse expected register
     R8Id parseReg()
     {
-        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
 
-        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);
-        assertParseError(m_lexer.YYText()[0] == 'r');
+        assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);
+        assertParseError(lexer_.YYText()[0] == 'r');
 
-        const char *reg_id_ptr = m_lexer.YYText() + 1;
-        const char *reg_id_end = m_lexer.YYText() + m_lexer.YYLeng();
+        const char *reg_id_ptr = lexer_.YYText() + 1;
+        const char *reg_id_end = lexer_.YYText() + lexer_.YYLeng();
         R8Id reg_id = 0;
 
         auto [end, ec] = std::from_chars(reg_id_ptr, reg_id_end, reg_id);
@@ -90,14 +83,14 @@ class Assembler final {
     // Parse expected int64_t immediate
     int64_t parseImmI()
     {
-        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
 
-        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::NUMBER);
+        assertParseError(lexer_.currLexemType() == Lexer::LexemType::NUMBER);
 
         int64_t immi = 0;
-        const char *immi_end = m_lexer.YYText() + m_lexer.YYLeng();
+        const char *immi_end = lexer_.YYText() + lexer_.YYLeng();
 
-        auto [end, ec] = std::from_chars(m_lexer.YYText(), immi_end, immi);
+        auto [end, ec] = std::from_chars(lexer_.YYText(), immi_end, immi);
 
         assertParseError(ec == std::errc());
         assertParseError(immi_end == end);
@@ -108,14 +101,14 @@ class Assembler final {
     // Parse expected double immediate
     double parseImmD()
     {
-        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
 
-        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::NUMBER);
+        assertParseError(lexer_.currLexemType() == Lexer::LexemType::NUMBER);
 
         double immd = 0;
-        const char *immd_end = m_lexer.YYText() + m_lexer.YYLeng();
+        const char *immd_end = lexer_.YYText() + lexer_.YYLeng();
 
-        auto [end, ec] = std::from_chars(m_lexer.YYText(), immd_end, immd);
+        auto [end, ec] = std::from_chars(lexer_.YYText(), immd_end, immd);
 
         assertParseError(ec == std::errc());
         assertParseError(immd_end == end);
@@ -126,18 +119,18 @@ class Assembler final {
     // Parse expected comma
     void parseComma()
     {
-        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
-        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::COMMA);
+        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
+        assertParseError(lexer_.currLexemType() == Lexer::LexemType::COMMA);
     }
 
     // An unknown name detec
     void parseLabel()
     {
-        std::string label_name = m_lexer.YYText();
+        std::string label_name = lexer_.YYText();
         // skip colon
         label_name.pop_back();
 
-        auto [_, is_inserted] = m_labels.insert({label_name, m_curr_dword_offset});
+        auto [_, is_inserted] = labels_.insert({label_name, curr_dword_offset_});
 
         if (!is_inserted) {
             throw DuplicatedLableError(label_name);
@@ -146,11 +139,11 @@ class Assembler final {
 
     std::string parseJumpDst()
     {
-        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
 
-        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);
+        assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);
 
-        return m_lexer.YYText();
+        return lexer_.YYText();
     }
 
     IntrinsicCode parseIntrinsicName()
@@ -161,11 +154,11 @@ class Assembler final {
                                                                             {"cos", IntrinsicCode::COS},
                                                                             {"sqrt", IntrinsicCode::SQRT}};
 
-        assertLexError(m_lexer.yylex() == Lexer::LEXING_OK);
+        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
 
-        assertParseError(m_lexer.currLexemType() == Lexer::LexemType::IDENTIFIER);
+        assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);
 
-        std::string intrinsic_name = m_lexer.YYText();
+        std::string intrinsic_name = lexer_.YYText();
 
         auto it = intrinsics.find(intrinsic_name);
         assertParseError(it != intrinsics.end());
@@ -206,10 +199,10 @@ class Assembler final {
     void first_pass();
     void reslove_jumps()
     {
-        for (auto &&jump : m_jumps) {
+        for (auto &&jump : jumps_) {
             auto &lable_name = jump.second;
-            auto it = m_labels.find(lable_name);
-            if (it == m_labels.end()) {
+            auto it = labels_.find(lable_name);
+            if (it == labels_.end()) {
                 throw UnresolvedLableError(lable_name);
             }
 
@@ -219,7 +212,7 @@ class Assembler final {
 
     void write(std::ofstream &out)
     {
-        for (auto &&inst_ptr : m_insts) {
+        for (auto &&inst_ptr : insts_) {
             const char *bin_code = reinterpret_cast<const char *>(inst_ptr->getBinCode());
             int size = inst_ptr->getDWordSize() * sizeof(DWord);
             out.write(bin_code, size);
@@ -233,6 +226,18 @@ public:
         reslove_jumps();
         write(out);
     }
+
+private:
+    Lexer lexer_;
+
+    DWordOffset curr_dword_offset_ = 0;
+
+    // Parsed instructions
+    std::vector<std::unique_ptr<InterfaceInst>> insts_ {};
+    // Parsed jumps: {Inst *, Label name}
+    std::vector<std::pair<InterfaceJump *, std::string>> jumps_ {};
+    // Parsed labels: [Label name -> offset]
+    std::unordered_map<std::string, DWordOffset> labels_ {};
 };
 
 }  // namespace assembler

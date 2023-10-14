@@ -7,36 +7,35 @@
 
 namespace shrimp {
 
-struct Lexer final : public yyFlexLexer {
+class Lexer final : public yyFlexLexer {
+public:
     enum class LexemType { NUMBER, COMMA, LABEL, IDENTIFIER };
 
     static constexpr int LEXING_OK = 1;
     static constexpr int LEXING_ERROR_CODE = -1;
 
 private:
-    LexemType m_curr_lexem_type;
-
     int processNumber() noexcept
     {
-        m_curr_lexem_type = LexemType::NUMBER;
+        curr_lexem_type_ = LexemType::NUMBER;
         return LEXING_OK;
     }
 
     int processComma() noexcept
     {
-        m_curr_lexem_type = LexemType::COMMA;
+        curr_lexem_type_ = LexemType::COMMA;
         return LEXING_OK;
     }
 
     int processLabel() noexcept
     {
-        m_curr_lexem_type = LexemType::LABEL;
+        curr_lexem_type_ = LexemType::LABEL;
         return LEXING_OK;
     }
 
     int processIdentifier() noexcept
     {
-        m_curr_lexem_type = LexemType::IDENTIFIER;
+        curr_lexem_type_ = LexemType::IDENTIFIER;
         return LEXING_OK;
     }
 
@@ -50,8 +49,11 @@ public:
 
     auto currLexemType() const noexcept
     {
-        return m_curr_lexem_type;
+        return curr_lexem_type_;
     }
+
+private:
+    LexemType curr_lexem_type_;
 };
 
 }  // namespace shrimp
