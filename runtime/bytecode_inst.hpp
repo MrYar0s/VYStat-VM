@@ -32,7 +32,7 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_ = applyMask<0xff>(applyRightShift<56>(raw_inst_));
+        reg_ = applyMask<0xff>(applyRightShift<8>(raw_inst_));
     }
     uint8_t getRegNum()
     {
@@ -50,8 +50,8 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_[0] = applyMask<0xff>(applyRightShift<56>(raw_inst_));
-        reg_[1] = applyMask<0xff>(applyRightShift<48>(raw_inst_));
+        reg_[0] = applyMask<0xff>(applyRightShift<8>(raw_inst_));
+        reg_[1] = applyMask<0xff>(applyRightShift<16>(raw_inst_));
     }
     template <size_t idx>
     uint8_t getRegNum()
@@ -70,8 +70,8 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_ = applyMask<0xff>(applyRightShift<56>(raw_inst_));
-        imm_ = applyMask<0xffffffff>(applyRightShift<24>(raw_inst_));
+        reg_ = applyMask<0xff>(applyRightShift<8>(raw_inst_));
+        imm_ = applyRightShift<32>(raw_inst_);
     }
     uint8_t getRegNum()
     {
@@ -94,7 +94,7 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        imm_ = applyMask<0xffffffff>(applyRightShift<32>(raw_inst_));
+        imm_ = applyRightShift<32>(raw_inst_);
     }
     uint32_t getImm()
     {
@@ -112,7 +112,7 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        id_ = applyMask<0xffff>(applyRightShift<48>(raw_inst_));
+        id_ = applyRightShift<48>(raw_inst_);
     }
     uint16_t getId()
     {
@@ -130,8 +130,8 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_ = applyMask<0xff>(applyRightShift<48>(raw_inst_));
-        id_ = applyMask<0xffff>(applyRightShift<40>(raw_inst_));
+        reg_ = applyMask<0xff>(applyRightShift<8>(raw_inst_));
+        id_ = applyRightShift<48>(raw_inst_);
     }
     uint8_t getRegNum()
     {
@@ -154,9 +154,9 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_[0] = applyMask<0xff>(applyRightShift<56>(raw_inst_));
-        reg_[1] = applyMask<0xff>(applyRightShift<48>(raw_inst_));
-        id_ = applyMask<0xffff>(applyRightShift<32>(raw_inst_));
+        reg_[0] = applyMask<0xff>(applyRightShift<32>(raw_inst_));
+        reg_[1] = applyMask<0xff>(applyRightShift<40>(raw_inst_));
+        id_ = applyMask<0xffff>(applyRightShift<8>(raw_inst_));
     }
     template <size_t idx>
     uint8_t getRegNum()
