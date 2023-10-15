@@ -1,11 +1,11 @@
-intrinsic scanf
+intrinsic scan.f
 sta r0
-intrinsic scanf
+intrinsic scan.f
 sta r1
-intrinsic cosf, r0
+intrinsic cos, r0
 sta r2
-intrinsic sinf, r1
-addf r2
+intrinsic sin, r1
+add.f r2
 sta r3
-intrinsic printf, r3
-return
+intrinsic print.f, r3
+ret

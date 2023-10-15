@@ -1,30 +1,32 @@
 # ax^2 + bx + c = 0
-intrinsic scanf
+intrinsic scan.f
 sta r0				# a
-intrinsic scanf
+intrinsic scan.f
 sta r1				# b
-intrinsic scanf
+intrinsic scan.f
 sta r2				# c
-mulf r1, r1
-sta r3				# b^2
-lda.immi 4
-mulf r0				# 4*a
-mulf r1				# (4*a)*b
-negf				# -(4*a*b)
-addf r3				# D = b^2-4*a*c
-sta r4				# same
-intrinsic sqrtf, r4	# sqrt(D)
-sta r5				# same
 lda r1
-negf				# -b
-addf r5				# -b + sqrt(D)
-mov.immi r6, 2		# r6 = 2
-divi r6				# (-b + sqrt(D))/2
+mul.f r1
+sta r3				# b^2
+lda.imm.f 4
+mul.f r0				# 4*a
+mul.f r2				# (4*a)*c
+neg.f					# -(4*a*c)
+add.f r3				# D = b^2-4*a*c
+sta r4					# same
+intrinsic sqrt, r4		# sqrt(D)
+sta r5					# same
+lda r1
+neg.f				# -b
+add.f r5			# -b + sqrt(D)
+mov.imm.f r6, 2		# r6 = 2
+div.f r6			# (-b + sqrt(D))/2
 sta r7				# x1
 lda r1
-negf				# -b
-subf r5				# -b - sqrt(D)
-divi r6				# (-b - sqrt(D))/2
+neg.f				# -b
+sub.f r5			# -b - sqrt(D)
+div.f r6			# (-b - sqrt(D))/2
 sta r8				# x2
-intrinsic printf, r7
-intrinsic printf, r8
+intrinsic print.f, r7
+intrinsic print.f, r8
+ret
