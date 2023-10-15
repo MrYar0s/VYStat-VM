@@ -31,28 +31,42 @@ def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | N
         out.write("}\n\n")
         return
 
+    need_comma = False
     for field_name in fields.keys() :
+        if need_comma :
+            out.write("parseComma();")
+
         match field_name :
             case "rd" | "rs" | "rs1" | "rs2" :
                 out.write("uint64_t %s = parseReg();\n" % field_name)
+                need_comma = True
 
             case "imm_i32" | "imm_i64" :
                 out.write("uint64_t %s = parseImmI();\n" % field_name)
+                need_comma = True
 
-            case "imm_f" | "imm_d" :
-                out.write("double %s = parseImmD();\n" % field_name)
+            case "imm_f" :
+                out.write("uint32_t %s = parseImmF();\n" % field_name)
+                need_comma = True
+
+            case "imm_d" :
+                out.write("uint64_t %s = parseImmD();\n" % field_name)
+                need_comma = True
 
             case "jump_offset" :
                 out.write("DWordOffset jump_offset = 0;")
                 out.write("parseJumpDst();")
+                need_comma = True
 
             case "intrinsic_code" :
                 out.write("auto intrinsic_code_enum = parseIntrinsicName();")
                 out.write("auto intrinsic_args = parseIntrinsicArgs(intrinsic_code_enum);")
                 out.write("auto intrinsic_code = static_cast<uint8_t>(intrinsic_code_enum);")
+                need_comma = False
 
-            case "opt_reg_arg1" | "opt_reg_arg2" | "opt_reg_arg3" | "opt_reg_arg4" :
+            case "intrinsic_arg_0" | "intrinsic_arg_1" | "intrinsic_arg_2" | "intrinsic_arg_3" :
                 out.write("R8Id %s = intrinsic_args[%c];" % (field_name, field_name[-1]))
+                need_comma = False
 
             case _:
                 raise RuntimeError("Unknown field")

@@ -26,13 +26,7 @@ using InstType = uint64_t;
 
 enum class ValueTag : uint8_t { INT };
 
-enum class IntrinsicCode : uint8_t {
-    PRINT,
-    SCAN,
-    SIN,
-    COS,
-    SQRT
-};
+enum class IntrinsicCode : uint8_t { PRINT_I32, PRINT_F, SCAN_I32, SCAN_F, SIN, COS, SQRT };
 
 }  // namespace shrimp
 

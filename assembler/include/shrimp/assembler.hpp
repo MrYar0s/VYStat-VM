@@ -98,22 +98,36 @@ class Assembler final {
         return immi;
     }
 
-    // Parse expected double immediate
-    double parseImmD()
+    // Parse expected floating point value
+    double parseFP()
     {
         assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
 
         assertParseError(lexer_.currLexemType() == Lexer::LexemType::NUMBER);
 
-        double immd = 0;
-        const char *immd_end = lexer_.YYText() + lexer_.YYLeng();
+        double value = 0;
+        const char *value_end = lexer_.YYText() + lexer_.YYLeng();
 
-        auto [end, ec] = std::from_chars(lexer_.YYText(), immd_end, immd);
+        auto [end, ec] = std::from_chars(lexer_.YYText(), value_end, value);
 
         assertParseError(ec == std::errc());
-        assertParseError(immd_end == end);
+        assertParseError(value_end == end);
 
-        return immd;
+        return value;
+    }
+
+    // Parse expected float immediate
+    uint32_t parseImmF()
+    {
+        float value = parseFP();
+        return std::bit_cast<uint32_t>(value);
+    }
+
+    // Parse expected double immediate
+    uint64_t parseImmD()
+    {
+        double value = parseFP();
+        return std::bit_cast<uint64_t>(value);
     }
 
     // Parse expected comma
@@ -148,17 +162,20 @@ class Assembler final {
 
     IntrinsicCode parseIntrinsicName()
     {
-        static std::unordered_map<std::string, IntrinsicCode> intrinsics = {{"print", IntrinsicCode::PRINT},
-                                                                            {"scan", IntrinsicCode::SCAN},
-                                                                            {"sin", IntrinsicCode::SIN},
-                                                                            {"cos", IntrinsicCode::COS},
-                                                                            {"sqrt", IntrinsicCode::SQRT}};
+        static std::unordered_map<std::string, IntrinsicCode> intrinsics = {{"PRINT.I32", IntrinsicCode::PRINT_I32},
+                                                                            {"PRINT.F", IntrinsicCode::PRINT_F},
+                                                                            {"SCAN.I32", IntrinsicCode::SCAN_I32},
+                                                                            {"SCAN.F", IntrinsicCode::SCAN_F},
+                                                                            {"SIN", IntrinsicCode::SIN},
+                                                                            {"COS", IntrinsicCode::COS},
+                                                                            {"SQRT", IntrinsicCode::SQRT}};
 
         assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
 
         assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);
 
         std::string intrinsic_name = lexer_.YYText();
+        std::transform(intrinsic_name.begin(), intrinsic_name.end(), intrinsic_name.begin(), ::toupper);
 
         auto it = intrinsics.find(intrinsic_name);
         assertParseError(it != intrinsics.end());
@@ -169,11 +186,13 @@ class Assembler final {
     std::array<R8Id, 4> parseIntrinsicArgs(IntrinsicCode code)
     {
         switch (code) {
-            case IntrinsicCode::PRINT:
+            case IntrinsicCode::PRINT_I32:
+            case IntrinsicCode::PRINT_F:
                 parseComma();
                 return {parseReg(), 0, 0, 0};
 
-            case IntrinsicCode::SCAN:
+            case IntrinsicCode::SCAN_I32:
+            case IntrinsicCode::SCAN_F:
                 return {0, 0, 0, 0};
 
             case IntrinsicCode::SIN:
