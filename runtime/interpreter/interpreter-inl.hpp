@@ -7,6 +7,7 @@
 #include "bitops.hpp"
 #include "types.hpp"
 #include <iostream>
+#include <stdexcept>
 #include "intrinsics.hpp"
 
 namespace shrimp::interpreter {
@@ -395,6 +396,9 @@ inline int handleIntrinsic(const InstType *pc, Frame *frame)
                       << "intrinsic sqrt, "
                       << "r" << (size_t)first_reg_num << std::endl;
             auto first_reg = getValue<float>(reg.getValue());
+            if (first_reg < 0.0) {
+                throw std::runtime_error("Negative value under square root");
+            }
             float res = SqrtF(first_reg);
             uint64_t res_u64 = castToWritable<float>(res);
             frame->setAcc(res_u64);
