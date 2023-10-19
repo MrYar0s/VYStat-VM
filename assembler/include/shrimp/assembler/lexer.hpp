@@ -1,5 +1,5 @@
-#ifndef INCLUDE_SHRIMP_LEXER_HPP
-#define INCLUDE_SHRIMP_LEXER_HPP
+#ifndef SHRIMP_ASSEMBLER_LEXER_HPP
+#define SHRIMP_ASSEMBLER_LEXER_HPP
 
 #ifndef yyFlexLexer
 #include <FlexLexer.h>
@@ -58,4 +58,4 @@ private:
 
 }  // namespace shrimp
 
-#endif  // INCLUDE_SHRIMP_LEXER_HPP
+#endif  // SHRIMP_ASSEMBLER_LEXER_HPP

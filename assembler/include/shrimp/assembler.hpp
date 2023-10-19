@@ -14,11 +14,11 @@
 #include <unordered_map>
 #include <charconv>
 
-#include <types.hpp>
+#include <shrimp/common/types.hpp>
 #include <shrimp/common/inst_opcode.gen.hpp>
-#include <shrimp/assembler/inst.gen.hpp>
 
-#include <shrimp/lexer.hpp>
+#include <shrimp/assembler/inst.gen.hpp>
+#include <shrimp/assembler/lexer.hpp>
 
 namespace shrimp {
 namespace assembler {

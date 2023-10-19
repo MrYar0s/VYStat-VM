@@ -1,5 +1,5 @@
-#ifndef COMMON_BITOPS_HPP
-#define COMMON_BITOPS_HPP
+#ifndef SHRIMP_COMMON_BITOPS_HPP
+#define SHRIMP_COMMON_BITOPS_HPP
 
 #include <cstdint>
 #include <bit>
@@ -46,4 +46,4 @@ Type getValue(uint64_t val)
     }
 }
 
-#endif  // COMMON_BITOPS_HPP
+#endif  // SHRIMP_COMMON_BITOPS_HPP

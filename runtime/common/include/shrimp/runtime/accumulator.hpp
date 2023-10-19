@@ -1,5 +1,5 @@
-#ifndef RUNTIME_ACCUMULATOR_HPP
-#define RUNTIME_ACCUMULATOR_HPP
+#ifndef SHRIMP_RUNTIME_ACCUMULATOR_HPP
+#define SHRIMP_RUNTIME_ACCUMULATOR_HPP
 
 #include <cstdint>
 
@@ -23,4 +23,4 @@ private:
 
 }  // namespace shrimp
 
-#endif  // RUNTIME_ACCUMULATOR_HPP
+#endif  // SHRIMP_RUNTIME_ACCUMULATOR_HPP

@@ -1,10 +1,10 @@
-#ifndef RUNTIME_INTERPRETER_FRAME_HPP
-#define RUNTIME_INTERPRETER_FRAME_HPP
+#ifndef SHRIMP_RUNTIME_FRAME_HPP
+#define SHRIMP_RUNTIME_FRAME_HPP
 
 #include <vector>
 
-#include "runtime.hpp"
-#include "accumulator.hpp"
+#include <shrimp/runtime/register.hpp>
+#include <shrimp/runtime/accumulator.hpp>
 
 namespace shrimp {
 
@@ -42,4 +42,4 @@ private:
 
 }  // namespace shrimp
 
-#endif  // RUNTIME_INTERPRETER_FRAME_HPP
+#endif  // SHRIMP_RUNTIME_FRAME_HPP

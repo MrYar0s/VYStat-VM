@@ -1,11 +1,12 @@
-#ifndef RUNTIME_BYTECODE_INST_HPP
-#define RUNTIME_BYTECODE_INST_HPP
+#ifndef SHRIMP_RUNTIME_BYTECODE_INST_HPP
+#define SHRIMP_RUNTIME_BYTECODE_INST_HPP
 
-#include "bitops.hpp"
-#include "types.hpp"
 #include <array>
 #include <cstdlib>
 #include <cstdint>
+
+#include <shrimp/common/bitops.hpp>
+#include <shrimp/common/types.hpp>
 
 namespace shrimp {
 
@@ -176,4 +177,4 @@ private:
 
 }  // namespace shrimp
 
-#endif  // RUNTIME_BYTECODE_INST_HPP
+#endif  // SHRIMP_RUNTIME_BYTECODE_INST_HPP

@@ -6,7 +6,8 @@
 #include <fstream>
 #include <algorithm>
 #include <iterator>
-#include "shrimp_vm.hpp"
+
+#include <shrimp/runtime/shrimp_vm.hpp>
 
 namespace shrimp {
 

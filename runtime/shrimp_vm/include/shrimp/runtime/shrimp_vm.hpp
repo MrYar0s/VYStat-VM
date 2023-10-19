@@ -1,12 +1,13 @@
-#ifndef RUNTIME_SHRIMP_VM_HPP
-#define RUNTIME_SHRIMP_VM_HPP
+#ifndef SHRIMP_RUNTIME_SHRIMP_VM_HPP
+#define SHRIMP_RUNTIME_SHRIMP_VM_HPP
 
 #include <vector>
 #include <cstdint>
 #include <stack>
-#include "accumulator.hpp"
-#include "runtime.hpp"
-#include "frame.hpp"
+
+#include <shrimp/runtime/accumulator.hpp>
+#include <shrimp/runtime/frame.hpp>
+#include <shrimp/runtime/runtime.hpp>
 
 namespace shrimp {
 
@@ -47,4 +48,4 @@ private:
 
 }  // namespace shrimp
 
-#endif  // RUNTIME_SHRIMP_VM_HPP
+#endif  // SHRIMP_RUNTIME_SHRIMP_VM_HPP
