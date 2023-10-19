@@ -2,7 +2,9 @@
 #define RUNTIME_INTERPRETER_INTERPRETER_HPP
 
 #include <cstdint>
-#include "frame.hpp"
+
+#include <shrimp/common/types.hpp>
+#include <shrimp/runtime/frame.hpp>
 
 namespace shrimp::interpreter {
 

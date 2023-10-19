@@ -1,6 +1,7 @@
-#include "interpreter.hpp"
-#include "interpreter-inl.hpp"
 #include <iostream>
+
+#include <shrimp/runtime/shrimp_vm/interpreter.hpp>
+#include <shrimp/runtime/shrimp_vm/interpreter-inl.hpp>
 
 namespace shrimp::interpreter {
 

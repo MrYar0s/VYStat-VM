@@ -8,20 +8,19 @@ flex_target(lexer
 )
 
 set(ASSEMBLER_GEN_ROOT ${CMAKE_CURRENT_BINARY_DIR}/include/shrimp/assembler)
-set(INST ${PROJECT_ROOT}/inst.yaml)
 
 file(MAKE_DIRECTORY ${ASSEMBLER_GEN_ROOT})
 
 add_custom_command(
     OUTPUT ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py ${INST} ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
-    DEPENDS ${INST} ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py ${INSTR} ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
+    DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py
 )
 
 add_custom_command(
     OUTPUT ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_parser.py ${INST} ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
-    DEPENDS ${INST} ${CMAKE_CURRENT_SOURCE_DIR}/gen_parser.py
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_parser.py ${INSTR} ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
+    DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_parser.py
 )
 
 add_executable(assembler

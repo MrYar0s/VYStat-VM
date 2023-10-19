@@ -1,14 +1,18 @@
-#ifndef RUNTIME_INTERPRETER_INTERPRETER_INL_HPP
-#define RUNTIME_INTERPRETER_INTERPRETER_INL_HPP
+#ifndef RUNTIME_SHRIMP_VM_INTERPRETER_INL_HPP
+#define RUNTIME_SHRIMP_VM_INTERPRETER_INL_HPP
 
-#include "frame.hpp"
-#include "interpreter.hpp"
-#include "bytecode_inst.hpp"
-#include "bitops.hpp"
-#include "types.hpp"
 #include <iostream>
+#include <array>
 #include <stdexcept>
-#include "intrinsics.hpp"
+
+#include <shrimp/common/bitops.hpp>
+#include <shrimp/common/types.hpp>
+
+#include <shrimp/runtime/frame.hpp>
+#include <shrimp/runtime/bytecode_inst.hpp>
+
+#include <shrimp/runtime/shrimp_vm/interpreter.hpp>
+#include <shrimp/runtime/shrimp_vm/intrinsics.hpp>
 
 namespace shrimp::interpreter {
 
@@ -422,4 +426,4 @@ inline int handleRet([[maybe_unused]] const InstType *pc, [[maybe_unused]] Frame
 
 }  // namespace shrimp::interpreter
 
-#endif  // RUNTIME_INTERPRETER_INTERPRETER_INL_HPP
+#endif  // RUNTIME_SHRIMP_VM_INTERPRETER_INL_HPP

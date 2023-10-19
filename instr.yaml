@@ -125,13 +125,13 @@ DIV.F:
     fields:
         rs: [8, 15]
 
-NEG.I32:
-    descr: "acc = - (acc as i32)"
-    opcode: 15
+# NEG.I32:
+#     descr: "acc = - (acc as i32)"
+#     opcode: 15
 
-NEG.F:
-    descr: "acc = - (acc as float)"
-    opcode: 16
+# NEG.F:
+#     descr: "acc = - (acc as float)"
+#     opcode: 16
 
 MUL.I32:
     descr: "acc = (acc as i32) * (rs as i32)"

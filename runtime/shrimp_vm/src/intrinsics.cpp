@@ -1,6 +1,7 @@
-#include "intrinsics.hpp"
 #include <iostream>
 #include <cmath>
+
+#include <shrimp/runtime/shrimp_vm/intrinsics.hpp>
 
 namespace shrimp {
 
@@ -33,27 +34,12 @@ float SinF(float val)
     return std::sin(val);
 }
 
-float SinI(int val)
-{
-    return std::sin(val);
-}
-
 float CosF(float val)
 {
     return std::cos(val);
 }
 
-float CosI(int val)
-{
-    return std::cos(val);
-}
-
 float SqrtF(float val)
-{
-    return std::sqrt(val);
-}
-
-float SqrtI(int val)
 {
     return std::sqrt(val);
 }

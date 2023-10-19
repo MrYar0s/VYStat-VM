@@ -13,7 +13,7 @@ def write_file_open(out: TextIOWrapper) :
         "#define PARSER_GEN_HPP\n\n"
 
         "#include <algorithm>\n"
-        "#include <types.hpp>\n"
+        "#include <shrimp/common/types.hpp>\n"
         "#include <shrimp/common/inst_opcode.gen.hpp>\n\n"
 
         "namespace shrimp {\n"

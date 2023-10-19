@@ -1,17 +1,19 @@
-#ifndef RUNTIME_RUNTIME_HPP
-#define RUNTIME_RUNTIME_HPP
+#ifndef SHRIMP_RUNTIME_RUNTIME_HPP
+#define SHRIMP_RUNTIME_RUNTIME_HPP
 
 #include <cstddef>
 #include <array>
 #include <cstdint>
-#include "register.hpp"
-#include "accumulator.hpp"
-#include "types.hpp"
+
+#include <shrimp/common/types.hpp>
+
+#include <shrimp/runtime/register.hpp>
+#include <shrimp/runtime/accumulator.hpp>
+#include <shrimp/runtime/frame.hpp>
 
 namespace shrimp {
 
 class ShrimpVM;
-class Frame;
 
 class Runtime final {
 public:
@@ -30,4 +32,4 @@ private:
 
 }  // namespace shrimp
 
-#endif  // RUNTIME_RUNTIME_HPP
+#endif  // SHRIMP_RUNTIME_RUNTIME_HPP

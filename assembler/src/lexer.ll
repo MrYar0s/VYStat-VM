@@ -3,7 +3,7 @@
 %option yylineno
 
 %{
-#include <shrimp/lexer.hpp>
+#include <shrimp/assembler/lexer.hpp>
 %}
 
 WHITE_SPACE     [ \n\t\v]+

@@ -1,9 +1,10 @@
-#include "runtime.hpp"
-#include "shrimp_vm.hpp"
-#include "interpreter.hpp"
 #include <cassert>
 #include <cstddef>
 #include <iostream>
+
+#include <shrimp/runtime/runtime.hpp>
+#include <shrimp/runtime/shrimp_vm.hpp>
+#include <shrimp/runtime/shrimp_vm/interpreter.hpp>
 
 namespace shrimp {
 
