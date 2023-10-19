@@ -4,19 +4,19 @@ import yaml
 
 from io import TextIOWrapper
 
-def fix_inst_name(inst_name: str) :
-    return inst_name.replace('.', '_')
+def fix_instr_name(instr_name: str) :
+    return instr_name.replace('.', '_')
 
 DWORD_BIT_SIZE = 64
 
-def get_field_pos(field_name: str, field: list, inst_dword_size: int) -> list :
+def get_field_pos(field_name: str, field: list, instr_dword_size: int) -> list :
     lo = field[0]
     hi = field[1]
 
     assert(type(lo) == int)
     assert(type(hi) == int)
     assert(lo <= hi)
-    assert(hi < DWORD_BIT_SIZE * inst_dword_size)
+    assert(hi < DWORD_BIT_SIZE * instr_dword_size)
 
     field_dword_idx = int(lo / DWORD_BIT_SIZE)
     dword_lo = lo - field_dword_idx * DWORD_BIT_SIZE
@@ -28,26 +28,26 @@ def get_field_pos(field_name: str, field: list, inst_dword_size: int) -> list :
 
 def write_file_open(out: TextIOWrapper) :
     out.write(
-        "#ifndef ASSEMBLER_INST_GEN_HPP\n"
-        "#define ASSEMBLER_INST_GEN_HPP\n\n"
+        "#ifndef ASSEMBLER_INSTR_GEN_HPP\n"
+        "#define ASSEMBLER_INSTR_GEN_HPP\n\n"
 
         "#include <array>\n\n"
 
-        "#include <shrimp/common/inst_opcode.gen.hpp>\n\n"
+        "#include <shrimp/common/instr_opcode.gen.hpp>\n\n"
 
         "namespace shrimp {\n"
         "namespace assembler {\n\n"
     )
 
-def write_inst_primary_templ(out: TextIOWrapper) :
+def write_instr_primary_templ(out: TextIOWrapper) :
     out.write(
-        "template<InstOpcode op>\n"
-        "class Inst;\n\n"
+        "template<InstrOpcode op>\n"
+        "class Instr;\n\n"
     )
 
-def write_inst_interface(out: TextIOWrapper) :
+def write_instr_interface(out: TextIOWrapper) :
     out.write(
-        "struct InterfaceInst {\n"
+        "struct InterfaceInstr {\n"
             "// Get instruction size in words.\n"
             "// Note: Some instructions are several words long\n"
             "virtual std::size_t getDWordSize() const noexcept = 0;\n\n"
@@ -59,35 +59,35 @@ def write_inst_interface(out: TextIOWrapper) :
 
 def write_jump_interface(out: TextIOWrapper) :
     out.write(
-        "struct InterfaceJump : public InterfaceInst {\n"
+        "struct InterfaceJump : public InterfaceInstr {\n"
             "// Set instruction target in offset in DWordOffset.\n"
             "virtual void setOffset(DWordOffset offset) noexcept = 0;\n"
         "};\n\n"
     )
 
-def write_inst_bin_code(out: TextIOWrapper, size: int, fixed_name: str) :
+def write_instr_bin_code(out: TextIOWrapper, size: int, fixed_name: str) :
     out.write("private:\n")
-    out.write("std::array<DWord, %d> bin_code_ = { static_cast<DWord>(InstOpcode::%s) };\n" % (size, fixed_name))
+    out.write("std::array<DWord, %d> bin_code_ = { static_cast<DWord>(InstrOpcode::%s) };\n" % (size, fixed_name))
 
-def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
-    fields = inst.get("fields")
-    size = inst.get("size", 1)
+def write_instr_spec(out: TextIOWrapper, name: str, instr: dict) :
+    fields = instr.get("fields")
+    size = instr.get("size", 1)
 
-    is_jump = inst.get("is_jump", False)
-    base = "InterfaceJump" if is_jump else "InterfaceInst"
+    is_jump = instr.get("is_jump", False)
+    base = "InterfaceJump" if is_jump else "InterfaceInstr"
 
-    fixed_name = fix_inst_name(name)
+    fixed_name = fix_instr_name(name)
 
     out.write("template<>\n")
-    out.write("class Inst<InstOpcode::%s> final : public %s {\n" % (fixed_name, base))
+    out.write("class Instr<InstrOpcode::%s> final : public %s {\n" % (fixed_name, base))
 
     out.write("public:\n")
     out.write("std::size_t getDWordSize() const noexcept override { return bin_code_.size(); }\n")
     out.write("const DWord *getBinCode() const noexcept override { return bin_code_.data(); }\n\n")
 
     if fields == None :
-        out.write("Inst() = default;\n")
-        write_inst_bin_code(out, size, fixed_name)
+        out.write("Instr() = default;\n")
+        write_instr_bin_code(out, size, fixed_name)
         out.write("};\n\n")
         return
 
@@ -100,7 +100,7 @@ def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
         out.write("bin_code_[%d] |= offset << %d;\n" % (dword_idx, lo))
         out.write("}\n\n")
 
-    out.write("Inst(")
+    out.write("Instr(")
 
     first = True
     for field_name in fields.keys() :
@@ -121,7 +121,7 @@ def write_inst_spec(out: TextIOWrapper, name: str, inst: dict) :
         out.write("bin_code_[%d] |= %s << %d;\n\n" % (dword_idx, field_name, lo))
 
     out.write("}\n\n")
-    write_inst_bin_code(out, size, fixed_name)
+    write_instr_bin_code(out, size, fixed_name)
     out.write("};\n\n")
 
 def write_file_close(out: TextIOWrapper) :
@@ -129,7 +129,7 @@ def write_file_close(out: TextIOWrapper) :
         "} // namespace assembler\n"
         "} // namespace shrimp\n\n"
 
-        "#endif // ASSEMBLER_INST_GEN_HPP\n\n"
+        "#endif // ASSEMBLER_INSTR_GEN_HPP\n\n"
     )
 
 if __name__ == "__main__" :
@@ -137,17 +137,17 @@ if __name__ == "__main__" :
     OUT_NAME = sys.argv[2]
 
     with open(IN_NAME, 'r') as file :
-        insts = yaml.safe_load(file)
+        instrs = yaml.safe_load(file)
 
     out = open(OUT_NAME, 'w')
 
     write_file_open(out)
-    write_inst_primary_templ(out)
-    write_inst_interface(out)
+    write_instr_primary_templ(out)
+    write_instr_interface(out)
     write_jump_interface(out)
 
-    for name, inst in insts.items() :
-        write_inst_spec(out, name, inst)
+    for name, instr in instrs.items() :
+        write_instr_spec(out, name, instr)
 
     write_file_close(out)
 
