@@ -15,9 +15,9 @@
 #include <charconv>
 
 #include <shrimp/common/types.hpp>
-#include <shrimp/common/inst_opcode.gen.hpp>
+#include <shrimp/common/instr_opcode.gen.hpp>
 
-#include <shrimp/assembler/inst.gen.hpp>
+#include <shrimp/assembler/instr.gen.hpp>
 #include <shrimp/assembler/lexer.hpp>
 
 namespace shrimp {
@@ -212,8 +212,8 @@ class Assembler final {
         }
     }
 
-    template <InstOpcode>
-    void parseInst();
+    template <InstrOpcode>
+    void parseInstr();
 
     void first_pass();
     void reslove_jumps()
@@ -231,9 +231,9 @@ class Assembler final {
 
     void write(std::ofstream &out)
     {
-        for (auto &&inst_ptr : insts_) {
-            const char *bin_code = reinterpret_cast<const char *>(inst_ptr->getBinCode());
-            int size = inst_ptr->getDWordSize() * sizeof(DWord);
+        for (auto &&instr_ptr : instrs_) {
+            const char *bin_code = reinterpret_cast<const char *>(instr_ptr->getBinCode());
+            int size = instr_ptr->getDWordSize() * sizeof(DWord);
             out.write(bin_code, size);
         }
     }
@@ -252,7 +252,7 @@ private:
     DWordOffset curr_dword_offset_ = 0;
 
     // Parsed instructions
-    std::vector<std::unique_ptr<InterfaceInst>> insts_ {};
+    std::vector<std::unique_ptr<InterfaceInstr>> instrs_ {};
     // Parsed jumps: {Inst *, Label name}
     std::vector<std::pair<InterfaceJump *, std::string>> jumps_ {};
     // Parsed labels: [Label name -> offset]

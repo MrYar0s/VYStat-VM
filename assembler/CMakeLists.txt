@@ -12,9 +12,9 @@ set(ASSEMBLER_GEN_ROOT ${CMAKE_CURRENT_BINARY_DIR}/include/shrimp/assembler)
 file(MAKE_DIRECTORY ${ASSEMBLER_GEN_ROOT})
 
 add_custom_command(
-    OUTPUT ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py ${INSTR} ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
-    DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_inst.py
+    OUTPUT ${ASSEMBLER_GEN_ROOT}/instr.gen.hpp
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py ${INSTR} ${ASSEMBLER_GEN_ROOT}/instr.gen.hpp
+    DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py
 )
 
 add_custom_command(
@@ -25,7 +25,7 @@ add_custom_command(
 
 add_executable(assembler
     src/assembler.cpp
-    ${ASSEMBLER_GEN_ROOT}/inst.gen.hpp
+    ${ASSEMBLER_GEN_ROOT}/instr.gen.hpp
     ${ASSEMBLER_GEN_ROOT}/parser.gen.hpp
     ${FLEX_lexer_OUTPUTS}
 )

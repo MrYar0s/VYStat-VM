@@ -4,8 +4,8 @@ import yaml
 
 from io import TextIOWrapper
 
-def fix_inst_name(inst_name: str) :
-    return inst_name.replace('.', '_')
+def fix_instr_name(instr_name: str) :
+    return instr_name.replace('.', '_')
 
 def write_file_open(out: TextIOWrapper) :
     out.write(
@@ -14,20 +14,20 @@ def write_file_open(out: TextIOWrapper) :
 
         "#include <algorithm>\n"
         "#include <shrimp/common/types.hpp>\n"
-        "#include <shrimp/common/inst_opcode.gen.hpp>\n\n"
+        "#include <shrimp/common/instr_opcode.gen.hpp>\n\n"
 
         "namespace shrimp {\n"
         "namespace assembler {\n\n"
     )
 
-def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | None) :
-    fixed_name = fix_inst_name(name)
+def write_instr_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | None) :
+    fixed_name = fix_instr_name(name)
 
     out.write("template<>\n")
-    out.write("void Assembler::parseInst<InstOpcode::%s>() {\n" % fixed_name)
+    out.write("void Assembler::parseInstr<InstrOpcode::%s>() {\n" % fixed_name)
 
     if fields == None :
-        out.write("insts_.push_back(std::make_unique<Inst<InstOpcode::%s>>());\n" % fixed_name)
+        out.write("instrs_.push_back(std::make_unique<Instr<InstrOpcode::%s>>());\n" % fixed_name)
         out.write("}\n\n")
         return
 
@@ -72,7 +72,7 @@ def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | N
                 raise RuntimeError("Unknown field")
 
     out.write("\n")
-    out.write("insts_.push_back(std::make_unique<Inst<InstOpcode::%s>>(" % fixed_name)
+    out.write("instrs_.push_back(std::make_unique<Instr<InstrOpcode::%s>>(" % fixed_name)
 
     first = True
     for field_name in fields.keys() :
@@ -83,31 +83,31 @@ def write_inst_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | N
 
     out.write(
         "));\n\n"
-        "curr_dword_offset_ += insts_.back()->getDWordSize();\n"
+        "curr_dword_offset_ += instrs_.back()->getDWordSize();\n"
         "}\n\n"
     )
 
-def write_inst_map(out: TextIOWrapper, insts: dict) :
-    out.write("static std::unordered_map<std::string, InstOpcode> insts = {")
+def write_instr_map(out: TextIOWrapper, instrs: dict) :
+    out.write("static std::unordered_map<std::string, InstrOpcode> instrs = {")
 
     first = True
-    for inst_name in insts.keys() :
+    for instr_name in instrs.keys() :
         if not first :
             out.write(", ")
         first = False
 
-        fixed_name = fix_inst_name(inst_name)
-        out.write("{\"%s\", InstOpcode::%s}" % (inst_name, fixed_name))
+        fixed_name = fix_instr_name(instr_name)
+        out.write("{\"%s\", InstrOpcode::%s}" % (instr_name, fixed_name))
 
     out.write("};\n\n")
 
-def write_first_pass(out: TextIOWrapper, insts: dict) :
+def write_first_pass(out: TextIOWrapper, instrs: dict) :
     out.write(
         "void Assembler::first_pass()\n"
         "{\n"
     )
 
-    write_inst_map(out, insts)
+    write_instr_map(out, instrs)
 
     out.write(
         "int lexing_status = Lexer::LEXING_ERROR_CODE;\n\n"
@@ -118,17 +118,17 @@ def write_first_pass(out: TextIOWrapper, insts: dict) :
             "std::string id = lexer_.YYText();\n"
             "std::transform(id.begin(), id.end(), id.begin(), ::toupper);\n\n"
 
-            "auto it = insts.find(id);\n"
-            "assertParseError(it != insts.end());\n\n"
+            "auto it = instrs.find(id);\n"
+            "assertParseError(it != instrs.end());\n\n"
 
             "switch(it->second) {\n"
     )
 
-    for inst_name in insts.keys() :
-        fixed_name = fix_inst_name(inst_name)
+    for instr_name in instrs.keys() :
+        fixed_name = fix_instr_name(instr_name)
 
-        out.write("case InstOpcode::%s:\n" % fixed_name)
-        out.write("parseInst<InstOpcode::%s>();\n" % fixed_name)
+        out.write("case InstrOpcode::%s:\n" % fixed_name)
+        out.write("parseInstr<InstrOpcode::%s>();\n" % fixed_name)
         out.write("break;\n")
 
     out.write(
@@ -152,16 +152,16 @@ if __name__ == "__main__" :
     OUT_NAME = sys.argv[2]
 
     with open(IN_NAME, 'r') as file :
-        insts = yaml.safe_load(file)
+        instrs = yaml.safe_load(file)
 
     out = open(OUT_NAME, 'w')
 
     write_file_open(out)
 
-    for name, inst in insts.items() :
-        write_inst_parser(out, name, inst.get("fields"))
+    for name, instr in instrs.items() :
+        write_instr_parser(out, name, instr.get("fields"))
 
-    write_first_pass(out, insts)
+    write_first_pass(out, instrs)
 
     write_file_close(out)
 
