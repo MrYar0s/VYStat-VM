@@ -1,5 +1,5 @@
 %option c++
-%option yyclass="shrimp::Lexer"
+%option yyclass="shrimp::assembler::Lexer"
 %option yylineno
 
 %{

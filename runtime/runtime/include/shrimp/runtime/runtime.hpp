@@ -11,7 +11,7 @@
 #include <shrimp/runtime/accumulator.hpp>
 #include <shrimp/runtime/frame.hpp>
 
-namespace shrimp {
+namespace shrimp::runtime {
 
 class ShrimpVM;
 
@@ -30,6 +30,6 @@ private:
     Accumulator acc_ {0};
 };
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime
 
 #endif  // SHRIMP_RUNTIME_RUNTIME_HPP

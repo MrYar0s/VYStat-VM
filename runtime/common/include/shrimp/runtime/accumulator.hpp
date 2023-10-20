@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-namespace shrimp {
+namespace shrimp::runtime {
 
 class Accumulator final {
 public:
@@ -21,6 +21,6 @@ private:
     uint64_t val_;
 };
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime
 
 #endif  // SHRIMP_RUNTIME_ACCUMULATOR_HPP

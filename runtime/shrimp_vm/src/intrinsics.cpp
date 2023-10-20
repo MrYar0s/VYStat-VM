@@ -3,7 +3,7 @@
 
 #include <shrimp/runtime/shrimp_vm/intrinsics.hpp>
 
-namespace shrimp {
+namespace shrimp::runtime::intrinsics {
 
 void PrintI(int val)
 {
@@ -44,4 +44,4 @@ float SqrtF(float val)
     return std::sqrt(val);
 }
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime::intrinsics

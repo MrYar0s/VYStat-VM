@@ -8,7 +8,7 @@
 #include <shrimp/common/bitops.hpp>
 #include <shrimp/common/types.hpp>
 
-namespace shrimp {
+namespace shrimp::runtime {
 
 enum class Format : uint8_t { R8, R8_R8, R8_IMM32, IMM32, R8_R8_ID16, ID16, R8_ID16 };
 
@@ -33,7 +33,7 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_ = applyMask<0xff>(applyRightShift<8>(raw_inst_));
+        reg_ = bit::applyMask<0xff>(bit::applyRightShift<8>(raw_inst_));
     }
     uint8_t getRegNum()
     {
@@ -51,8 +51,8 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_[0] = applyMask<0xff>(applyRightShift<8>(raw_inst_));
-        reg_[1] = applyMask<0xff>(applyRightShift<16>(raw_inst_));
+        reg_[0] = bit::applyMask<0xff>(bit::applyRightShift<8>(raw_inst_));
+        reg_[1] = bit::applyMask<0xff>(bit::applyRightShift<16>(raw_inst_));
     }
     template <size_t idx>
     uint8_t getRegNum()
@@ -71,8 +71,8 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_ = applyMask<0xff>(applyRightShift<8>(raw_inst_));
-        imm_ = applyRightShift<32>(raw_inst_);
+        reg_ = bit::applyMask<0xff>(bit::applyRightShift<8>(raw_inst_));
+        imm_ = bit::applyRightShift<32>(raw_inst_);
     }
     uint8_t getRegNum()
     {
@@ -95,7 +95,7 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        imm_ = applyRightShift<32>(raw_inst_);
+        imm_ = bit::applyRightShift<32>(raw_inst_);
     }
     uint32_t getImm()
     {
@@ -113,7 +113,7 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        id_ = applyRightShift<48>(raw_inst_);
+        id_ = bit::applyRightShift<48>(raw_inst_);
     }
     uint16_t getId()
     {
@@ -131,8 +131,8 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_ = applyMask<0xff>(applyRightShift<8>(raw_inst_));
-        id_ = applyRightShift<48>(raw_inst_);
+        reg_ = bit::applyMask<0xff>(bit::applyRightShift<8>(raw_inst_));
+        id_ = bit::applyRightShift<48>(raw_inst_);
     }
     uint8_t getRegNum()
     {
@@ -155,9 +155,9 @@ public:
     explicit BytecodeInstruction(const InstType *pc)
     {
         raw_inst_ = *pc;
-        reg_[0] = applyMask<0xff>(applyRightShift<32>(raw_inst_));
-        reg_[1] = applyMask<0xff>(applyRightShift<40>(raw_inst_));
-        id_ = applyMask<0xffff>(applyRightShift<8>(raw_inst_));
+        reg_[0] = bit::applyMask<0xff>(bit::applyRightShift<32>(raw_inst_));
+        reg_[1] = bit::applyMask<0xff>(bit::applyRightShift<40>(raw_inst_));
+        id_ = bit::applyMask<0xffff>(bit::applyRightShift<8>(raw_inst_));
     }
     template <size_t idx>
     uint8_t getRegNum()
@@ -175,6 +175,6 @@ private:
     uint64_t raw_inst_;
 };
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime
 
 #endif  // SHRIMP_RUNTIME_BYTECODE_INST_HPP

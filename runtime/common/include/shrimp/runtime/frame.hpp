@@ -6,7 +6,7 @@
 #include <shrimp/runtime/register.hpp>
 #include <shrimp/runtime/accumulator.hpp>
 
-namespace shrimp {
+namespace shrimp::runtime {
 
 class Frame {
 public:
@@ -40,6 +40,6 @@ private:
     std::vector<Register> regs_ {16};
 };
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime
 
 #endif  // SHRIMP_RUNTIME_FRAME_HPP
