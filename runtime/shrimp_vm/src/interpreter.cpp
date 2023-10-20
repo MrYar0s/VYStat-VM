@@ -1,5 +1,7 @@
+#include <cassert>
 #include <iostream>
 #include <array>
+#include <sstream>
 
 #include <shrimp/common/bitops.hpp>
 #include <shrimp/common/types.hpp>
@@ -10,6 +12,46 @@
 #include <shrimp/runtime/shrimp_vm/interpreter.hpp>
 
 namespace shrimp::runtime::interpreter {
+
+std::string Instr<InstrOpcode::INTRINSIC>::toString() const
+{
+    std::stringstream out;
+
+    switch (static_cast<IntrinsicCode>(getIntrinsicCode())) {
+        case IntrinsicCode::PRINT_I32:
+            out << "PRINT.I32, R" << getIntrinsicArg0();
+            break;
+
+        case IntrinsicCode::PRINT_F:
+            out << "PRINT.F, R" << getIntrinsicArg0();
+            break;
+
+        case IntrinsicCode::SCAN_I32:
+            out << "SCAN.I32";
+            break;
+
+        case IntrinsicCode::SCAN_F:
+            out << "SCAN.F";
+            break;
+
+        case IntrinsicCode::COS:
+            out << "COS, R" << getIntrinsicArg0();
+            break;
+
+        case IntrinsicCode::SIN:
+            out << "SIN, R" << getIntrinsicArg0();
+            break;
+
+        case IntrinsicCode::SQRT:
+            out << "SQRT, R" << getIntrinsicArg0();
+            break;
+
+        default:
+            assert(0);
+    }
+
+    return out.str();
+}
 
 namespace {
 
@@ -48,17 +90,18 @@ static constexpr std::array<int (*)(const Byte *pc, Frame *frame), DISPATCH_LEN>
 
 static constexpr Byte OPCODE_MASK = 0xff;
 
-uint64_t getOpcode(const Byte *pc)
+Byte getOpcode(const Byte *pc)
 {
     return *pc & OPCODE_MASK;
 }
 
 int handleNop(const Byte *pc, Frame *frame)
 {
-    std::cout << "LOG_INFO: "
-              << "nop" << std::endl;
+    Instr<InstrOpcode::NOP> instr {};
 
-    pc += Instr<InstrOpcode::NOP>::getByteSize();
+    std::cout << "LOG: " << instr.toString() << std::endl;
+
+    pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
 }
 
@@ -71,9 +114,7 @@ int handleMov(const Byte *pc, Frame *frame)
     auto src_reg = frame->getReg(src_reg_num);
     frame->setReg(src_reg.getValue(), dst_reg_num);
 
-    std::cout << "LOG_INFO: "
-              << "mov "
-              << "r" << (size_t)dst_reg_num << " r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -83,14 +124,12 @@ int handleMovImmF(const Byte *pc, Frame *frame)
 {
     auto instr = Instr<InstrOpcode::MOV_IMM_F>(pc);
     auto dst_reg_num = instr.getRd();
-    auto val = bit::getValue<float>(instr.getImm_f());
+    auto val = bit::getValue<float>(instr.getImmF());
 
     auto res = bit::castToWritable<float>(val);
     frame->setReg(res, dst_reg_num);
 
-    std::cout << "LOG_INFO: "
-              << "mov.imm.f "
-              << "r" << (size_t)dst_reg_num << " " << val << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -100,14 +139,12 @@ int handleMovImmI32(const Byte *pc, Frame *frame)
 {
     auto instr = Instr<InstrOpcode::MOV_IMM_I32>(pc);
     auto dst_reg_num = instr.getRd();
-    auto val = bit::getValue<int>(instr.getImm_i32());
+    auto val = bit::getValue<int>(instr.getImmI32());
 
     auto res = bit::castToWritable<int>(val);
     frame->setReg(res, dst_reg_num);
 
-    std::cout << "LOG_INFO: "
-              << "mov.imm.i32 "
-              << "r" << (size_t)dst_reg_num << " " << val << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -121,9 +158,7 @@ int handleLda(const Byte *pc, Frame *frame)
     auto src_reg = frame->getReg(src_reg_num);
     frame->setAcc(src_reg.getValue());
 
-    std::cout << "LOG_INFO: "
-              << "lda "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -132,13 +167,12 @@ int handleLda(const Byte *pc, Frame *frame)
 int handleLdaImmF(const Byte *pc, Frame *frame)
 {
     auto instr = Instr<InstrOpcode::LDA_IMM_F>(pc);
-    auto val = bit::getValue<float>(instr.getImm_f());
+    auto val = bit::getValue<float>(instr.getImmF());
 
     auto res = bit::castToWritable<float>(val);
     frame->setAcc(res);
 
-    std::cout << "LOG_INFO: "
-              << "lda.imm.f " << val << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -147,13 +181,12 @@ int handleLdaImmF(const Byte *pc, Frame *frame)
 int handleLdaImmI32(const Byte *pc, Frame *frame)
 {
     auto instr = Instr<InstrOpcode::LDA_IMM_I32>(pc);
-    auto val = bit::getValue<int>(instr.getImm_i32());
+    auto val = bit::getValue<int>(instr.getImmI32());
 
     auto res = bit::castToWritable<int>(val);
     frame->setAcc(res);
 
-    std::cout << "LOG_INFO: "
-              << "lda.imm.i32 " << val << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -167,9 +200,7 @@ int handleSta(const Byte *pc, Frame *frame)
     auto acc = frame->getAcc();
     frame->setReg(acc.getValue(), dst_reg_num);
 
-    std::cout << "LOG_INFO: "
-              << "sta "
-              << "r" << (size_t)dst_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -188,9 +219,7 @@ int handleAddI32(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<int>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "add.i32 "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -209,9 +238,7 @@ int handleAddF(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "add.f "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -231,9 +258,7 @@ int handleSubI32(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<int>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "sub.i32 "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -252,9 +277,7 @@ int handleSubF(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "sub.f "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -273,9 +296,7 @@ int handleDivI32(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "div.i32 "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -294,9 +315,7 @@ int handleDivF(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "div.f "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -315,9 +334,7 @@ int handleMulI32(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<int>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "mul.i32 "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -336,9 +353,7 @@ int handleMulF(const Byte *pc, Frame *frame)
     uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
 
-    std::cout << "LOG_INFO: "
-              << "mul.f "
-              << "r" << (size_t)src_reg_num << std::endl;
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     pc += instr.getByteSize();
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -348,41 +363,35 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
 {
     auto instr = Instr<InstrOpcode::INTRINSIC>(pc);
 
-    auto intrinsic_type = static_cast<IntrinsicCode>(instr.getIntrinsic_code());
+    auto intrinsic_type = static_cast<IntrinsicCode>(instr.getIntrinsicCode());
 
-    [[maybe_unused]] auto first_reg_num = instr.getIntrinsic_arg_0();
-    [[maybe_unused]] auto second_reg_num = instr.getIntrinsic_arg_1();
+    [[maybe_unused]] auto first_reg_num = instr.getIntrinsicArg0();
+    [[maybe_unused]] auto second_reg_num = instr.getIntrinsicArg1();
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     switch (intrinsic_type) {
         case IntrinsicCode::PRINT_I32: {
-            std::cout << "LOG_INFO: "
-                      << "intrinsic print.i32, "
-                      << "r" << (size_t)first_reg_num << std::endl;
             auto reg = frame->getReg(first_reg_num);
             auto first_reg = bit::getValue<int>(reg.getValue());
+
             intrinsics::PrintI(first_reg);
             break;
         }
         case IntrinsicCode::PRINT_F: {
             auto reg = frame->getReg(first_reg_num);
-            std::cout << "LOG_INFO: "
-                      << "intrinsic print.f, "
-                      << "r" << (size_t)first_reg_num << std::endl;
             auto first_reg = bit::getValue<float>(reg.getValue());
+
             intrinsics::PrintF(first_reg);
             break;
         }
         case IntrinsicCode::SCAN_I32: {
-            std::cout << "LOG_INFO: "
-                      << "intrinsic scan.i32" << std::endl;
             int res = intrinsics::ScanI();
             uint64_t res_u64 = bit::castToWritable<int>(res);
             frame->setAcc(res_u64);
             break;
         }
         case IntrinsicCode::SCAN_F: {
-            std::cout << "LOG_INFO: "
-                      << "intrinsic scan.f" << std::endl;
             float res = intrinsics::ScanF();
             uint64_t res_u64 = bit::castToWritable<float>(res);
             frame->setAcc(res_u64);
@@ -390,10 +399,8 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
         }
         case IntrinsicCode::SIN: {
             auto reg = frame->getReg(first_reg_num);
-            std::cout << "LOG_INFO: "
-                      << "intrinsic sin, "
-                      << "r" << (size_t)first_reg_num << std::endl;
             float first_reg = bit::getValue<float>(reg.getValue());
+
             float res = intrinsics::SinF(first_reg);
             uint64_t res_u64 = bit::castToWritable<float>(res);
             frame->setAcc(res_u64);
@@ -401,10 +408,8 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
         }
         case IntrinsicCode::COS: {
             auto reg = frame->getReg(first_reg_num);
-            std::cout << "LOG_INFO: "
-                      << "intrinsic cos, "
-                      << "r" << (size_t)first_reg_num << std::endl;
             auto first_reg = bit::getValue<float>(reg.getValue());
+
             float res = intrinsics::CosF(first_reg);
             uint64_t res_u64 = bit::castToWritable<float>(res);
             frame->setAcc(res_u64);
@@ -412,10 +417,8 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
         }
         case IntrinsicCode::SQRT: {
             auto reg = frame->getReg(first_reg_num);
-            std::cout << "LOG_INFO: "
-                      << "intrinsic sqrt, "
-                      << "r" << (size_t)first_reg_num << std::endl;
             auto first_reg = bit::getValue<float>(reg.getValue());
+
             if (first_reg < 0.0) {
                 throw std::runtime_error("Negative value under square root");
             }
@@ -435,8 +438,9 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
 
 int handleRet([[maybe_unused]] const Byte *pc, [[maybe_unused]] Frame *frame)
 {
-    std::cout << "LOG_INFO: "
-              << "ret" << std::endl;
+    Instr<InstrOpcode::RET> instr {};
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
 
     return 0;
 }
