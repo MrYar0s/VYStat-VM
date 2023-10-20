@@ -6,7 +6,7 @@
 #include <shrimp/runtime/shrimp_vm.hpp>
 #include <shrimp/runtime/shrimp_vm/interpreter.hpp>
 
-namespace shrimp {
+namespace shrimp::runtime {
 
 Runtime::Runtime(ShrimpVM *vm)
 {
@@ -22,4 +22,4 @@ int Runtime::runImpl()
     return 0;
 }
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime

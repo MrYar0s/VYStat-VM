@@ -5,7 +5,7 @@
 #include <FlexLexer.h>
 #endif
 
-namespace shrimp {
+namespace shrimp::assembler {
 
 class Lexer final : public yyFlexLexer {
 public:
@@ -56,6 +56,6 @@ private:
     LexemType curr_lexem_type_;
 };
 
-}  // namespace shrimp
+}  // namespace shrimp::assembler
 
 #endif  // SHRIMP_ASSEMBLER_LEXER_HPP

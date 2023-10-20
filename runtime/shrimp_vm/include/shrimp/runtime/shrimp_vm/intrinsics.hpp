@@ -1,9 +1,9 @@
-#ifndef CORE_INTERPRETER_INTRINSICS_HPP
-#define CORE_INTERPRETER_INTRINSICS_HPP
+#ifndef RUNTIME_SHRIMP_VM_INTRINSICS_HPP
+#define RUNTIME_SHRIMP_VM_INTRINSICS_HPP
 
 #include <cstdint>
 
-namespace shrimp {
+namespace shrimp::runtime::intrinsics {
 
 void PrintI(int val);
 void PrintF(float val);
@@ -13,6 +13,6 @@ float SinF(float val);
 float CosF(float val);
 float SqrtF(float val);
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime::intrinsics
 
-#endif  // CORE_INTERPRETER_INTRINSICS_HPP
+#endif  // RUNTIME_SHRIMP_VM_INTRINSICS_HPP

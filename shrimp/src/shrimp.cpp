@@ -41,8 +41,8 @@ int Main(int argc, char *argv[])
 {
     std::string file_name = getFileName(argc, argv);
     auto native_code = readFromFile(file_name);
-    shrimp::ShrimpVM svm {native_code};
-    shrimp::Runtime runtime = shrimp::Runtime(&svm);
+    runtime::ShrimpVM svm {native_code};
+    runtime::Runtime runtime = runtime::Runtime(&svm);
     svm.setRuntime(&runtime);
     runtime.runImpl();
     return 0;

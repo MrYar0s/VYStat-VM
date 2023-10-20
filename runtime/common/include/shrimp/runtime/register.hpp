@@ -1,9 +1,9 @@
-#ifndef RUNTIME_REGISTER_HPP
-#define RUNTIME_REGISTER_HPP
+#ifndef SHRIMP_RUNTIME_REGISTER_HPP
+#define SHRIMP_RUNTIME_REGISTER_HPP
 
 #include <cstdint>
 
-namespace shrimp {
+namespace shrimp::runtime {
 
 class Register final {
 public:
@@ -20,6 +20,6 @@ private:
     uint64_t val_;
 };
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime
 
-#endif  // RUNTIME_REGISTER_HPP
+#endif  // SHRIMP_RUNTIME_REGISTER_HPP

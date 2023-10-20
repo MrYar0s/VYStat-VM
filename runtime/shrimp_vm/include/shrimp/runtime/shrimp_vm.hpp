@@ -9,7 +9,7 @@
 #include <shrimp/runtime/frame.hpp>
 #include <shrimp/runtime/runtime.hpp>
 
-namespace shrimp {
+namespace shrimp::runtime {
 
 class ShrimpVM final {
 public:
@@ -46,6 +46,6 @@ private:
     std::stack<Frame *> stk_frames_;
 };
 
-}  // namespace shrimp
+}  // namespace shrimp::runtime
 
 #endif  // SHRIMP_RUNTIME_SHRIMP_VM_HPP

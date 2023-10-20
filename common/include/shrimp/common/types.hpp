@@ -1,5 +1,5 @@
-#ifndef COMMON_TYPES_HPP
-#define COMMON_TYPES_HPP
+#ifndef SHRIMP_COMMON_TYPES_HPP
+#define SHRIMP_COMMON_TYPES_HPP
 
 #include <cstdint>
 
@@ -30,4 +30,4 @@ enum class IntrinsicCode : uint8_t { PRINT_I32, PRINT_F, SCAN_I32, SCAN_F, SIN, 
 
 }  // namespace shrimp
 
-#endif  // COMMON_TYPES_HPP
+#endif  // SHRIMP_COMMON_TYPES_HPP

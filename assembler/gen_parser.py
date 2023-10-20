@@ -16,8 +16,7 @@ def write_file_open(out: TextIOWrapper) :
         "#include <shrimp/common/types.hpp>\n"
         "#include <shrimp/common/instr_opcode.gen.hpp>\n\n"
 
-        "namespace shrimp {\n"
-        "namespace assembler {\n\n"
+        "namespace shrimp::assembler {\n\n"
     )
 
 def write_instr_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | None) :
@@ -141,8 +140,7 @@ def write_first_pass(out: TextIOWrapper, instrs: dict) :
 
 def write_file_close(out: TextIOWrapper) :
     out.write(
-        "} // namespace assembler\n"
-        "} // namespace shrimp\n\n"
+        "} // namespace shrimp::assembler\n\n"
 
         "#endif // PARSER_GEN_HPP\n\n"
     )

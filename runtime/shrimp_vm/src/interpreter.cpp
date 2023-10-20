@@ -7,7 +7,7 @@
 #include <shrimp/runtime/shrimp_vm/interpreter.hpp>
 #include "shrimp/common/instr_opcode.gen.hpp"
 
-namespace shrimp::interpreter {
+namespace shrimp::runtime::interpreter {
 
 namespace {
 
@@ -77,11 +77,11 @@ int handleMovImmF(const InstType *pc, Frame *frame)
 {
     auto instr = BytecodeInstruction<Format::R8_IMM32>(pc);
     auto dst_reg_num = instr.getRegNum();
-    auto val = getValue<float>(instr.getImm());
+    auto val = bit::getValue<float>(instr.getImm());
     std::cout << "LOG_INFO: "
               << "mov.imm.f "
               << "r" << (size_t)dst_reg_num << " " << val << std::endl;
-    auto res = castToWritable<float>(val);
+    auto res = bit::castToWritable<float>(val);
     frame->setReg(res, dst_reg_num);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -91,11 +91,11 @@ int handleMovImmI32(const InstType *pc, Frame *frame)
 {
     auto instr = BytecodeInstruction<Format::R8_IMM32>(pc);
     auto dst_reg_num = instr.getRegNum();
-    auto val = getValue<int>(instr.getImm());
+    auto val = bit::getValue<int>(instr.getImm());
     std::cout << "LOG_INFO: "
               << "mov.imm.i32 "
               << "r" << (size_t)dst_reg_num << " " << val << std::endl;
-    auto res = castToWritable<int>(val);
+    auto res = bit::castToWritable<int>(val);
     frame->setReg(res, dst_reg_num);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -117,10 +117,10 @@ int handleLda(const InstType *pc, Frame *frame)
 int handleLdaImmF(const InstType *pc, Frame *frame)
 {
     auto instr = BytecodeInstruction<Format::IMM32>(pc);
-    auto val = getValue<float>(instr.getImm());
+    auto val = bit::getValue<float>(instr.getImm());
     std::cout << "LOG_INFO: "
               << "lda.imm.f " << val << std::endl;
-    auto res = castToWritable<float>(val);
+    auto res = bit::castToWritable<float>(val);
     frame->setAcc(res);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -129,10 +129,10 @@ int handleLdaImmF(const InstType *pc, Frame *frame)
 int handleLdaImmI32(const InstType *pc, Frame *frame)
 {
     auto instr = BytecodeInstruction<Format::IMM32>(pc);
-    auto val = getValue<int>(instr.getImm());
+    auto val = bit::getValue<int>(instr.getImm());
     std::cout << "LOG_INFO: "
               << "lda.imm.i32 " << val << std::endl;
-    auto res = castToWritable<int>(val);
+    auto res = bit::castToWritable<int>(val);
     frame->setAcc(res);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -160,10 +160,10 @@ int handleAddI32(const InstType *pc, Frame *frame)
               << "add.i32 "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    int acc_val = getValue<int>(acc.getValue());
-    int src_val = getValue<int>(src_reg.getValue());
+    int acc_val = bit::getValue<int>(acc.getValue());
+    int src_val = bit::getValue<int>(src_reg.getValue());
     int res = acc_val + src_val;
-    uint64_t res_u64 = castToWritable<int>(res);
+    uint64_t res_u64 = bit::castToWritable<int>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -178,10 +178,10 @@ int handleAddF(const InstType *pc, Frame *frame)
               << "add.f "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    float acc_val = getValue<float>(acc.getValue());
-    float src_val = getValue<float>(src_reg.getValue());
+    float acc_val = bit::getValue<float>(acc.getValue());
+    float src_val = bit::getValue<float>(src_reg.getValue());
     float res = acc_val + src_val;
-    uint64_t res_u64 = castToWritable<float>(res);
+    uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -197,10 +197,10 @@ int handleSubI32(const InstType *pc, Frame *frame)
               << "sub.i32 "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    int acc_val = getValue<int>(acc.getValue());
-    int src_val = getValue<int>(src_reg.getValue());
+    int acc_val = bit::getValue<int>(acc.getValue());
+    int src_val = bit::getValue<int>(src_reg.getValue());
     int res = acc_val - src_val;
-    uint64_t res_u64 = castToWritable<int>(res);
+    uint64_t res_u64 = bit::castToWritable<int>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -215,10 +215,10 @@ int handleSubF(const InstType *pc, Frame *frame)
               << "sub.f "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    float acc_val = getValue<float>(acc.getValue());
-    float src_val = getValue<float>(src_reg.getValue());
+    float acc_val = bit::getValue<float>(acc.getValue());
+    float src_val = bit::getValue<float>(src_reg.getValue());
     float res = acc_val - src_val;
-    uint64_t res_u64 = castToWritable<float>(res);
+    uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -233,10 +233,10 @@ int handleDivI32(const InstType *pc, Frame *frame)
               << "div.i32 "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    float acc_val = getValue<float>(acc.getValue());
-    int src_val = getValue<int>(src_reg.getValue());
+    float acc_val = bit::getValue<float>(acc.getValue());
+    int src_val = bit::getValue<int>(src_reg.getValue());
     float res = acc_val / src_val;
-    uint64_t res_u64 = castToWritable<float>(res);
+    uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -251,10 +251,10 @@ int handleDivF(const InstType *pc, Frame *frame)
               << "div.f "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    float acc_val = getValue<float>(acc.getValue());
-    float src_val = getValue<float>(src_reg.getValue());
+    float acc_val = bit::getValue<float>(acc.getValue());
+    float src_val = bit::getValue<float>(src_reg.getValue());
     float res = acc_val / src_val;
-    uint64_t res_u64 = castToWritable<float>(res);
+    uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -269,10 +269,10 @@ int handleMulI32(const InstType *pc, Frame *frame)
               << "mul.i32 "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    int acc_val = getValue<int>(acc.getValue());
-    int src_val = getValue<int>(src_reg.getValue());
+    int acc_val = bit::getValue<int>(acc.getValue());
+    int src_val = bit::getValue<int>(src_reg.getValue());
     int res = acc_val * src_val;
-    uint64_t res_u64 = castToWritable<int>(res);
+    uint64_t res_u64 = bit::castToWritable<int>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -287,10 +287,10 @@ int handleMulF(const InstType *pc, Frame *frame)
               << "mul.f "
               << "r" << (size_t)src_reg_num << std::endl;
     auto src_reg = frame->getReg(src_reg_num);
-    float acc_val = getValue<float>(acc.getValue());
-    float src_val = getValue<float>(src_reg.getValue());
+    float acc_val = bit::getValue<float>(acc.getValue());
+    float src_val = bit::getValue<float>(src_reg.getValue());
     float res = acc_val * src_val;
-    uint64_t res_u64 = castToWritable<float>(res);
+    uint64_t res_u64 = bit::castToWritable<float>(res);
     frame->setAcc(res_u64);
     pc++;
     return dispatch_table[getOpcode(pc)](pc, frame);
@@ -309,8 +309,8 @@ int handleIntrinsic(const InstType *pc, Frame *frame)
                       << "intrinsic print.i32, "
                       << "r" << (size_t)first_reg_num << std::endl;
             auto reg = frame->getReg(first_reg_num);
-            auto first_reg = getValue<int>(reg.getValue());
-            PrintI(first_reg);
+            auto first_reg = bit::getValue<int>(reg.getValue());
+            intrinsics::PrintI(first_reg);
             break;
         }
         case IntrinsicCode::PRINT_F: {
@@ -318,23 +318,23 @@ int handleIntrinsic(const InstType *pc, Frame *frame)
             std::cout << "LOG_INFO: "
                       << "intrinsic print.f, "
                       << "r" << (size_t)first_reg_num << std::endl;
-            auto first_reg = getValue<float>(reg.getValue());
-            PrintF(first_reg);
+            auto first_reg = bit::getValue<float>(reg.getValue());
+            intrinsics::PrintF(first_reg);
             break;
         }
         case IntrinsicCode::SCAN_I32: {
             std::cout << "LOG_INFO: "
                       << "intrinsic scan.i32" << std::endl;
-            int res = ScanI();
-            uint64_t res_u64 = castToWritable<int>(res);
+            int res = intrinsics::ScanI();
+            uint64_t res_u64 = bit::castToWritable<int>(res);
             frame->setAcc(res_u64);
             break;
         }
         case IntrinsicCode::SCAN_F: {
             std::cout << "LOG_INFO: "
                       << "intrinsic scan.f" << std::endl;
-            float res = ScanF();
-            uint64_t res_u64 = castToWritable<float>(res);
+            float res = intrinsics::ScanF();
+            uint64_t res_u64 = bit::castToWritable<float>(res);
             frame->setAcc(res_u64);
             break;
         }
@@ -343,9 +343,9 @@ int handleIntrinsic(const InstType *pc, Frame *frame)
             std::cout << "LOG_INFO: "
                       << "intrinsic sin, "
                       << "r" << (size_t)first_reg_num << std::endl;
-            float first_reg = getValue<float>(reg.getValue());
-            float res = SinF(first_reg);
-            uint64_t res_u64 = castToWritable<float>(res);
+            float first_reg = bit::getValue<float>(reg.getValue());
+            float res = intrinsics::SinF(first_reg);
+            uint64_t res_u64 = bit::castToWritable<float>(res);
             frame->setAcc(res_u64);
             break;
         }
@@ -354,9 +354,9 @@ int handleIntrinsic(const InstType *pc, Frame *frame)
             std::cout << "LOG_INFO: "
                       << "intrinsic cos, "
                       << "r" << (size_t)first_reg_num << std::endl;
-            auto first_reg = getValue<float>(reg.getValue());
-            float res = CosF(first_reg);
-            uint64_t res_u64 = castToWritable<float>(res);
+            auto first_reg = bit::getValue<float>(reg.getValue());
+            float res = intrinsics::CosF(first_reg);
+            uint64_t res_u64 = bit::castToWritable<float>(res);
             frame->setAcc(res_u64);
             break;
         }
@@ -365,12 +365,12 @@ int handleIntrinsic(const InstType *pc, Frame *frame)
             std::cout << "LOG_INFO: "
                       << "intrinsic sqrt, "
                       << "r" << (size_t)first_reg_num << std::endl;
-            auto first_reg = getValue<float>(reg.getValue());
+            auto first_reg = bit::getValue<float>(reg.getValue());
             if (first_reg < 0.0) {
                 throw std::runtime_error("Negative value under square root");
             }
-            float res = SqrtF(first_reg);
-            uint64_t res_u64 = castToWritable<float>(res);
+            float res = intrinsics::SqrtF(first_reg);
+            uint64_t res_u64 = bit::castToWritable<float>(res);
             frame->setAcc(res_u64);
             break;
         }
@@ -398,4 +398,4 @@ int runImpl(const InstType *pc, Frame *frame)
     return 0;
 }
 
-}  // namespace shrimp::interpreter
+}  // namespace shrimp::runtime::interpreter

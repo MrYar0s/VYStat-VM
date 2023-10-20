@@ -20,8 +20,7 @@
 #include <shrimp/assembler/instr.gen.hpp>
 #include <shrimp/assembler/lexer.hpp>
 
-namespace shrimp {
-namespace assembler {
+namespace shrimp::assembler {
 
 class LexError : public std::runtime_error {
 public:
@@ -259,8 +258,7 @@ private:
     std::unordered_map<std::string, DWordOffset> labels_ {};
 };
 
-}  // namespace assembler
-}  // namespace shrimp
+}  // namespace shrimp::assembler
 
 #include <shrimp/assembler/parser.gen.hpp>
 

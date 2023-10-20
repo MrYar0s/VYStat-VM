@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <bit>
 
+namespace shrimp::bit {
+
 template <uint64_t MASK>
 uint64_t applyMask(uint64_t input)
 {
@@ -45,5 +47,7 @@ Type getValue(uint64_t val)
         return std::bit_cast<Type>(res);
     }
 }
+
+}  // namespace shrimp::bit
 
 #endif  // SHRIMP_COMMON_BITOPS_HPP

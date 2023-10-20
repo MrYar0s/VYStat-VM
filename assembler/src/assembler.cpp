@@ -5,12 +5,12 @@
 
 #include <shrimp/assembler.hpp>
 
+using namespace shrimp;
+
 int yyFlexLexer::yywrap()
 {
     return 1;
 }
-
-using namespace shrimp;
 
 int main()
 {
