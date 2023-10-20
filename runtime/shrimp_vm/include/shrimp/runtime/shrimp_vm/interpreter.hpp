@@ -8,7 +8,7 @@
 
 namespace shrimp::runtime::interpreter {
 
-int runImpl(const InstType *pc, Frame *frame);
+int runImpl(const Byte *pc, Frame *frame);
 
 }  // namespace shrimp::runtime::interpreter
 

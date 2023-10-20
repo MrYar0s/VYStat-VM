@@ -22,15 +22,15 @@ std::string getFileName(int argc, char *argv[])
     return file_name_arg;
 }
 
-std::vector<uint64_t> readFromFile(std::string file_name)
+std::vector<Byte> readFromFile(std::string file_name)
 {
     FILE *file = fopen(file_name.data(), "rb");
     fseek(file, 0, SEEK_END);
     size_t len = ftell(file);
     fseek(file, 0L, SEEK_SET);
-    uint64_t *buf = (uint64_t *)calloc(sizeof(uint64_t), len);
-    fread(buf, sizeof(uint64_t), len, file);
-    std::vector<uint64_t> code;
+    Byte *buf = (Byte *)calloc(sizeof(Byte), len);
+    fread(buf, sizeof(Byte), len, file);
+    std::vector<Byte> code;
     code.assign(buf, buf + len);
     free(buf);
     fclose(file);

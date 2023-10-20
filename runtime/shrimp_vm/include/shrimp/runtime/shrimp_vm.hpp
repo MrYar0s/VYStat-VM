@@ -13,12 +13,12 @@ namespace shrimp::runtime {
 
 class ShrimpVM final {
 public:
-    ShrimpVM(std::vector<InstType> code) : code_(code), pc_ {code_.data()} {}
-    InstType *getPc()
+    ShrimpVM(std::vector<Byte> code) : code_(code), pc_ {code_.data()} {}
+    Byte *getPc()
     {
         return pc_;
     }
-    InstType *getEntrypoint()
+    Byte *getEntrypoint()
     {
         return code_.data();
     }
@@ -40,8 +40,8 @@ public:
     }
 
 private:
-    std::vector<InstType> code_ {};
-    InstType *pc_;
+    std::vector<Byte> code_ {};
+    Byte *pc_;
     Runtime *runtime_ = nullptr;
     std::stack<Frame *> stk_frames_;
 };
