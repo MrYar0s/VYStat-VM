@@ -38,9 +38,9 @@ def write_instr_primary_templ(out: TextIOWrapper) :
     out.write("template<InstrOpcode op>\n")
     out.write("class Instr;\n\n")
 
-def write_instr_bin_code(out: TextIOWrapper, size: int, fixed_name: str) :
+def write_instr_bin_code(out: TextIOWrapper, size: int) :
     out.write("private:\n")
-    out.write("std::array<DWord, %d> bin_code_ = { static_cast<DWord>(InstrOpcode::%s) };\n" % (size, fixed_name))
+    out.write("std::array<DWord, %d> bin_code_ {};\n" % size)
 
 def write_instr_spec(out: TextIOWrapper, name: str, instr: dict) :
     fields = instr.get("fields")
@@ -50,16 +50,20 @@ def write_instr_spec(out: TextIOWrapper, name: str, instr: dict) :
 
     out.write("template<>\n")
     out.write("struct Instr<InstrOpcode::%s> {\n" % fixed_name)
-    out.write("[[nodiscard]] size_t getByteSize() const noexcept {\n")
+    out.write("[[nodiscard]] static size_t getByteSize() const noexcept {\n")
     out.write("return %d;\n" % (size * 8))
     out.write("}\n")
 
     if fields == None :
-        write_instr_bin_code(out, size, fixed_name)
         out.write("};\n\n")
         return
 
-    out.write("\n")
+    out.write(
+        "\n"
+        "Instr(const Byte *pc) {\n"
+        "std::memcpy(bin_code_.data(), pc, getByteSize());\n"
+        "}\n\n"
+    )
 
     for field_name, field_bits in fields.items() :
         [field_dword_idx, dword_lo, dword_hi, field_bit_len] = get_field_pos(field_name, field_bits, size)
@@ -76,7 +80,7 @@ def write_instr_spec(out: TextIOWrapper, name: str, instr: dict) :
         out.write(";\n")
         out.write("}\n\n")
 
-    write_instr_bin_code(out, size, fixed_name)
+    write_instr_bin_code(out, size)
     out.write("};\n\n")
 
 def write_file_close(out: TextIOWrapper) :
