@@ -53,7 +53,7 @@ def write_instr_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | 
                 need_comma = True
 
             case "jump_offset" :
-                out.write("DWordOffset jump_offset = 0;")
+                out.write("ByteOffset jump_offset = 0;")
                 out.write("parseJumpDst();")
                 need_comma = True
 
@@ -82,7 +82,7 @@ def write_instr_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | 
 
     out.write(
         "));\n\n"
-        "curr_dword_offset_ += instrs_.back()->getDWordSize();\n"
+        "curr_offset_ += instrs_.back()->getByteSize();\n"
         "}\n\n"
     )
 

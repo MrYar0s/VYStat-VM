@@ -30,7 +30,10 @@ def write_file_open(out: TextIOWrapper) :
     out.write("#ifndef RUNTIME_INSTR_GEN_HPP\n")
     out.write("#define RUNTIME_INSTR_GEN_HPP\n\n")
 
-    out.write("#include <instr_opcode.gen.hpp>\n\n")
+    out.write("#include <array>\n")
+    out.write("#include <cstring>\n\n")
+
+    out.write("#include <shrimp/common/instr_opcode.gen.hpp>\n\n")
 
     out.write("namespace shrimp {\n\n")
 
@@ -50,7 +53,7 @@ def write_instr_spec(out: TextIOWrapper, name: str, instr: dict) :
 
     out.write("template<>\n")
     out.write("struct Instr<InstrOpcode::%s> {\n" % fixed_name)
-    out.write("[[nodiscard]] static size_t getByteSize() const noexcept {\n")
+    out.write("[[nodiscard]] static size_t getByteSize() noexcept {\n")
     out.write("return %d;\n" % (size * 8))
     out.write("}\n")
 

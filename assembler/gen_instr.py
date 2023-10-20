@@ -50,7 +50,7 @@ def write_instr_interface(out: TextIOWrapper) :
         "struct InterfaceInstr {\n"
             "// Get instruction size in words.\n"
             "// Note: Some instructions are several words long\n"
-            "virtual std::size_t getDWordSize() const noexcept = 0;\n\n"
+            "virtual std::size_t getByteSize() const noexcept = 0;\n\n"
 
             "// Get ptr to buff with instruction binary code\n"
             "virtual const DWord *getBinCode() const noexcept = 0;\n"
@@ -60,8 +60,8 @@ def write_instr_interface(out: TextIOWrapper) :
 def write_jump_interface(out: TextIOWrapper) :
     out.write(
         "struct InterfaceJump : public InterfaceInstr {\n"
-            "// Set instruction target in offset in DWordOffset.\n"
-            "virtual void setOffset(DWordOffset offset) noexcept = 0;\n"
+            "// Set instruction target in offset in ByteOffset.\n"
+            "virtual void setOffset(ByteOffset offset) noexcept = 0;\n"
         "};\n\n"
     )
 
@@ -82,7 +82,7 @@ def write_instr_spec(out: TextIOWrapper, name: str, instr: dict) :
     out.write("class Instr<InstrOpcode::%s> final : public %s {\n" % (fixed_name, base))
 
     out.write("public:\n")
-    out.write("std::size_t getDWordSize() const noexcept override { return bin_code_.size(); }\n")
+    out.write("std::size_t getByteSize() const noexcept override { return %d; }\n" % (size * 8))
     out.write("const DWord *getBinCode() const noexcept override { return bin_code_.data(); }\n\n")
 
     if fields == None :
@@ -94,7 +94,7 @@ def write_instr_spec(out: TextIOWrapper, name: str, instr: dict) :
     if is_jump :
         [dword_idx, lo, hi, bit_len] = get_field_pos("jump_offset", fields["jump_offset"], size)
 
-        out.write("void setOffset(DWordOffset offset) noexcept override {\n")
+        out.write("void setOffset(ByteOffset offset) noexcept override {\n")
         if bit_len != DWORD_BIT_SIZE :
             out.write("offset &= (uint64_t{ 1 } << %d) - 1;\n" % bit_len)
         out.write("bin_code_[%d] |= offset << %d;\n" % (dword_idx, lo))

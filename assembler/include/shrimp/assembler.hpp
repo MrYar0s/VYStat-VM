@@ -143,7 +143,7 @@ class Assembler final {
         // skip colon
         label_name.pop_back();
 
-        auto [_, is_inserted] = labels_.insert({label_name, curr_dword_offset_});
+        auto [_, is_inserted] = labels_.insert({label_name, curr_offset_});
 
         if (!is_inserted) {
             throw DuplicatedLableError(label_name);
@@ -232,8 +232,7 @@ class Assembler final {
     {
         for (auto &&instr_ptr : instrs_) {
             const char *bin_code = reinterpret_cast<const char *>(instr_ptr->getBinCode());
-            int size = instr_ptr->getDWordSize() * sizeof(DWord);
-            out.write(bin_code, size);
+            out.write(bin_code, instr_ptr->getByteSize());
         }
     }
 
@@ -248,14 +247,14 @@ public:
 private:
     Lexer lexer_;
 
-    DWordOffset curr_dword_offset_ = 0;
+    ByteOffset curr_offset_ = 0;
 
     // Parsed instructions
     std::vector<std::unique_ptr<InterfaceInstr>> instrs_ {};
     // Parsed jumps: {Inst *, Label name}
     std::vector<std::pair<InterfaceJump *, std::string>> jumps_ {};
     // Parsed labels: [Label name -> offset]
-    std::unordered_map<std::string, DWordOffset> labels_ {};
+    std::unordered_map<std::string, ByteOffset> labels_ {};
 };
 
 }  // namespace shrimp::assembler
