@@ -6,6 +6,8 @@ project(shrimp VERSION 0.1 LANGUAGES CXX)
 
 find_package(Python3 REQUIRED)
 
+set(ENV{PYTHONPATH} "${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
