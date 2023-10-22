@@ -7,9 +7,11 @@
 #include <shrimp/common/types.hpp>
 #include <shrimp/common/instr_opcode.gen.hpp>
 
-#include <shrimp/runtime/shrimp_vm/instr.gen.hpp>
 #include <shrimp/runtime/shrimp_vm/intrinsics.hpp>
 #include <shrimp/runtime/shrimp_vm/interpreter.hpp>
+
+#include <shrimp/runtime/shrimp_vm/instr.gen.hpp>
+#include <shrimp/runtime/shrimp_vm/dispatch_table.gen.hpp>
 
 namespace shrimp::runtime::interpreter {
 
@@ -55,39 +57,6 @@ std::string Instr<InstrOpcode::INTRINSIC>::toString() const
 
 namespace {
 
-int handleNop(const Byte *pc, Frame *frame);
-
-int handleMov(const Byte *pc, Frame *frame);
-int handleMovImmI32(const Byte *pc, Frame *frame);
-int handleMovImmF(const Byte *pc, Frame *frame);
-
-int handleLda(const Byte *pc, Frame *frame);
-int handleLdaImmI32(const Byte *pc, Frame *frame);
-int handleLdaImmF(const Byte *pc, Frame *frame);
-
-int handleSta(const Byte *pc, Frame *frame);
-
-int handleAddI32(const Byte *pc, Frame *frame);
-int handleAddF(const Byte *pc, Frame *frame);
-
-int handleSubI32(const Byte *pc, Frame *frame);
-int handleSubF(const Byte *pc, Frame *frame);
-
-int handleDivI32(const Byte *pc, Frame *frame);
-int handleDivF(const Byte *pc, Frame *frame);
-
-int handleMulI32(const Byte *pc, Frame *frame);
-int handleMulF(const Byte *pc, Frame *frame);
-
-int handleRet(const Byte *pc, Frame *frame);
-int handleIntrinsic(const Byte *pc, Frame *frame);
-
-static constexpr size_t DISPATCH_LEN = 21;
-static constexpr std::array<int (*)(const Byte *pc, Frame *frame), DISPATCH_LEN> dispatch_table {
-    nullptr,        &handleNop, &handleMov,    &handleMovImmI32, &handleMovImmF, &handleLda,  &handleLdaImmI32,
-    &handleLdaImmF, &handleSta, &handleAddI32, &handleAddF,      &handleSubI32,  &handleSubF, &handleDivI32,
-    &handleDivF,    nullptr,    nullptr,       &handleMulI32,    &handleMulF,    &handleRet,  &handleIntrinsic};
-
 static constexpr Byte OPCODE_MASK = 0xff;
 
 Byte getOpcode(const Byte *pc)
@@ -97,7 +66,7 @@ Byte getOpcode(const Byte *pc)
 
 int handleNop(const Byte *pc, Frame *frame)
 {
-    Instr<InstrOpcode::NOP> instr {};
+    Instr<InstrOpcode::NOP> instr {pc};
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
@@ -234,7 +203,6 @@ int handleAddF(const Byte *pc, Frame *frame)
     return dispatch_table[getOpcode(pc)](pc, frame);
 }
 
-// Sub from register value from accumulator
 int handleSubI32(const Byte *pc, Frame *frame)
 {
     auto instr = Instr<InstrOpcode::SUB_I32>(pc);
@@ -401,21 +369,69 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
     return dispatch_table[getOpcode(pc)](pc, frame);
 }
 
-int handleRet([[maybe_unused]] const Byte *pc, [[maybe_unused]] Frame *frame)
+int handleRet(const Byte *pc, [[maybe_unused]] Frame *frame)
 {
-    Instr<InstrOpcode::RET> instr {};
+    Instr<InstrOpcode::RET> instr {pc};
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
     return 0;
 }
 
+int handleJump(const Byte *pc, Frame *frame) {
+    Instr<InstrOpcode::JUMP> instr {pc};
+    int64_t offset = instr.getJumpOffset();
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
+
+    pc += offset;
+    return dispatch_table[getOpcode(pc)](pc, frame);
+}
+
+int handleJumpGg(const Byte *pc, Frame *frame) {
+    Instr<InstrOpcode::JUMP_GG> instr {pc};
+    auto rs_idx = instr.getRs();
+    auto offset = instr.getJumpOffset();
+
+    auto gg = frame->getAcc().getValue() > frame->getReg(rs_idx).getValue();
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
+
+    pc += gg ? offset : instr.getByteSize();
+    return dispatch_table[getOpcode(pc)](pc, frame);
+}
+
+int handleJumpEq(const Byte *pc, Frame *frame) {
+    Instr<InstrOpcode::JUMP_EQ> instr {pc};
+    auto rs_idx = instr.getRs();
+    auto offset = instr.getJumpOffset();
+
+    auto eq = frame->getAcc().getValue() == frame->getReg(rs_idx).getValue();
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
+
+    pc += eq ? offset : instr.getByteSize();
+    return dispatch_table[getOpcode(pc)](pc, frame);
+}
+
+int handleJumpLl(const Byte *pc, Frame *frame) {
+    Instr<InstrOpcode::JUMP_EQ> instr {pc};
+    auto rs_idx = instr.getRs();
+    auto offset = instr.getJumpOffset();
+
+    auto ll = frame->getAcc().getValue() < frame->getReg(rs_idx).getValue();
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
+
+    pc += ll ? offset : instr.getByteSize();
+    return dispatch_table[getOpcode(pc)](pc, frame);
+}
+
 }  // namespace
 
 int runImpl(const Byte *pc, Frame *frame)
 {
-    dispatch_table[getOpcode(pc)](pc, frame);
-    return 0;
+    return dispatch_table[getOpcode(pc)](pc, frame);
 }
 
 }  // namespace shrimp::runtime::interpreter

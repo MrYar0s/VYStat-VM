@@ -9,6 +9,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 #include <unordered_map>
@@ -43,6 +44,32 @@ public:
 };
 
 class Assembler final {
+    class JumpInfo final {
+    public:
+        JumpInfo(InterfaceJump *instr_ptr, ByteOffset instr_offset, std::string dst_name)
+            : instr_ptr_(instr_ptr), instr_offset_(instr_offset), dst_name_(std::move(dst_name))
+        {
+        }
+
+        auto *getInstrPtr() const
+        {
+            return instr_ptr_;
+        }
+        auto getInstrOffset() const
+        {
+            return instr_offset_;
+        }
+        std::string_view getDstName() const
+        {
+            return dst_name_;
+        }
+
+    private:
+        InterfaceJump *instr_ptr_ = nullptr;
+        ByteOffset instr_offset_ = 0;
+        std::string dst_name_ = "";
+    };
+
     // Throw lexing error if condition is not true
     void assertLexError(bool cond)
     {
@@ -136,7 +163,6 @@ class Assembler final {
         assertParseError(lexer_.currLexemType() == Lexer::LexemType::COMMA);
     }
 
-    // An unknown name detec
     void parseLabel()
     {
         std::string label_name = lexer_.YYText();
@@ -218,13 +244,15 @@ class Assembler final {
     void reslove_jumps()
     {
         for (auto &&jump : jumps_) {
-            auto &lable_name = jump.second;
-            auto it = labels_.find(lable_name);
-            if (it == labels_.end()) {
-                throw UnresolvedLableError(lable_name);
+            auto lable_name = jump.getDstName();
+            auto label_it = labels_.find(lable_name.data());
+            if (label_it == labels_.end()) {
+                throw UnresolvedLableError(lable_name.data());
             }
 
-            jump.first->setOffset(it->second);
+            auto label_offset = label_it->second;
+
+            jump.getInstrPtr()->setOffset(label_offset - jump.getInstrOffset());
         }
     }
 
@@ -251,8 +279,8 @@ private:
 
     // Parsed instructions
     std::vector<std::unique_ptr<InterfaceInstr>> instrs_ {};
-    // Parsed jumps: {Inst *, Label name}
-    std::vector<std::pair<InterfaceJump *, std::string>> jumps_ {};
+    // Parsed jumps
+    std::vector<JumpInfo> jumps_ {};
     // Parsed labels: [Label name -> offset]
     std::unordered_map<std::string, ByteOffset> labels_ {};
 };

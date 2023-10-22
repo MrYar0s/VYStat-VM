@@ -15,7 +15,18 @@ add_custom_command(
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py ${INSTR} ${SHRIMP_VM_GEN_ROOT}/instr.gen.hpp
     DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py
 )
-add_custom_target(runtime_shrimp_vm_gen DEPENDS ${SHRIMP_VM_GEN_ROOT}/instr.gen.hpp)
+
+add_custom_command(
+    OUTPUT ${SHRIMP_VM_GEN_ROOT}/dispatch_table.gen.hpp
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_dispatch_table.py ${INSTR} ${SHRIMP_VM_GEN_ROOT}/dispatch_table.gen.hpp
+    DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_dispatch_table.py
+)
+
+add_custom_target(runtime_shrimp_vm_gen
+DEPENDS
+    ${SHRIMP_VM_GEN_ROOT}/instr.gen.hpp
+    ${SHRIMP_VM_GEN_ROOT}/dispatch_table.gen.hpp
+)
 add_dependencies(runtime runtime_shrimp_vm_gen)
 
 target_include_directories(runtime
