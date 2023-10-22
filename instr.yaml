@@ -1,10 +1,12 @@
 NOP:
     descr: "Do nothing."
     opcode: 1
+    size: "Byte"
 
 MOV:
     descr: "Move value from rs to rd."
     opcode: 2
+    size: "Word"
     fields:
         rs: [8, 15]
         rd: [16, 23]
@@ -28,6 +30,7 @@ MOV.IMM.F:
 LDA:
     descr: "Load value from rs to acc."
     opcode: 5
+    size: "HWord"
     fields:
         rs: [8, 15]
 
@@ -48,60 +51,70 @@ LDA.IMM.F:
 STA:
     descr: "Store value from acc to rd."
     opcode: 8
+    size: "HWord"
     fields:
         rd: [8, 15]
 
 ADD.I32:
     descr: "acc = (acc as i32) + (rs as i32)"
     opcode: 9
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 ADD.F:
     descr: "acc = (acc as float) + (rs as float)"
     opcode: 10
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 SUB.I32:
     descr: "acc = (acc as i32) - (rs as i32)"
     opcode: 11
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 SUB.F:
     descr: "acc = (acc as float) - (rs as float)"
     opcode: 12
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 DIV.I32:
     descr: "acc = (acc as i32) / (rs as i32)"
     opcode: 13
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 DIV.F:
     descr: "acc = (acc as float) / (rs as float)"
     opcode: 14
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 MUL.I32:
     descr: "acc = (acc as i32) * (rs as i32)"
     opcode: 15
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 MUL.F:
     descr: "acc = (acc as float) * (rs as float)"
     opcode: 16
+    size: "HWord"
     fields:
         rs: [8, 15]
 
 RET:
     descr: "Return from current frame. Return value is passed in acc"
     opcode: 17
+    size: "Byte"
 
 INTRINSIC:
     descr: "call intrinsic"
