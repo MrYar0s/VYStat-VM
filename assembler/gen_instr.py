@@ -73,7 +73,7 @@ def write_instr_spec(out: TextIOWrapper, instr: Instr) :
 
     out.write("}\n\n")
     out.write("private:\n")
-    out.write("%s bin_code_ = 0;\n" % instr.size)
+    out.write("%s bin_code_ = static_cast<Byte>(%s);\n" % (instr.size, instr.get_opcode_name()))
     out.write("};\n\n")
 
 def write_file_close(out: TextIOWrapper) :
