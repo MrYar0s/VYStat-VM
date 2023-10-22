@@ -1,11 +1,9 @@
 import os
 import sys
-import yaml
+
+from instr import*
 
 from io import TextIOWrapper
-
-def fix_instr_name(instr_name: str) :
-    return instr_name.replace('.', '_')
 
 def write_file_open(out: TextIOWrapper) :
     out.write(
@@ -19,43 +17,33 @@ def write_file_open(out: TextIOWrapper) :
         "namespace shrimp::assembler {\n\n"
     )
 
-def write_instr_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | None) :
-    fixed_name = fix_instr_name(name)
-
+def write_instr_parser(out: TextIOWrapper, instr: Instr) :
     out.write("template<>\n")
-    out.write("void Assembler::parseInstr<InstrOpcode::%s>() {\n" % fixed_name)
-
-    if fields == None :
-        out.write("instrs_.push_back(std::make_unique<Instr<InstrOpcode::%s>>());\n" % fixed_name)
-        out.write("}\n\n")
-        return
+    out.write("void Assembler::parseInstr<%s>() {\n" % instr.get_opcode_name())
 
     need_comma = False
-    for field_name in fields.keys() :
+    for field_name in instr.fields.keys() :
         if need_comma :
             out.write("parseComma();")
+
+        need_comma = True
 
         match field_name :
             case "rd" | "rs" | "rs1" | "rs2" :
                 out.write("uint64_t %s = parseReg();\n" % field_name)
-                need_comma = True
 
             case "imm_i32" | "imm_i64" :
                 out.write("uint64_t %s = parseImmI();\n" % field_name)
-                need_comma = True
 
             case "imm_f" :
-                out.write("uint32_t %s = parseImmF();\n" % field_name)
-                need_comma = True
+                out.write("uint64_t %s = parseImmF();\n" % field_name)
 
             case "imm_d" :
                 out.write("uint64_t %s = parseImmD();\n" % field_name)
-                need_comma = True
 
             case "jump_offset" :
                 out.write("ByteOffset jump_offset = 0;")
                 out.write("parseJumpDst();")
-                need_comma = True
 
             case "intrinsic_code" :
                 out.write("auto intrinsic_code_enum = parseIntrinsicName();")
@@ -68,13 +56,13 @@ def write_instr_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | 
                 need_comma = False
 
             case _:
-                raise RuntimeError("Unknown field")
+                raise RuntimeError("Unknown field in instruction %s: %s" % (instr.name, field_name))
 
     out.write("\n")
-    out.write("instrs_.push_back(std::make_unique<Instr<InstrOpcode::%s>>(" % fixed_name)
+    out.write("instrs_.push_back(std::make_unique<Instr<%s>>(" % instr.get_opcode_name())
 
     first = True
-    for field_name in fields.keys() :
+    for field_name in instr.fields.keys() :
         if not first :
             out.write(", ")
         first = False
@@ -86,21 +74,20 @@ def write_instr_parser(out: TextIOWrapper, name: str, fields: dict[str, list] | 
         "}\n\n"
     )
 
-def write_instr_map(out: TextIOWrapper, instrs: dict) :
+def write_instr_map(out: TextIOWrapper, instrs: list) :
     out.write("static std::unordered_map<std::string, InstrOpcode> instrs = {")
 
     first = True
-    for instr_name in instrs.keys() :
+    for instr in instrs :
         if not first :
             out.write(", ")
         first = False
 
-        fixed_name = fix_instr_name(instr_name)
-        out.write("{\"%s\", InstrOpcode::%s}" % (instr_name, fixed_name))
+        out.write("{\"%s\", %s}" % (instr.name, instr.get_opcode_name()))
 
     out.write("};\n\n")
 
-def write_first_pass(out: TextIOWrapper, instrs: dict) :
+def write_first_pass(out: TextIOWrapper, instrs: list) :
     out.write(
         "void Assembler::first_pass()\n"
         "{\n"
@@ -123,11 +110,9 @@ def write_first_pass(out: TextIOWrapper, instrs: dict) :
             "switch(it->second) {\n"
     )
 
-    for instr_name in instrs.keys() :
-        fixed_name = fix_instr_name(instr_name)
-
-        out.write("case InstrOpcode::%s:\n" % fixed_name)
-        out.write("parseInstr<InstrOpcode::%s>();\n" % fixed_name)
+    for instr in instrs :
+        out.write("case %s:\n" % instr.get_opcode_name())
+        out.write("parseInstr<%s>();\n" % instr.get_opcode_name())
         out.write("break;\n")
 
     out.write(
@@ -149,15 +134,14 @@ if __name__ == "__main__" :
     IN_NAME = sys.argv[1]
     OUT_NAME = sys.argv[2]
 
-    with open(IN_NAME, 'r') as file :
-        instrs = yaml.safe_load(file)
+    instrs = load_instrs(IN_NAME)
 
     out = open(OUT_NAME, 'w')
 
     write_file_open(out)
 
-    for name, instr in instrs.items() :
-        write_instr_parser(out, name, instr.get("fields"))
+    for instr in instrs :
+        write_instr_parser(out, instr)
 
     write_first_pass(out, instrs)
 

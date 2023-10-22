@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+using std::size_t;
+
 namespace shrimp {
 
 using Byte = uint8_t;
