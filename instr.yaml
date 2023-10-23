@@ -17,7 +17,7 @@ MOV.IMM.I32:
     fields:
         rd: [8, 15]
         imm_i32:
-            signed: true
+            is_signed: true
             bits: [32, 63]
 
 MOV.IMM.F:
@@ -39,7 +39,7 @@ LDA.IMM.I32:
     opcode: 6
     fields:
         imm_i32:
-            signed: true
+            is_signed: true
             bits: [32, 63]
 
 LDA.IMM.F:
@@ -132,7 +132,7 @@ JUMP:
     is_jump: true
     fields:
         jump_offset:
-            signed: true
+            is_signed: true
             bits: [8, 63]
 
 JUMP.GG:
@@ -142,7 +142,7 @@ JUMP.GG:
     fields:
         rs: [8, 15]
         jump_offset:
-            signed: true
+            is_signed: true
             bits: [16, 63]
 
 JUMP.EQ:
@@ -152,7 +152,7 @@ JUMP.EQ:
     fields:
         rs: [8, 15]
         jump_offset:
-            signed: true
+            is_signed: true
             bits: [16, 63]
 
 JUMP.LL:
@@ -162,5 +162,5 @@ JUMP.LL:
     fields:
         rs: [8, 15]
         jump_offset:
-            signed: true
+            is_signed: true
             bits: [16, 63]
