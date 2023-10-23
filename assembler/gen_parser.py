@@ -43,7 +43,7 @@ def write_instr_parser(out: TextIOWrapper, instr: Instr) :
 
             case "jump_offset" :
                 out.write("ByteOffset jump_offset = 0;")
-                out.write("parseJumpDst();")
+                out.write("auto dst_name = parseJumpDst();")
 
             case "intrinsic_code" :
                 out.write("auto intrinsic_code_enum = parseIntrinsicName();")
@@ -68,8 +68,12 @@ def write_instr_parser(out: TextIOWrapper, instr: Instr) :
         first = False
         out.write("%s" % field_name)
 
+    out.write("));\n\n")
+
+    if instr.is_jump :
+        out.write("jumps_.emplace_back(static_cast<InterfaceJump*>(instrs_.back().get()), curr_offset_, dst_name);\n")
+
     out.write(
-        "));\n\n"
         "curr_offset_ += instrs_.back()->getByteSize();\n"
         "}\n\n"
     )
@@ -99,6 +103,11 @@ def write_first_pass(out: TextIOWrapper, instrs: list) :
         "int lexing_status = Lexer::LEXING_ERROR_CODE;\n\n"
 
         "while ((lexing_status = lexer_.yylex()) == Lexer::LEXING_OK) {\n"
+            "if (lexer_.currLexemType() == Lexer::LexemType::LABEL) {\n"
+                "parseLabel();\n"
+                "continue;\n"
+            "}\n\n"
+
             "assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);\n\n"
 
             "std::string id = lexer_.YYText();\n"
