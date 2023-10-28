@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <stack>
 
-#include <shrimp/runtime/accumulator.hpp>
 #include <shrimp/runtime/frame.hpp>
 #include <shrimp/runtime/runtime.hpp>
 
@@ -26,7 +25,7 @@ public:
     {
         runtime_ = runtime;
     }
-    Frame *createFrame(Accumulator *acc)
+    Frame *createFrame(Register *acc)
     {
         Frame *frame = new Frame {acc};
         stk_frames_.push(frame);
