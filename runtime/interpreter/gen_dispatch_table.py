@@ -19,7 +19,7 @@ def write_file_open(out: TextIOWrapper) :
 
         "#include <shrimp/common/types.hpp>\n"
         "#include <shrimp/common/instr_opcode.gen.hpp>\n"
-        "#include <shrimp/runtime/shrimp_vm/interpreter.hpp>\n\n"
+        "#include <shrimp/runtime/interpreter.hpp>\n\n"
 
         "namespace shrimp::runtime::interpreter {\n\n"
 

@@ -1,7 +1,7 @@
-# Define runtime_common interface deps
+# Define runtime::common interface deps
 
 add_library(runtime_common INTERFACE)
-add_library(shrimp::runtime_common ALIAS runtime_common)
+add_library(shrimp::runtime::common ALIAS runtime_common)
 
 target_include_directories(runtime_common
 INTERFACE

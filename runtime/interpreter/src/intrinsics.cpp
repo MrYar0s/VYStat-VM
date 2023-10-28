@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 
-#include <shrimp/runtime/shrimp_vm/intrinsics.hpp>
+#include <shrimp/runtime/interpreter/intrinsics.hpp>
 
 namespace shrimp::runtime::intrinsics {
 
