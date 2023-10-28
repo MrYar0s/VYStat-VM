@@ -1,5 +1,5 @@
-#ifndef RUNTIME_SHRIMP_VM_INTERPRETER_HPP
-#define RUNTIME_SHRIMP_VM_INTERPRETER_HPP
+#ifndef SHRIMP_RUNTIME_INTERPRETER_HPP
+#define SHRIMP_RUNTIME_INTERPRETER_HPP
 
 #include <cstdint>
 
@@ -12,4 +12,4 @@ int runImpl(const Byte *pc, Frame *frame);
 
 }  // namespace shrimp::runtime::interpreter
 
-#endif  // RUNTIME_SHRIMP_VM_INTERPRETER_HPP
+#endif  // SHRIMP_RUNTIME_INTERPRETER_HPP

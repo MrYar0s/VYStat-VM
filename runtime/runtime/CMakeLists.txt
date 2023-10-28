@@ -1,4 +1,4 @@
-# Add runtime_runtime include and src
+# Add runtime::runtime include and src
 
 target_sources(runtime
 PRIVATE

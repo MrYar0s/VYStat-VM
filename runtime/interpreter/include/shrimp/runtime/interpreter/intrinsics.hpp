@@ -1,5 +1,5 @@
-#ifndef RUNTIME_SHRIMP_VM_INTRINSICS_HPP
-#define RUNTIME_SHRIMP_VM_INTRINSICS_HPP
+#ifndef RUNTIME_INTERPRETER_INTRINSICS_HPP
+#define RUNTIME_INTERPRETER_INTRINSICS_HPP
 
 #include <cstdint>
 
@@ -15,4 +15,4 @@ float SqrtF(float val);
 
 }  // namespace shrimp::runtime::intrinsics
 
-#endif  // RUNTIME_SHRIMP_VM_INTRINSICS_HPP
+#endif  // RUNTIME_INTERPRETER_INTRINSICS_HPP

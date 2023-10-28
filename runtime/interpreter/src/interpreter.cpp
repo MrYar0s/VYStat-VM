@@ -7,11 +7,11 @@
 #include <shrimp/common/types.hpp>
 #include <shrimp/common/instr_opcode.gen.hpp>
 
-#include <shrimp/runtime/shrimp_vm/intrinsics.hpp>
-#include <shrimp/runtime/shrimp_vm/interpreter.hpp>
+#include <shrimp/runtime/interpreter/intrinsics.hpp>
+#include <shrimp/runtime/interpreter.hpp>
 
-#include <shrimp/runtime/shrimp_vm/instr.gen.hpp>
-#include <shrimp/runtime/shrimp_vm/dispatch_table.gen.hpp>
+#include <shrimp/runtime/interpreter/instr.gen.hpp>
+#include <shrimp/runtime/interpreter/dispatch_table.gen.hpp>
 
 namespace shrimp::runtime::interpreter {
 

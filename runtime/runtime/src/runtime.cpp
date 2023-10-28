@@ -4,7 +4,7 @@
 
 #include <shrimp/runtime/runtime.hpp>
 #include <shrimp/runtime/shrimp_vm.hpp>
-#include <shrimp/runtime/shrimp_vm/interpreter.hpp>
+#include <shrimp/runtime/interpreter.hpp>
 
 namespace shrimp::runtime {
 
