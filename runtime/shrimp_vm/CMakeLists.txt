@@ -10,24 +10,13 @@ set(SHRIMP_VM_GEN_ROOT ${CMAKE_CURRENT_BINARY_DIR}/include/shrimp/runtime/shrimp
 
 file(MAKE_DIRECTORY ${SHRIMP_VM_GEN_ROOT})
 
-add_custom_command(
-    OUTPUT ${SHRIMP_VM_GEN_ROOT}/instr.gen.hpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py ${INSTR} ${SHRIMP_VM_GEN_ROOT}/instr.gen.hpp
-    DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py
+shrimp_add_instr_dep_gen(${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py ${SHRIMP_VM_GEN_ROOT}/instr.gen.hpp
+    runtime runtime_instr_gen
 )
 
-add_custom_command(
-    OUTPUT ${SHRIMP_VM_GEN_ROOT}/dispatch_table.gen.hpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_dispatch_table.py ${INSTR} ${SHRIMP_VM_GEN_ROOT}/dispatch_table.gen.hpp
-    DEPENDS ${INSTR} ${CMAKE_CURRENT_SOURCE_DIR}/gen_dispatch_table.py
+shrimp_add_instr_dep_gen(${CMAKE_CURRENT_SOURCE_DIR}/gen_dispatch_table.py ${SHRIMP_VM_GEN_ROOT}/dispatch_table.gen.hpp
+    runtime runtime_dispatch_gen
 )
-
-add_custom_target(runtime_shrimp_vm_gen
-DEPENDS
-    ${SHRIMP_VM_GEN_ROOT}/instr.gen.hpp
-    ${SHRIMP_VM_GEN_ROOT}/dispatch_table.gen.hpp
-)
-add_dependencies(runtime runtime_shrimp_vm_gen)
 
 target_include_directories(runtime
 PUBLIC
