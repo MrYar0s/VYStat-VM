@@ -7,14 +7,9 @@ set(COMMON_GEN_ROOT ${CMAKE_CURRENT_BINARY_DIR}/include/shrimp/common)
 
 file(MAKE_DIRECTORY ${COMMON_GEN_ROOT})
 
-add_custom_command(
-    OUTPUT ${COMMON_GEN_ROOT}/instr_opcode.gen.hpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/gen_instr_opcode.py ${INSTR} ${COMMON_GEN_ROOT}/instr_opcode.gen.hpp
-    DEPENDS ${INSTR}
+shrimp_add_instr_dep_gen(${CMAKE_CURRENT_SOURCE_DIR}/gen_instr_opcode.py ${COMMON_GEN_ROOT}/instr_opcode.gen.hpp
+    common common_gen
 )
-
-add_custom_target(common_gen DEPENDS ${COMMON_GEN_ROOT}/instr_opcode.gen.hpp)
-add_dependencies(common INTERFACE common_gen)
 
 target_include_directories(common
 INTERFACE
