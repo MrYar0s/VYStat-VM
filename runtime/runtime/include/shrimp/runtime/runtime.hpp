@@ -8,7 +8,6 @@
 #include <shrimp/common/types.hpp>
 
 #include <shrimp/runtime/register.hpp>
-#include <shrimp/runtime/accumulator.hpp>
 #include <shrimp/runtime/frame.hpp>
 
 namespace shrimp::runtime {
@@ -27,7 +26,7 @@ public:
 private:
     ShrimpVM *vm_;
     Frame *curr_frame_;
-    Accumulator acc_ {0};
+    Register acc_ {};
 };
 
 }  // namespace shrimp::runtime

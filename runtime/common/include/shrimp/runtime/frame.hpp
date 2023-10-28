@@ -4,18 +4,17 @@
 #include <vector>
 
 #include <shrimp/runtime/register.hpp>
-#include <shrimp/runtime/accumulator.hpp>
 
 namespace shrimp::runtime {
 
 class Frame {
 public:
-    explicit Frame(Accumulator *acc) : acc_(acc) {}
+    explicit Frame(Register *acc) : acc_(acc) {}
     Register getReg(size_t idx)
     {
         return regs_[idx];
     }
-    Accumulator getAcc()
+    Register getAcc()
     {
         return *acc_;
     }
@@ -36,7 +35,7 @@ private:
     Frame *prev_frame_ = nullptr;
     /*  Doesn't need now */
     //  Method *curr_method_;
-    Accumulator *acc_;
+    Register *acc_;
     std::vector<Register> regs_ {16};
 };
 
