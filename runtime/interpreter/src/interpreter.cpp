@@ -64,244 +64,258 @@ Byte getOpcode(const Byte *pc)
     return *pc & OPCODE_MASK;
 }
 
-int handleNop(const Byte *pc, Frame *frame)
+int handleNop(ShrimpVM *vm)
 {
-    Instr<InstrOpcode::NOP> instr {pc};
+    Instr<InstrOpcode::NOP> instr {vm->pc()};
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleMov(const Byte *pc, Frame *frame)
+int handleMov(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::MOV>(pc);
+    auto instr = Instr<InstrOpcode::MOV>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
     auto rs_idx = instr.getRs();
 
-    auto res = frame->getReg(rs_idx).getValue();
-    frame->setReg(res, rd_idx);
+    auto res = frame.getReg(rs_idx).getValue();
+    frame.setReg(res, rd_idx);
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleMovImmI32(const Byte *pc, Frame *frame)
+int handleMovImmI32(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::MOV_IMM_I32>(pc);
+    auto instr = Instr<InstrOpcode::MOV_IMM_I32>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
     auto imm_i32 = bit::getValue<int32_t>(instr.getImmI32());
 
-    frame->setReg(imm_i32, rd_idx);
+    frame.setReg(imm_i32, rd_idx);
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleMovImmF(const Byte *pc, Frame *frame)
+int handleMovImmF(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::MOV_IMM_F>(pc);
+    auto instr = Instr<InstrOpcode::MOV_IMM_F>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
     auto imm_f = bit::getValue<float>(instr.getImmF());
 
-    frame->setReg(bit::castToWritable(imm_f), rd_idx);
+    frame.setReg(bit::castToWritable(imm_f), rd_idx);
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleLda(const Byte *pc, Frame *frame)
+int handleLda(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::LDA>(pc);
+    auto instr = Instr<InstrOpcode::LDA>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    auto res = frame->getReg(rs_idx).getValue();
-    frame->setAcc(res);
+    auto res = frame.getReg(rs_idx).getValue();
+    vm->acc().setValue(res);
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleLdaImmI32(const Byte *pc, Frame *frame)
+int handleLdaImmI32(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::LDA_IMM_I32>(pc);
+    auto instr = Instr<InstrOpcode::LDA_IMM_I32>(vm->pc());
     auto imm_i32 = bit::getValue<int32_t>(instr.getImmI32());
 
-    frame->setAcc(imm_i32);
+    vm->acc().setValue(imm_i32);
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleLdaImmF(const Byte *pc, Frame *frame)
+int handleLdaImmF(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::LDA_IMM_F>(pc);
+    auto instr = Instr<InstrOpcode::LDA_IMM_F>(vm->pc());
     auto imm_f = bit::getValue<float>(instr.getImmF());
 
-    frame->setAcc(bit::castToWritable(imm_f));
+    vm->acc().setValue(bit::castToWritable(imm_f));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleSta(const Byte *pc, Frame *frame)
+int handleSta(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::STA>(pc);
+    auto instr = Instr<InstrOpcode::STA>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
 
-    auto res = frame->getAcc().getValue();
-    frame->setReg(res, rd_idx);
+    auto res = vm->acc().getValue();
+    frame.setReg(res, rd_idx);
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleAddI32(const Byte *pc, Frame *frame)
+int handleAddI32(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::ADD_I32>(pc);
+    auto instr = Instr<InstrOpcode::ADD_I32>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    int32_t acc_i32 = frame->getAcc().getValue();
-    int32_t rs_i32 = frame->getReg(rs_idx).getValue();
-    frame->setAcc(acc_i32 + rs_i32);
+    int32_t acc_i32 = vm->acc().getValue();
+    int32_t rs_i32 = frame.getReg(rs_idx).getValue();
+    vm->acc().setValue(acc_i32 + rs_i32);
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleAddF(const Byte *pc, Frame *frame)
+int handleAddF(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::ADD_F>(pc);
+    auto instr = Instr<InstrOpcode::ADD_F>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    auto acc = frame->getAcc().getValue();
-    auto rs = frame->getReg(rs_idx).getValue();
+    auto acc = vm->acc().getValue();
+    auto rs = frame.getReg(rs_idx).getValue();
     float acc_f = bit::getValue<float>(acc);
     float rs_f = bit::getValue<float>(rs);
-    frame->setAcc(bit::castToWritable<float>(acc_f + rs_f));
+    vm->acc().setValue(bit::castToWritable<float>(acc_f + rs_f));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleSubI32(const Byte *pc, Frame *frame)
+int handleSubI32(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::SUB_I32>(pc);
+    auto instr = Instr<InstrOpcode::SUB_I32>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    int32_t acc_i32 = frame->getAcc().getValue();
-    int32_t rs_i32 = frame->getReg(rs_idx).getValue();
-    frame->setAcc(bit::castToWritable(acc_i32 - rs_i32));
+    int32_t acc_i32 = vm->acc().getValue();
+    int32_t rs_i32 = frame.getReg(rs_idx).getValue();
+    vm->acc().setValue(bit::castToWritable(acc_i32 - rs_i32));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleSubF(const Byte *pc, Frame *frame)
+int handleSubF(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::SUB_F>(pc);
+    auto instr = Instr<InstrOpcode::SUB_F>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    auto acc = frame->getAcc().getValue();
-    auto rs = frame->getReg(rs_idx).getValue();
+    auto acc = vm->acc().getValue();
+    auto rs = frame.getReg(rs_idx).getValue();
     auto acc_f = bit::getValue<float>(acc);
     auto rs_f = bit::getValue<float>(rs);
-    frame->setAcc(bit::castToWritable(acc_f - rs_f));
+    vm->acc().setValue(bit::castToWritable(acc_f - rs_f));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleDivI32(const Byte *pc, Frame *frame)
+int handleDivI32(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::DIV_I32>(pc);
+    auto instr = Instr<InstrOpcode::DIV_I32>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    int32_t acc_i32 = frame->getAcc().getValue();
-    int32_t rs_i32 = frame->getReg(rs_idx).getValue();
-    frame->setAcc(bit::castToWritable(acc_i32 / rs_i32));
+    int32_t acc_i32 = vm->acc().getValue();
+    int32_t rs_i32 = frame.getReg(rs_idx).getValue();
+    vm->acc().setValue(bit::castToWritable(acc_i32 / rs_i32));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleDivF(const Byte *pc, Frame *frame)
+int handleDivF(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::DIV_F>(pc);
+    auto instr = Instr<InstrOpcode::DIV_F>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    auto acc = frame->getAcc().getValue();
-    auto rs = frame->getReg(rs_idx).getValue();
+    auto acc = vm->acc().getValue();
+    auto rs = frame.getReg(rs_idx).getValue();
     auto acc_f = bit::getValue<float>(acc);
     auto rs_f = bit::getValue<float>(rs);
-    frame->setAcc(bit::castToWritable(acc_f / rs_f));
+    vm->acc().setValue(bit::castToWritable(acc_f / rs_f));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleMulI32(const Byte *pc, Frame *frame)
+int handleMulI32(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::MUL_I32>(pc);
+    auto instr = Instr<InstrOpcode::MUL_I32>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    int32_t acc_i32 = frame->getAcc().getValue();
-    int32_t rs_i32 = frame->getReg(rs_idx).getValue();
-    frame->setAcc(bit::castToWritable(acc_i32 * rs_i32));
+    int32_t acc_i32 = vm->acc().getValue();
+    int32_t rs_i32 = frame.getReg(rs_idx).getValue();
+    vm->acc().setValue(bit::castToWritable(acc_i32 * rs_i32));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleMulF(const Byte *pc, Frame *frame)
+int handleMulF(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::MUL_F>(pc);
+    auto instr = Instr<InstrOpcode::MUL_F>(vm->pc());
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    auto acc = frame->getAcc().getValue();
-    auto rs = frame->getReg(rs_idx).getValue();
+    auto acc = vm->acc().getValue();
+    auto rs = frame.getReg(rs_idx).getValue();
     auto acc_f = bit::getValue<float>(acc);
     auto rs_f = bit::getValue<float>(rs);
-    frame->setAcc(bit::castToWritable(acc_f * rs_f));
+    vm->acc().setValue(bit::castToWritable(acc_f * rs_f));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleIntrinsic(const Byte *pc, Frame *frame)
+int handleIntrinsic(ShrimpVM *vm)
 {
-    auto instr = Instr<InstrOpcode::INTRINSIC>(pc);
+    auto instr = Instr<InstrOpcode::INTRINSIC>(vm->pc());
+    auto &frame = vm->currFrame();
 
     auto intrinsic_code = static_cast<IntrinsicCode>(instr.getIntrinsicCode());
 
@@ -311,14 +325,14 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
 
     switch (intrinsic_code) {
         case IntrinsicCode::PRINT_I32: {
-            auto value_raw = frame->getReg(arg0_idx).getValue();
+            auto value_raw = frame.getReg(arg0_idx).getValue();
             auto value = bit::getValue<int32_t>(value_raw);
 
             intrinsics::PrintI(value);
             break;
         }
         case IntrinsicCode::PRINT_F: {
-            auto value_raw = frame->getReg(arg0_idx).getValue();
+            auto value_raw = frame.getReg(arg0_idx).getValue();
             auto value = bit::getValue<float>(value_raw);
 
             intrinsics::PrintF(value);
@@ -327,37 +341,37 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
         case IntrinsicCode::SCAN_I32: {
             auto res = intrinsics::ScanI();
 
-            frame->setAcc(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res));
             break;
         }
         case IntrinsicCode::SCAN_F: {
             auto res = intrinsics::ScanF();
 
-            frame->setAcc(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res));
             break;
         }
         case IntrinsicCode::SIN: {
-            auto value_raw = frame->getReg(arg0_idx).getValue();
+            auto value_raw = frame.getReg(arg0_idx).getValue();
             auto value = bit::getValue<float>(value_raw);
 
             auto res = intrinsics::SinF(value);
-            frame->setAcc(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res));
             break;
         }
         case IntrinsicCode::COS: {
-            auto value_raw = frame->getReg(arg0_idx).getValue();
+            auto value_raw = frame.getReg(arg0_idx).getValue();
             auto value = bit::getValue<float>(value_raw);
 
             auto res = intrinsics::CosF(value);
-            frame->setAcc(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res));
             break;
         }
         case IntrinsicCode::SQRT: {
-            auto value_raw = frame->getReg(arg0_idx).getValue();
+            auto value_raw = frame.getReg(arg0_idx).getValue();
             auto value = bit::getValue<float>(value_raw);
 
             auto res = intrinsics::SqrtF(value);
-            frame->setAcc(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res));
             break;
         }
         default: {
@@ -365,73 +379,80 @@ int handleIntrinsic(const Byte *pc, Frame *frame)
             std::abort();
         }
     }
-    pc += instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleRet(const Byte *pc, [[maybe_unused]] Frame *frame)
+int handleRet(ShrimpVM *vm)
 {
-    Instr<InstrOpcode::RET> instr {pc};
+    Instr<InstrOpcode::RET> instr {vm->pc()};
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
     return 0;
 }
 
-int handleJump(const Byte *pc, Frame *frame) {
-    Instr<InstrOpcode::JUMP> instr {pc};
+int handleJump(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::JUMP> instr {vm->pc()};
     int64_t offset = instr.getJumpOffset();
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += offset;
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += offset;
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleJumpGg(const Byte *pc, Frame *frame) {
-    Instr<InstrOpcode::JUMP_GG> instr {pc};
+int handleJumpGg(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::JUMP_GG> instr {vm->pc()};
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
     auto offset = instr.getJumpOffset();
 
-    auto gg = frame->getAcc().getValue() > frame->getReg(rs_idx).getValue();
+    auto gg = vm->acc().getValue() > frame.getReg(rs_idx).getValue();
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += gg ? offset : instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += gg ? offset : instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleJumpEq(const Byte *pc, Frame *frame) {
-    Instr<InstrOpcode::JUMP_EQ> instr {pc};
+int handleJumpEq(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::JUMP_EQ> instr {vm->pc()};
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
     auto offset = instr.getJumpOffset();
 
-    auto eq = frame->getAcc().getValue() == frame->getReg(rs_idx).getValue();
+    auto eq = vm->acc().getValue() == frame.getReg(rs_idx).getValue();
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += eq ? offset : instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += eq ? offset : instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
-int handleJumpLl(const Byte *pc, Frame *frame) {
-    Instr<InstrOpcode::JUMP_EQ> instr {pc};
+int handleJumpLl(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::JUMP_EQ> instr {vm->pc()};
+    auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
     auto offset = instr.getJumpOffset();
 
-    auto ll = frame->getAcc().getValue() < frame->getReg(rs_idx).getValue();
+    auto ll = vm->acc().getValue() < frame.getReg(rs_idx).getValue();
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
-    pc += ll ? offset : instr.getByteSize();
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    vm->pc() += ll ? offset : instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
 }  // namespace
 
-int runImpl(const Byte *pc, Frame *frame)
+int runImpl(ShrimpVM *vm)
 {
-    return dispatch_table[getOpcode(pc)](pc, frame);
+    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
 }  // namespace shrimp::runtime::interpreter

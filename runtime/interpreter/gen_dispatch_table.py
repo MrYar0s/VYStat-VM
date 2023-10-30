@@ -28,14 +28,14 @@ def write_file_open(out: TextIOWrapper) :
 
 def write_handlers_decls(out: TextIOWrapper, instrs: dict) :
     for instr_name in instrs.keys() :
-        out.write("int handle%s(const Byte *pc, Frame *frame);" % instr_name_to_camel(instr_name))
+        out.write("int handle%s(ShrimpVM *vm);" % instr_name_to_camel(instr_name))
 
 def write_dispatch_table(out: TextIOWrapper, instrs: dict) :
     sorted_instrs = dict(sorted(instrs.items(), key=lambda item: item[1]["opcode"]))
 
     DISPATCH_LEN = 256
 
-    out.write("using HandlerPtr = int (*)(const Byte *pc, Frame *frame);\n\n")
+    out.write("using HandlerPtr = int (*)(ShrimpVM *vm);\n\n")
 
     out.write("static constexpr size_t DISPATCH_LEN = %d;\n\n" % DISPATCH_LEN)
 

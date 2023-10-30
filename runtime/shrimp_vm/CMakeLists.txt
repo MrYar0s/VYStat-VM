@@ -1,9 +1,11 @@
-# Define runtime::shrimp_vm interface deps
+# Add runtime::shrimp_vm include and src
 
-add_library(runtime_shrimp_vm INTERFACE)
-add_library(shrimp::runtime::shrimp_vm ALIAS runtime_shrimp_vm)
+target_sources(runtime
+PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shrimp_vm.cpp
+)
 
-target_include_directories(runtime_shrimp_vm
-INTERFACE
+target_include_directories(runtime
+PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

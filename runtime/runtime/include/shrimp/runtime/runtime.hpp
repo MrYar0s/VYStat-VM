@@ -16,17 +16,13 @@ class ShrimpVM;
 
 class Runtime final {
 public:
-    Runtime(ShrimpVM *vm);
-    Frame *getCurrFrame()
+    Runtime(ShrimpVM *vm)
     {
-        return curr_frame_;
+        vm_ = vm;
     }
-    int runImpl();
 
 private:
-    ShrimpVM *vm_;
-    Frame *curr_frame_;
-    Register acc_ {};
+    ShrimpVM *vm_ = nullptr;
 };
 
 }  // namespace shrimp::runtime
