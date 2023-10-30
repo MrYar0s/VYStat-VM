@@ -6,9 +6,11 @@
 #include <shrimp/common/types.hpp>
 #include <shrimp/runtime/frame.hpp>
 
+#include <shrimp/runtime/shrimp_vm.hpp>
+
 namespace shrimp::runtime::interpreter {
 
-int runImpl(const Byte *pc, Frame *frame);
+int runImpl(ShrimpVM *vm);
 
 }  // namespace shrimp::runtime::interpreter
 

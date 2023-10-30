@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <stack>
+#include <cassert>
 
 #include <shrimp/runtime/frame.hpp>
 #include <shrimp/runtime/runtime.hpp>
@@ -12,37 +13,51 @@ namespace shrimp::runtime {
 
 class ShrimpVM final {
 public:
-    ShrimpVM(std::vector<Byte> code) : code_(code), pc_ {code_.data()} {}
-    Byte *getPc()
+    ShrimpVM(std::vector<Byte> code) : code_(std::move(code))
+    {
+        stack_.push(Frame {});
+    }
+
+    int runImpl();
+
+    const Byte *&pc() noexcept
     {
         return pc_;
     }
-    Byte *getEntrypoint()
+
+    const Byte *getEntryPoint() const noexcept
     {
         return code_.data();
     }
+
     void setRuntime(Runtime *runtime)
     {
         runtime_ = runtime;
     }
-    Frame *createFrame(Register *acc)
+
+    auto &acc() noexcept
     {
-        Frame *frame = new Frame {acc};
-        stk_frames_.push(frame);
-        return stk_frames_.top();
+        return acc_;
     }
-    void deleteFrame()
+
+    auto &stack() noexcept
     {
-        Frame *frame = stk_frames_.top();
-        stk_frames_.pop();
-        delete frame;
+        return stack_;
+    }
+
+    auto &currFrame() noexcept
+    {
+        return stack_.top();
     }
 
 private:
-    std::vector<Byte> code_ {};
-    Byte *pc_;
     Runtime *runtime_ = nullptr;
-    std::stack<Frame *> stk_frames_;
+
+    std::vector<Byte> code_ {};
+    const Byte *pc_ = code_.data();
+
+    Register acc_ {};
+    std::stack<Frame> stack_ {};
 };
 
 }  // namespace shrimp::runtime
