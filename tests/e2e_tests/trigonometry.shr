@@ -1,0 +1,17 @@
+mov.imm.i32 r0, 17
+lda r0
+i32tof
+sta r0
+intrinsic cos, r0
+sta r1
+mul.f r1            # cos^2(x)
+sta r1
+lda r0
+intrinsic sin, r0
+sta r2
+mul.f r2            # sin^2(x)
+add.f r1
+sta r2
+intrinsic print.f, r2
+lda.imm.i32 0
+ret

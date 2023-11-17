@@ -43,9 +43,7 @@ int Main(int argc, char *argv[])
     auto native_code = readFromFile(file_name);
     runtime::ShrimpVM svm {native_code};
 
-    svm.runImpl();
-
-    return 0;
+    return svm.runImpl();
 }
 
 }  // namespace shrimp

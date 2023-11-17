@@ -1,11 +1,10 @@
-intrinsic scan.f
-sta r0
-intrinsic scan.f
-sta r1
+mov.imm.f r0, 4
+mov.imm.f r1, -5
 intrinsic cos, r0
 sta r2
 intrinsic sin, r1
 add.f r2
 sta r3
 intrinsic print.f, r3
+lda.imm.i32 0
 ret

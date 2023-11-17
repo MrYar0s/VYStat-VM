@@ -6,7 +6,7 @@ project(shrimp VERSION 0.1 LANGUAGES CXX)
 
 find_package(Python3 REQUIRED)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Werror")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
@@ -58,7 +58,7 @@ endif()
 add_custom_target(
     run-clang-format
     COMMENT Run clang-format
-    COMMAND ${Python3_EXECUTABLE} ${PROJECT_SCRIPTS}/run_clang_format.py ${PROJECT_ROOT}
+    COMMAND ${Python3_EXECUTABLE} ${PROJECT_SCRIPTS}/run_clang_format.py ${PROJECT_SOURCE_DIR}
 )
 
 # Add GTest
@@ -73,3 +73,5 @@ add_subdirectory(assembler)
 
 # Add VM executable
 add_subdirectory(shrimp)
+
+add_subdirectory(tests)

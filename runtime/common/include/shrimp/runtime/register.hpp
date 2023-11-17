@@ -17,7 +17,7 @@ public:
     }
 
 private:
-    uint64_t val_;
+    uint64_t val_ = 0;
 };
 
 }  // namespace shrimp::runtime

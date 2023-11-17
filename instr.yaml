@@ -164,3 +164,13 @@ JUMP.LL:
         jump_offset:
             is_signed: true
             bits: [16, 63]
+
+I32TOF:
+    descr: "acc = (acc as float)"
+    opcode: 23
+    size: "Byte"
+
+FTOI32:
+    descr: "acc = (acc as i32)"
+    opcode: 24
+    size: "Byte"

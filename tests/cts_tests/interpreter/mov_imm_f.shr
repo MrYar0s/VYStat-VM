@@ -1,0 +1,4 @@
+mov.imm.f r0, 0
+sta r0
+ftoi32
+ret
