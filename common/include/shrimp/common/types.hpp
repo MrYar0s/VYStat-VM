@@ -20,7 +20,6 @@ using ByteOffset = int64_t;
 // Register index in range [0, 255]
 using R8Id = uint8_t;
 
-
 enum class ValueTag : uint8_t { INT };
 
 enum class IntrinsicCode : uint8_t { PRINT_I32, PRINT_F, SCAN_I32, SCAN_F, SIN, COS, SQRT };

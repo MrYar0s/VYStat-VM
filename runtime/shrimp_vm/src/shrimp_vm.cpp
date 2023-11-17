@@ -6,8 +6,11 @@ namespace shrimp::runtime {
 int ShrimpVM::runImpl()
 {
     assert(!stack_.empty());
-    interpreter::runImpl(this);
-    return 0;
+    auto status = interpreter::runImpl(this);
+    if (status != 0) {
+        return -1;
+    }
+    return acc().getValue();
 }
 
 }  // namespace shrimp::runtime

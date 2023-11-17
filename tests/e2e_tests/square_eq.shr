@@ -1,34 +1,34 @@
 # ax^2 + bx + c = 0
-intrinsic scan.f
-sta r0				# a
-intrinsic scan.f
-sta r1				# b
-intrinsic scan.f
-sta r2				# c
+mov.imm.f r0, 4     # a
+mov.imm.f r1, 10    # b
+mov.imm.f r2, 3     # c
 lda r1
 mul.f r1
 sta r3				# b^2
 lda.imm.f 4
 mul.f r0				# 4*a
 mul.f r2				# (4*a)*c
-neg.f					# -(4*a*c)
+sta r9
+lda.imm.f 0.0
+sub.f r9				# -(4*a*c)
 add.f r3				# D = b^2-4*a*c
 sta r4					# same
 intrinsic sqrt, r4		# sqrt(D)
 sta r5					# same
-lda r1
-neg.f				# -b
+lda.imm.f 0.0
+sub.f r1			# -b
 add.f r5			# -b + sqrt(D)
 mov.imm.f r6, 2		# r6 = 2
 div.f r6			# (-b + sqrt(D))/2
 div.f r0			# ((-b + sqrt(D))/2)/a
 sta r7				# x1
-lda r1
-neg.f				# -b
+lda.imm.f 0.0
+sub.f r1			# -b
 sub.f r5			# -b - sqrt(D)
 div.f r6			# (-b - sqrt(D))/2
 div.f r0			# ((-b + sqrt(D))/2)/a
 sta r8				# x2
 intrinsic print.f, r7
 intrinsic print.f, r8
+lda.imm.i32 0
 ret

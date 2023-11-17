@@ -1,0 +1,17 @@
+lda.imm.f 15
+mov.imm.f r0, -15
+mov.imm.f r1, 30
+sta r2
+lda r1
+ftoi32
+sta r1
+lda r2
+sub.f r0
+ftoi32
+jump.eq r1, label_2
+label_1:
+lda.imm.i32 1
+ret
+label_2:
+lda.imm.i32 0
+ret

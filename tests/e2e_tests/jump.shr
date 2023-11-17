@@ -1,0 +1,11 @@
+mov.imm.i32 r0, 20
+mov.imm.i32 r1, 5
+lda.imm.i32 15
+add.i32 r1
+jump case_1
+case_0:
+sub.i32 r1
+case_1:
+jump.eq r0, case_0
+lda.imm.i32 0
+ret
