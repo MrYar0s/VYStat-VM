@@ -1,2 +1,3 @@
-lda.imm.i32 0
-ret
+func main ()
+    lda.imm.i32 0
+    ret

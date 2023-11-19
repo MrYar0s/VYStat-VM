@@ -27,6 +27,8 @@ def write_file_open(out: TextIOWrapper) :
 
             "// Get ptr to buff with instruction binary code\n"
             "virtual const Byte *getBinCode() const noexcept = 0;\n"
+
+            "virtual ~InterfaceInstr() = default;"
         "};\n\n"
 
         "struct InterfaceJump : public InterfaceInstr {\n"

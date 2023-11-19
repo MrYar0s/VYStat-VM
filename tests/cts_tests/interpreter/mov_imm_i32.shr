@@ -1,3 +1,4 @@
-mov.imm.i32 r0, 0
-sta r0
-ret
+func main ()
+    mov.imm.i32 r0, 0
+    sta r0
+    ret

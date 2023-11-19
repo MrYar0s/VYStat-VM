@@ -6,6 +6,8 @@
 #include <stack>
 #include <cassert>
 
+#include <shrimp/common/logger.hpp>
+
 #include <shrimp/runtime/frame.hpp>
 #include <shrimp/runtime/runtime.hpp>
 
@@ -13,7 +15,7 @@ namespace shrimp::runtime {
 
 class ShrimpVM final {
 public:
-    ShrimpVM(std::vector<Byte> code) : code_(std::move(code))
+    ShrimpVM(std::vector<Byte> code, LogLevel log_level) : log_level_(log_level), code_(std::move(code))
     {
         stack_.push(Frame {});
     }
@@ -28,6 +30,11 @@ public:
     const Byte *getEntryPoint() const noexcept
     {
         return code_.data();
+    }
+
+    [[nodiscard]] auto getLogLevel() const noexcept
+    {
+        return log_level_;
     }
 
     void setRuntime(Runtime *runtime)
@@ -52,6 +59,7 @@ public:
 
 private:
     Runtime *runtime_ = nullptr;
+    LogLevel log_level_ = LogLevel::NONE;
 
     std::vector<Byte> code_ {};
     const Byte *pc_ = code_.data();
