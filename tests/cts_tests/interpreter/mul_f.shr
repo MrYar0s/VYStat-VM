@@ -1,17 +1,18 @@
-lda.imm.f 15
-mov.imm.f r0, -1
-mov.imm.f r1, -15
-sta r2
-lda r1
-ftoi32
-sta r1
-lda r2
-mul.f r0
-ftoi32
-jump.eq r1, label_2
+func main ()
+    lda.imm.f 15
+    mov.imm.f r0, -1
+    mov.imm.f r1, -15
+    sta r2
+    lda r1
+    ftoi32
+    sta r1
+    lda r2
+    mul.f r0
+    ftoi32
+    jump.eq r1, label_2
 label_1:
-lda.imm.i32 1
-ret
+    lda.imm.i32 1
+    ret
 label_2:
-lda.imm.i32 0
-ret
+    lda.imm.i32 0
+    ret

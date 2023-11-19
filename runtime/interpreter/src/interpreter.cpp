@@ -3,6 +3,7 @@
 #include <array>
 #include <sstream>
 
+#include <shrimp/common/logger.hpp>
 #include <shrimp/common/bitops.hpp>
 #include <shrimp/common/types.hpp>
 #include <shrimp/common/instr_opcode.gen.hpp>
@@ -68,7 +69,7 @@ int handleNop(ShrimpVM *vm)
 {
     Instr<InstrOpcode::NOP> instr {vm->pc()};
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -84,7 +85,7 @@ int handleMov(ShrimpVM *vm)
     auto res = frame.getReg(rs_idx).getValue();
     frame.setReg(res, rd_idx);
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -99,7 +100,7 @@ int handleMovImmI32(ShrimpVM *vm)
 
     frame.setReg(imm_i32, rd_idx);
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -114,7 +115,7 @@ int handleMovImmF(ShrimpVM *vm)
 
     frame.setReg(bit::castToWritable(imm_f), rd_idx);
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -129,7 +130,7 @@ int handleLda(ShrimpVM *vm)
     auto res = frame.getReg(rs_idx).getValue();
     vm->acc().setValue(res);
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -142,7 +143,7 @@ int handleLdaImmI32(ShrimpVM *vm)
 
     vm->acc().setValue(imm_i32);
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -155,7 +156,7 @@ int handleLdaImmF(ShrimpVM *vm)
 
     vm->acc().setValue(bit::castToWritable(imm_f));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -170,7 +171,7 @@ int handleSta(ShrimpVM *vm)
     auto res = vm->acc().getValue();
     frame.setReg(res, rd_idx);
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -186,7 +187,7 @@ int handleAddI32(ShrimpVM *vm)
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
     vm->acc().setValue(acc_i32 + rs_i32);
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -204,7 +205,7 @@ int handleAddF(ShrimpVM *vm)
     float rs_f = bit::getValue<float>(rs);
     vm->acc().setValue(bit::castToWritable<float>(acc_f + rs_f));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -220,7 +221,7 @@ int handleSubI32(ShrimpVM *vm)
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
     vm->acc().setValue(bit::castToWritable(acc_i32 - rs_i32));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -238,7 +239,7 @@ int handleSubF(ShrimpVM *vm)
     auto rs_f = bit::getValue<float>(rs);
     vm->acc().setValue(bit::castToWritable(acc_f - rs_f));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -255,7 +256,7 @@ int handleDivI32(ShrimpVM *vm)
     auto res = bit::signExtend<DWord, 31>(acc_i32 / rs_i32);
     vm->acc().setValue(bit::castToWritable(res));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -273,7 +274,7 @@ int handleDivF(ShrimpVM *vm)
     auto rs_f = bit::getValue<float>(rs);
     vm->acc().setValue(bit::castToWritable(acc_f / rs_f));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -291,7 +292,7 @@ int handleMulI32(ShrimpVM *vm)
     auto res = bit::signExtend<DWord, 31>(acc_i32 * rs_i32);
     vm->acc().setValue(bit::castToWritable(res));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -309,7 +310,7 @@ int handleMulF(ShrimpVM *vm)
     auto rs_f = bit::getValue<float>(rs);
     vm->acc().setValue(bit::castToWritable(acc_f * rs_f));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -324,7 +325,7 @@ int handleIntrinsic(ShrimpVM *vm)
 
     auto arg0_idx = instr.getIntrinsicArg0();
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     switch (intrinsic_code) {
         case IntrinsicCode::PRINT_I32: {
@@ -378,7 +379,7 @@ int handleIntrinsic(ShrimpVM *vm)
             break;
         }
         default: {
-            std::cerr << "Unsupported intrinsic" << std::endl;
+            LOG_ERROR("Unsupported intrinsic", vm->getLogLevel());
             std::abort();
         }
     }
@@ -390,7 +391,7 @@ int handleRet(ShrimpVM *vm)
 {
     Instr<InstrOpcode::RET> instr {vm->pc()};
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     return 0;
 }
@@ -400,7 +401,7 @@ int handleJump(ShrimpVM *vm)
     Instr<InstrOpcode::JUMP> instr {vm->pc()};
     int64_t offset = instr.getJumpOffset();
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += offset;
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -415,7 +416,7 @@ int handleJumpGg(ShrimpVM *vm)
 
     auto gg = vm->acc().getValue() > frame.getReg(rs_idx).getValue();
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += gg ? offset : instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -430,7 +431,7 @@ int handleJumpEq(ShrimpVM *vm)
 
     auto eq = vm->acc().getValue() == frame.getReg(rs_idx).getValue();
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += eq ? offset : instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -445,7 +446,7 @@ int handleJumpLl(ShrimpVM *vm)
 
     auto ll = vm->acc().getValue() < frame.getReg(rs_idx).getValue();
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += ll ? offset : instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -459,7 +460,7 @@ int handleI32tof(ShrimpVM *vm)
     float acc_f = acc_i32;
     vm->acc().setValue(bit::castToWritable(acc_f));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
@@ -474,7 +475,7 @@ int handleFtoi32(ShrimpVM *vm)
     int32_t acc_i = acc_f;
     vm->acc().setValue(bit::castToWritable(acc_i));
 
-    std::cout << "LOG: " << instr.toString() << std::endl;
+    LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);

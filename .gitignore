@@ -1,5 +1,5 @@
 # Ignored directories
-build/
+build*/
 third-party/
 __pycache__/
 .cache/

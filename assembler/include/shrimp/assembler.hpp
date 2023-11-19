@@ -15,6 +15,7 @@
 #include <vector>
 #include <unordered_map>
 #include <charconv>
+#include <algorithm>
 
 #include <shrimp/common/types.hpp>
 #include <shrimp/common/instr_opcode.gen.hpp>

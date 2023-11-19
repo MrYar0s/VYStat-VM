@@ -1,7 +1,8 @@
-jump label_2
+func main ()
+    jump label_2
 label_1:
-lda.imm.i32 1
-ret
+    lda.imm.i32 1
+    ret
 label_2:
-lda.imm.i32 0
-ret
+    lda.imm.i32 0
+    ret

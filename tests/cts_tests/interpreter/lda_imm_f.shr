@@ -1,3 +1,4 @@
-lda.imm.i32 0
-ftoi32
-ret
+func main ()
+    lda.imm.i32 0
+    ftoi32
+    ret

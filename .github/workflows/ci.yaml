@@ -1,0 +1,62 @@
+name: CI for ShrimpVM
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install ninja-build flex libfl-dev
+    - name: Build
+      run: |
+        mkdir build &&
+        cd build &&
+        cmake .. -GNinja &&
+        ninja all
+    - uses: actions/upload-artifact@v3
+      with:
+        name: build-artifacts
+        path: build
+  tests:
+    name: Run tests
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install ninja-build flex libfl-dev\
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+        path: build
+    - name: Build
+      run: |
+        cd build &&
+        ninja tests
+  tidy-check:
+    name: Run clang-tidy checks
+    runs-on: ubuntu-22.04
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install ninja-build flex libfl-dev
+    - uses: actions/download-artifact@v3
+      with:
+        name: build-artifacts
+        path: build
+    - name: Build
+      run: |
+        cd build &&
+        ninja run-clang-tidy

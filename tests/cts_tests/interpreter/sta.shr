@@ -1,10 +1,11 @@
-lda.imm.i32 1
-mov.imm.i32 r1, 1
-sta r0
-jump.eq r0, label_2
+func main ()
+    lda.imm.i32 1
+    mov.imm.i32 r1, 1
+    sta r0
+    jump.eq r0, label_2
 label_1:
-lda.imm.i32 1
-ret
+    lda.imm.i32 1
+    ret
 label_2:
-lda.imm.i32 0
-ret
+    lda.imm.i32 0
+    ret

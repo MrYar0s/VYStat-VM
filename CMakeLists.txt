@@ -47,18 +47,17 @@ execute_process(
         ${PROJECT_SCRIPTS}/third_party_list.txt ${PROJECT_THIRD_PARTY}
 )
 
-if (ENABLE_CLANG_TIDY)
-    set(CMAKE_CXX_CLANG_TIDY
-        clang-tidy;
-        --format-style=file;
-        --header-filter=*.h
-    )
-endif()
-
 add_custom_target(
     run-clang-format
     COMMENT Run clang-format
     COMMAND ${Python3_EXECUTABLE} ${PROJECT_SCRIPTS}/run_clang_format.py ${PROJECT_SOURCE_DIR}
+)
+
+add_custom_target(
+	run-clang-tidy
+	COMMENT Run clang-tidy
+	COMMAND ${Python3_EXECUTABLE} ${PROJECT_SCRIPTS}/run_clang_tidy.py ${PROJECT_SOURCE_DIR}
+	DEPENDS all
 )
 
 # Add GTest

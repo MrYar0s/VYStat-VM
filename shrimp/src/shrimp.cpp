@@ -7,20 +7,14 @@
 #include <algorithm>
 #include <iterator>
 
+#include <shrimp/common/logger.hpp>
+
 #include <shrimp/runtime/shrimp_vm.hpp>
 
-namespace shrimp {
+#include <CLI/CLI.hpp>
+#include <CLI/App.hpp>
 
-std::string getFileName(int argc, char *argv[])
-{
-    if (argc < 2) {
-        std::cerr << "Wrong number of arguments\n" << std::endl;
-        std::abort();
-    }
-    // File name must be placed on the last position (need to specify it)
-    char *file_name_arg = argv[argc - 1];
-    return file_name_arg;
-}
+namespace shrimp {
 
 std::vector<Byte> readFromFile(std::string file_name)
 {
@@ -39,9 +33,21 @@ std::vector<Byte> readFromFile(std::string file_name)
 
 int Main(int argc, char *argv[])
 {
-    std::string file_name = getFileName(argc, argv);
-    auto native_code = readFromFile(file_name);
-    runtime::ShrimpVM svm {native_code};
+    CLI::App app("Shrimp VM");
+
+    std::string log_level_str {};
+    auto *log_level_cli = app.add_option("--log-level", log_level_str, "Log level [error, info, debug, none]");
+    log_level_cli->default_str("none");
+
+    std::string input_file {};
+    auto *input_arg = app.add_option("--in", input_file, "Input file");
+    input_arg->required();
+
+    CLI11_PARSE(app, argc, argv);
+
+    LogLevel log_level = getLogLevelByString(log_level_str);
+    auto native_code = readFromFile(input_file);
+    runtime::ShrimpVM svm {native_code, log_level};
 
     return svm.runImpl();
 }
