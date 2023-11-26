@@ -1,6 +1,7 @@
 #ifndef INCLUDE_SHRIMP_ASSEMBLER_HPP
 #define INCLUDE_SHRIMP_ASSEMBLER_HPP
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
@@ -23,31 +24,19 @@
 
 namespace shrimp::assembler {
 
-class LexError : public std::runtime_error {
+class Error : public std::runtime_error {
 public:
-    LexError(size_t lineno) : std::runtime_error("Lexing error on line: " + std::to_string(lineno)) {}
-};
-
-class ParseError : public std::runtime_error {
-public:
-    ParseError(size_t lineno) : std::runtime_error("Parse error on line: " + std::to_string(lineno)) {}
-};
-
-class UnresolvedLableError : public std::runtime_error {
-public:
-    UnresolvedLableError(std::string lable_name) : std::runtime_error("Unresolved lable: " + lable_name) {}
-};
-
-class DuplicatedLableError : public std::runtime_error {
-public:
-    DuplicatedLableError(std::string lable_name) : std::runtime_error("Duplicated lable: " + lable_name) {}
+    Error(std::string descr, size_t lineno)
+        : std::runtime_error("Assembler error at line " + std::to_string(lineno) + " :" + descr)
+    {
+    }
 };
 
 class Assembler final {
     class JumpInfo final {
     public:
-        JumpInfo(InterfaceJump *instr_ptr, ByteOffset instr_offset, std::string dst_name)
-            : instr_ptr_(instr_ptr), instr_offset_(instr_offset), dst_name_(std::move(dst_name))
+        JumpInfo(InterfaceJump *instr_ptr, ByteOffset instr_offset, std::string dst_name, int lineno)
+            : instr_ptr_(instr_ptr), instr_offset_(instr_offset), dst_name_(std::move(dst_name)), lineno_(lineno)
         {
         }
 
@@ -59,44 +48,102 @@ class Assembler final {
         {
             return instr_offset_;
         }
-        std::string_view getDstName() const
+        std::string getDstName() const
         {
             return dst_name_;
+        }
+        auto getLineno() const
+        {
+            return lineno_;
         }
 
     private:
         InterfaceJump *instr_ptr_ = nullptr;
         ByteOffset instr_offset_ = 0;
         std::string dst_name_ = "";
+        int lineno_ = 0;
     };
 
-    // Throw lexing error if condition is not true
-    void assertLexError(bool cond)
+    class FuncInfo final {
+    public:
+        FuncInfo(std::vector<std::string> args) : args_(args) {}
+
+        auto getArgs() const noexcept
+        {
+            return args_;
+        }
+
+        auto &instrs() noexcept
+        {
+            return instrs_;
+        }
+        auto &jumps() noexcept
+        {
+            return jumps_;
+        }
+        auto &labels() noexcept
+        {
+            return labels_;
+        }
+
+    private:
+        // Function arguments aliases
+        std::vector<std::string> args_ {};
+
+        // Parsed instructions
+        std::vector<std::unique_ptr<InterfaceInstr>> instrs_ {};
+        // Parsed jumps
+        std::vector<JumpInfo> jumps_ {};
+        // Parsed labels: [Label name -> offset]
+        std::unordered_map<std::string, ByteOffset> labels_ {};
+    };
+
+    // Try to get next lexem. Throw Error if failed
+    void expectLexem()
     {
-        if (!cond) {
-            throw LexError(lexer_.lineno());
+        if (lexer_.yylex() != Lexer::LEXING_OK) {
+            throw Error("Failed to get next lexem", lexer_.lineno());
         }
     }
 
-    // Throw parsing error if condition is not true
+    // Try to get next lexem. Throw Error if failed
+    void expectLexem(Lexer::LexemType lexem_type)
+    {
+        if (lexer_.yylex() != Lexer::LEXING_OK || lexer_.currLexemType() != lexem_type) {
+            throw Error("Failed to get next lexem", lexer_.lineno());
+        }
+    }
+
+    // Throw Error if condition is not true
     void assertParseError(bool cond)
     {
         if (!cond) {
-            throw ParseError(lexer_.lineno());
+            throw Error("Parse error", lexer_.lineno());
         }
     }
 
     // Parse expected register
     R8Id parseReg()
     {
-        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
+        expectLexem(Lexer::LexemType::IDENTIFIER);
 
-        assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);
-        assertParseError(lexer_.YYText()[0] == 'r');
+        R8Id reg_id = 0;
+        const char *reg_name = lexer_.YYText();
+
+        const auto &args = curr_func_->getArgs();
+        bool found_arg = std::any_of(args.cbegin(), args.cend(), [&](const std::string &arg) {
+            --reg_id;
+            return std::strcmp(arg.c_str(), reg_name) == 0;
+        });
+
+        if (found_arg) {
+            return reg_id;
+        }
+
+        assertParseError(std::toupper(lexer_.YYText()[0]) == 'R');
 
         const char *reg_id_ptr = lexer_.YYText() + 1;
         const char *reg_id_end = lexer_.YYText() + lexer_.YYLeng();
-        R8Id reg_id = 0;
 
         auto [end, ec] = std::from_chars(reg_id_ptr, reg_id_end, reg_id);
 
@@ -109,9 +156,7 @@ class Assembler final {
     // Parse expected int64_t immediate
     int64_t parseImmI()
     {
-        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
-
-        assertParseError(lexer_.currLexemType() == Lexer::LexemType::NUMBER);
+        expectLexem(Lexer::LexemType::NUMBER);
 
         int64_t immi = 0;
         const char *immi_end = lexer_.YYText() + lexer_.YYLeng();
@@ -127,9 +172,7 @@ class Assembler final {
     // Parse expected floating point value
     double parseFP()
     {
-        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
-
-        assertParseError(lexer_.currLexemType() == Lexer::LexemType::NUMBER);
+        expectLexem(Lexer::LexemType::NUMBER);
 
         double value = 0;
         const char *value_end = lexer_.YYText() + lexer_.YYLeng();
@@ -156,32 +199,26 @@ class Assembler final {
         return std::bit_cast<uint64_t>(value);
     }
 
-    // Parse expected comma
-    void parseComma()
+    // Add lexed label to current function labels
+    void addLexedLabel()
     {
-        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
-        assertParseError(lexer_.currLexemType() == Lexer::LexemType::COMMA);
-    }
+        assert(lexer_.currLexemType() == Lexer::LexemType::LABEL);
 
-    void parseLabel()
-    {
         std::string label_name = lexer_.YYText();
         // skip colon
         label_name.pop_back();
 
-        auto [_, is_inserted] = labels_.insert({label_name, curr_offset_});
+        auto [_, is_inserted] = curr_func_->labels().insert({label_name, curr_offset_});
 
         if (!is_inserted) {
-            throw DuplicatedLableError(label_name);
+            throw Error("Lable redeclaration: " + label_name, lexer_.lineno());
         }
     }
 
+    // Parse jump destination label name
     std::string parseJumpDst()
     {
-        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
-
-        assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);
-
+        expectLexem(Lexer::LexemType::IDENTIFIER);
         return lexer_.YYText();
     }
 
@@ -195,9 +232,7 @@ class Assembler final {
                                                                             {"COS", IntrinsicCode::COS},
                                                                             {"SQRT", IntrinsicCode::SQRT}};
 
-        assertLexError(lexer_.yylex() == Lexer::LEXING_OK);
-
-        assertParseError(lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER);
+        expectLexem(Lexer::LexemType::IDENTIFIER);
 
         std::string intrinsic_name = lexer_.YYText();
         std::transform(intrinsic_name.begin(), intrinsic_name.end(), intrinsic_name.begin(), ::toupper);
@@ -213,7 +248,7 @@ class Assembler final {
         switch (code) {
             case IntrinsicCode::PRINT_I32:
             case IntrinsicCode::PRINT_F:
-                parseComma();
+                expectLexem(Lexer::LexemType::COMMA);
                 return {parseReg(), 0, 0, 0};
 
             case IntrinsicCode::SCAN_I32:
@@ -221,15 +256,15 @@ class Assembler final {
                 return {0, 0, 0, 0};
 
             case IntrinsicCode::SIN:
-                parseComma();
+                expectLexem(Lexer::LexemType::COMMA);
                 return {parseReg(), 0, 0, 0};
 
             case IntrinsicCode::COS:
-                parseComma();
+                expectLexem(Lexer::LexemType::COMMA);
                 return {parseReg(), 0, 0, 0};
 
             case IntrinsicCode::SQRT:
-                parseComma();
+                expectLexem(Lexer::LexemType::COMMA);
                 return {parseReg(), 0, 0, 0};
 
             default:
@@ -237,38 +272,98 @@ class Assembler final {
         }
     }
 
+    FuncId parseCallFuncId()
+    {
+        expectLexem(Lexer::LexemType::IDENTIFIER);
+
+        auto it = func_name_to_id_.find(lexer_.YYText());
+        assertParseError(it != func_name_to_id_.end());
+
+        return it->second;
+    }
+
+    void parseFuncDecl()
+    {
+        expectLexem(Lexer::LexemType::IDENTIFIER);
+
+        func_name_to_id_.insert({lexer_.YYText(), funcs_.size()});
+
+        expectLexem(Lexer::LexemType::LEFT_ROUND_BRACE);
+
+        std::vector<std::string> args {};
+
+        expectLexem();
+
+        if (lexer_.currLexemType() == Lexer::LexemType::IDENTIFIER) {
+            args.push_back(lexer_.YYText());
+
+            while (expectLexem(), lexer_.currLexemType() == Lexer::LexemType::COMMA) {
+                expectLexem(Lexer::LexemType::IDENTIFIER);
+                args.push_back(lexer_.YYText());
+            }
+        }
+
+        assertParseError(lexer_.currLexemType() == Lexer::LexemType::RIGHT_ROUND_BRACE);
+
+        static constexpr size_t MAX_FUNC_ARGS_NUMBER = 4;
+        assertParseError(args.size() <= MAX_FUNC_ARGS_NUMBER);
+
+        funcs_.emplace_back(args);
+        curr_func_ = &funcs_.back();
+    }
+
+    // Generated
+    int parseFuncBody();
+
+    // Generated
     template <InstrOpcode>
     void parseInstr();
 
-    void first_pass();
-    void reslove_jumps()
+    void firstPass()
     {
-        for (auto &&jump : jumps_) {
-            auto lable_name = jump.getDstName();
-            auto label_it = labels_.find(lable_name.data());
-            if (label_it == labels_.end()) {
-                throw UnresolvedLableError(lable_name.data());
+        int lexing_status = lexer_.yylex();
+
+        while (lexing_status == Lexer::LEXING_OK) {
+            // Parse next function
+            assertParseError(lexer_.currLexemType() == Lexer::LexemType::FUNC);
+
+            parseFuncDecl();
+            lexing_status = parseFuncBody();
+        }
+    }
+
+    void resloveJumps()
+    {
+        for (auto &&func : funcs_) {
+            for (auto &&jump : func.jumps()) {
+                auto lable_name = jump.getDstName();
+                auto label_it = func.labels().find(lable_name.c_str());
+                if (label_it == func.labels().end()) {
+                    throw Error("Unresolved lable" + lable_name, jump.getLineno());
+                }
+
+                auto label_offset = label_it->second;
+
+                jump.getInstrPtr()->setOffset(label_offset - jump.getInstrOffset());
             }
-
-            auto label_offset = label_it->second;
-
-            jump.getInstrPtr()->setOffset(label_offset - jump.getInstrOffset());
         }
     }
 
     void write(std::ofstream &out)
     {
-        for (auto &&instr_ptr : instrs_) {
-            const char *bin_code = reinterpret_cast<const char *>(instr_ptr->getBinCode());
-            out.write(bin_code, instr_ptr->getByteSize());
+        for (auto &&func : funcs_) {
+            for (auto &&instr_ptr : func.instrs()) {
+                const char *bin_code = reinterpret_cast<const char *>(instr_ptr->getBinCode());
+                out.write(bin_code, instr_ptr->getByteSize());
+            }
         }
     }
 
 public:
     void assemble(std::ofstream &out)
     {
-        first_pass();
-        reslove_jumps();
+        firstPass();
+        resloveJumps();
         write(out);
     }
 
@@ -277,13 +372,25 @@ private:
 
     ByteOffset curr_offset_ = 0;
 
-    // Parsed instructions
-    std::vector<std::unique_ptr<InterfaceInstr>> instrs_ {};
-    // Parsed jumps
-    std::vector<JumpInfo> jumps_ {};
-    // Parsed labels: [Label name -> offset]
-    std::unordered_map<std::string, ByteOffset> labels_ {};
+    std::unordered_map<std::string, FuncId> func_name_to_id_ {};
+
+    std::vector<FuncInfo> funcs_ {};
+    FuncInfo *curr_func_ = nullptr;
 };
+
+template <>
+inline void Assembler::parseInstr<InstrOpcode::INTRINSIC>()
+{
+    auto &&instrs = curr_func_->instrs();
+
+    auto intrinsic_code_enum = parseIntrinsicName();
+    auto [arg0, arg1, arg2, arg3] = parseIntrinsicArgs(intrinsic_code_enum);
+    auto intrinsic_code = static_cast<uint8_t>(intrinsic_code_enum);
+
+    instrs.push_back(std::make_unique<Instr<InstrOpcode::INTRINSIC>>(intrinsic_code, arg0, arg1, arg2, arg3));
+
+    curr_offset_ += instrs.back()->getByteSize();
+}
 
 }  // namespace shrimp::assembler
 

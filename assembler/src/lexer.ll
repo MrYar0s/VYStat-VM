@@ -11,9 +11,6 @@ COMMENT         #.*
 
 NUMBER          [+-]?([1-9][0-9]*\.?[0-9]*|0\.[0-9]*)
 
-COMMA           ,
-COLON           :
-
 IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_.]*
 
 %%
@@ -21,10 +18,13 @@ IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_.]*
 {WHITE_SPACE}       /* Skip */
 {COMMENT}           /* Skip */
 
-{COMMA}             return processComma();
+"func"              return processFunc();
+","                 return processComma();
+"("                 return processLeftRoundBrace();
+")"                 return processRightRoundBrace();
 
 {NUMBER}            return processNumber();
-{IDENTIFIER}{COLON} return processLabel();
+{IDENTIFIER}":"     return processLabel();
 {IDENTIFIER}        return processIdentifier();
 
 .                   return processUndef();

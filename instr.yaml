@@ -119,6 +119,7 @@ RET:
 INTRINSIC:
     descr: "call intrinsic"
     opcode: 18
+    gen_parser: false
     fields:
         intrinsic_code: [8, 23]
         intrinsic_arg_0: [32, 39]
@@ -164,3 +165,49 @@ JUMP.LL:
         jump_offset:
             is_signed: true
             bits: [16, 63]
+
+CALL.0ARG:
+    desct: "call function with no arguments"
+    opcode: 23
+    gen_handler: false
+    size: "Word"
+    fields:
+        func_id: [8, 31]
+
+CALL.1ARG:
+    desct: "call function with one argument"
+    opcode: 24
+    gen_handler: false
+    fields:
+        func_id: [8, 31]
+        func_arg0: [32, 39]
+
+CALL.2ARG:
+    desct: "call function with two arguments"
+    opcode: 25
+    gen_handler: false
+    fields:
+        func_id: [8, 31]
+        func_arg0: [32, 39]
+        func_arg1: [40, 47]
+
+CALL.3ARG:
+    desct: "call function with three arguments"
+    opcode: 26
+    gen_handler: false
+    fields:
+        func_id: [8, 31]
+        func_arg0: [32, 39]
+        func_arg1: [40, 47]
+        func_arg2: [48, 55]
+
+CALL.4ARG:
+    desct: "call function with four arguments"
+    opcode: 27
+    gen_handler: false
+    fields:
+        func_id: [8, 31]
+        func_arg0: [32, 39]
+        func_arg1: [40, 47]
+        func_arg2: [48, 55]
+        func_arg2: [56, 63]

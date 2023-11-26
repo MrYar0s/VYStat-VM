@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 
 from instr import*
 
@@ -18,18 +19,22 @@ def write_file_open(out: TextIOWrapper) :
     )
 
 def write_instr_parser(out: TextIOWrapper, instr: Instr) :
+    if not instr.gen_parser:
+        return
+
     out.write("template<>\n")
     out.write("void Assembler::parseInstr<%s>() {\n" % instr.get_opcode_name())
+    out.write("auto &&instrs = curr_func_->instrs();\n")
 
     need_comma = False
     for field_name in instr.fields.keys() :
         if need_comma :
-            out.write("parseComma();")
+            out.write("expectLexem(Lexer::LexemType::COMMA);")
 
         need_comma = True
 
         match field_name :
-            case "rd" | "rs" | "rs1" | "rs2" :
+            case "rd" | "rs" | "rs1" | "rs2" | "func_arg0" | "func_arg1" | "func_arg2" | "func_arg3" :
                 out.write("uint64_t %s = parseReg();\n" % field_name)
 
             case "imm_i32" | "imm_i64" :
@@ -45,21 +50,14 @@ def write_instr_parser(out: TextIOWrapper, instr: Instr) :
                 out.write("ByteOffset jump_offset = 0;")
                 out.write("auto dst_name = parseJumpDst();")
 
-            case "intrinsic_code" :
-                out.write("auto intrinsic_code_enum = parseIntrinsicName();")
-                out.write("auto intrinsic_args = parseIntrinsicArgs(intrinsic_code_enum);")
-                out.write("auto intrinsic_code = static_cast<uint8_t>(intrinsic_code_enum);")
-                need_comma = False
-
-            case "intrinsic_arg_0" | "intrinsic_arg_1" | "intrinsic_arg_2" | "intrinsic_arg_3" :
-                out.write("R8Id %s = intrinsic_args[%c];" % (field_name, field_name[-1]))
-                need_comma = False
+            case "func_id" :
+                out.write("auto func_id = parseCallFuncId();")
 
             case _:
                 raise RuntimeError("Unknown field in instruction %s: %s" % (instr.name, field_name))
 
     out.write("\n")
-    out.write("instrs_.push_back(std::make_unique<Instr<%s>>(" % instr.get_opcode_name())
+    out.write("instrs.push_back(std::make_unique<Instr<%s>>(" % instr.get_opcode_name())
 
     first = True
     for field_name in instr.fields.keys() :
@@ -71,10 +69,10 @@ def write_instr_parser(out: TextIOWrapper, instr: Instr) :
     out.write("));\n\n")
 
     if instr.is_jump :
-        out.write("jumps_.emplace_back(static_cast<InterfaceJump*>(instrs_.back().get()), curr_offset_, dst_name);\n")
+        out.write("curr_func_->jumps().emplace_back(static_cast<InterfaceJump*>(instrs.back().get()), curr_offset_, dst_name, lexer_.lineno());\n")
 
     out.write(
-        "curr_offset_ += instrs_.back()->getByteSize();\n"
+        "curr_offset_ += instrs.back()->getByteSize();\n"
         "}\n\n"
     )
 
@@ -91,9 +89,9 @@ def write_instr_map(out: TextIOWrapper, instrs: list) :
 
     out.write("};\n\n")
 
-def write_first_pass(out: TextIOWrapper, instrs: list) :
+def write_parse_func_body(out: TextIOWrapper, instrs: list) :
     out.write(
-        "void Assembler::first_pass()\n"
+        "int Assembler::parseFuncBody()\n"
         "{\n"
     )
 
@@ -103,8 +101,11 @@ def write_first_pass(out: TextIOWrapper, instrs: list) :
         "int lexing_status = Lexer::LEXING_ERROR_CODE;\n\n"
 
         "while ((lexing_status = lexer_.yylex()) == Lexer::LEXING_OK) {\n"
+            "if (lexer_.currLexemType() == Lexer::LexemType::FUNC) {\n"
+            "return lexing_status;\n"
+            "}\n"
             "if (lexer_.currLexemType() == Lexer::LexemType::LABEL) {\n"
-                "parseLabel();\n"
+                "addLexedLabel();\n"
                 "continue;\n"
             "}\n\n"
 
@@ -128,7 +129,9 @@ def write_first_pass(out: TextIOWrapper, instrs: list) :
         "default: assert(0);\n"
 
                 "}\n"
-            "}\n"
+            "}\n\n"
+
+            "return lexing_status;\n"
         "}\n"
     )
 
@@ -152,7 +155,7 @@ if __name__ == "__main__" :
     for instr in instrs :
         write_instr_parser(out, instr)
 
-    write_first_pass(out, instrs)
+    write_parse_func_body(out, instrs)
 
     write_file_close(out)
 

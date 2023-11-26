@@ -20,6 +20,8 @@ using ByteOffset = int64_t;
 // Register index in range [0, 255]
 using R8Id = uint8_t;
 
+// Function id
+using FuncId = uint32_t;
 
 enum class ValueTag : uint8_t { INT };
 

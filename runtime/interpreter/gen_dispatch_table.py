@@ -27,8 +27,9 @@ def write_file_open(out: TextIOWrapper) :
     )
 
 def write_handlers_decls(out: TextIOWrapper, instrs: dict) :
-    for instr_name in instrs.keys() :
-        out.write("int handle%s(ShrimpVM *vm);" % instr_name_to_camel(instr_name))
+    for instr_name, instr_descr in instrs.items() :
+        if instr_descr.get("gen_handler", True) :
+            out.write("int handle%s(ShrimpVM *vm);" % instr_name_to_camel(instr_name))
 
 def write_dispatch_table(out: TextIOWrapper, instrs: dict) :
     sorted_instrs = dict(sorted(instrs.items(), key=lambda item: item[1]["opcode"]))
@@ -52,7 +53,11 @@ def write_dispatch_table(out: TextIOWrapper, instrs: dict) :
             out.write(", nullptr")
             curr_opcode = curr_opcode + 1
 
-        out.write(", handle%s" % instr_name_to_camel(instr_name))
+        if instr_descr.get("gen_handler", True) :
+            out.write(", handle%s" % instr_name_to_camel(instr_name))
+        else :
+            out.write(", nullptr")
+
         curr_opcode = curr_opcode + 1
 
     out.write("};\n\n")

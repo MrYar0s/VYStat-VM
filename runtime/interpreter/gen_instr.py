@@ -47,19 +47,17 @@ def write_instr_to_string(out: TextIOWrapper, instr: Instr) :
         need_comma = True
 
         match field_name :
-            case "rd" | "rs" | "rs1" | "rs2" :
+            case "rd" | "rs" | "rs1" | "rs2" | "func_arg0" | "func_arg1" | "func_arg2" | "func_arg3" :
                 out.write("\"R\" << get%s()" % camel_field_name)
 
             case "imm_i32" :
                 out.write("bit::getValue<int32_t>(get%s())" % camel_field_name)
-            case "imm_i64" :
+            case "imm_i64" | "jump_offset" | "func_id" :
                 out.write("get%s()" % camel_field_name)
             case "imm_f" :
                 out.write("bit::getValue<float>(get%s())" % camel_field_name)
             case "imm_d" :
                 out.write("bit::getValue<double>(get%s())" % camel_field_name)
-            case "jump_offset" :
-                out.write("get%s()" % camel_field_name)
 
             case _:
                 raise RuntimeError("Unknown field in instruction %s: %s" % (instr.name, field_name))
