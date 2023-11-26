@@ -64,6 +64,9 @@ add_custom_target(
 # Add GTest
 add_subdirectory(third-party/googletest)
 
+# Add CLI11
+add_subdirectory(third-party/CLI11)
+
 # Add libraries
 add_subdirectory(common)
 add_subdirectory(runtime)

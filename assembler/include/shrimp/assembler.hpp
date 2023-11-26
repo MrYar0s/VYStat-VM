@@ -360,8 +360,10 @@ class Assembler final {
     }
 
 public:
-    void assemble(std::ofstream &out)
+    void assemble(std::ifstream &in, std::ofstream &out)
     {
+        lexer_.switch_streams(&in);
+
         firstPass();
         resloveJumps();
         write(out);
