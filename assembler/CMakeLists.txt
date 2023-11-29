@@ -30,4 +30,8 @@ PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(assembler PRIVATE common)
+target_link_libraries(assembler
+PRIVATE
+    CLI11
+    common
+)
