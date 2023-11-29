@@ -211,3 +211,13 @@ CALL.4ARG:
         func_arg1: [40, 47]
         func_arg2: [48, 55]
         func_arg2: [56, 63]
+
+I32TOF:
+    descr: "acc = (acc as float)"
+    opcode: 28
+    size: "Byte"
+
+FTOI32:
+    descr: "acc = (acc as i32)"
+    opcode: 29
+    size: "Byte"

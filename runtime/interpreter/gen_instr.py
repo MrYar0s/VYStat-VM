@@ -18,7 +18,7 @@ def write_file_open(out: TextIOWrapper) :
         "namespace shrimp::runtime::interpreter {\n\n"
 
         "template<InstrOpcode op>\n"
-        "class Instr;\n\n"
+        "struct Instr;\n\n"
     )
 
 def write_instr_bin_code(out: TextIOWrapper, size: int) :

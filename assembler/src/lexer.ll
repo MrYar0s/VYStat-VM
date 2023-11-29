@@ -9,7 +9,7 @@
 WHITE_SPACE     [ \n\t\v]+
 COMMENT         #.*
 
-NUMBER          [+-]?([1-9][0-9]*\.?[0-9]*|0\.[0-9]*)
+NUMBER          [+-]?([1-9][0-9]*\.?[0-9]*|0\.[0-9]*|0)
 
 IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_.]*
 

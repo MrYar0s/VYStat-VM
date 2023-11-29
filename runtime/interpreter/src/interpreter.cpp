@@ -252,7 +252,8 @@ int handleDivI32(ShrimpVM *vm)
 
     int32_t acc_i32 = vm->acc().getValue();
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
-    vm->acc().setValue(bit::castToWritable(acc_i32 / rs_i32));
+    auto res = bit::signExtend<DWord, 31>(acc_i32 / rs_i32);
+    vm->acc().setValue(bit::castToWritable(res));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
@@ -286,7 +287,9 @@ int handleMulI32(ShrimpVM *vm)
 
     int32_t acc_i32 = vm->acc().getValue();
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
-    vm->acc().setValue(bit::castToWritable(acc_i32 * rs_i32));
+
+    auto res = bit::signExtend<DWord, 31>(acc_i32 * rs_i32);
+    vm->acc().setValue(bit::castToWritable(res));
 
     std::cout << "LOG: " << instr.toString() << std::endl;
 
@@ -445,6 +448,35 @@ int handleJumpLl(ShrimpVM *vm)
     std::cout << "LOG: " << instr.toString() << std::endl;
 
     vm->pc() += ll ? offset : instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleI32tof(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::I32TOF>(vm->pc());
+
+    int32_t acc_i32 = vm->acc().getValue();
+    float acc_f = acc_i32;
+    vm->acc().setValue(bit::castToWritable(acc_f));
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleFtoi32(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::FTOI32>(vm->pc());
+
+    auto acc = vm->acc().getValue();
+    auto acc_f = bit::getValue<float>(acc);
+    int32_t acc_i = acc_f;
+    vm->acc().setValue(bit::castToWritable(acc_i));
+
+    std::cout << "LOG: " << instr.toString() << std::endl;
+
+    vm->pc() += instr.getByteSize();
     return dispatch_table[getOpcode(vm->pc())](vm);
 }
 

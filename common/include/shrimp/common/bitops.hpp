@@ -55,20 +55,22 @@ using BitIdx = size_t;
 
 static constexpr BitSize BYTE_BIT_SIZE = 8;
 
-template<class T>
-constexpr BitSize bitSize() noexcept {
+template <class T>
+constexpr BitSize bitSize() noexcept
+{
     return sizeof(T) * BYTE_BIT_SIZE;
 }
 
 template <typename UInt, BitIdx sign_idx>
-constexpr UInt signExtend(UInt value) noexcept {
+constexpr UInt signExtend(UInt value) noexcept
+{
     static_assert(std::is_unsigned_v<UInt>);
     static_assert(sign_idx < bitSize<UInt>());
 
     // Zero upper bits
-    value &= (UInt{1} << (sign_idx + 1)) - 1;
+    value &= (UInt {1} << (sign_idx + 1)) - 1;
 
-    UInt sign_mask = UInt{1} << sign_idx;
+    UInt sign_mask = UInt {1} << sign_idx;
     return (value ^ sign_mask) - sign_mask;
 }
 
