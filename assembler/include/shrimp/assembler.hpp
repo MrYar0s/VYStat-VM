@@ -23,6 +23,8 @@
 #include <shrimp/assembler/instr.gen.hpp>
 #include <shrimp/assembler/lexer.hpp>
 
+#include <shrimp/shrimpfile.hpp>
+
 namespace shrimp::assembler {
 
 class Error : public std::runtime_error {
@@ -67,7 +69,10 @@ class Assembler final {
 
     class FuncInfo final {
     public:
-        FuncInfo(std::vector<std::string> args) : args_(args) {}
+        FuncInfo(ByteOffset offset, std::string name, std::vector<std::string> args)
+            : offset_(offset), name_(name), args_(args)
+        {
+        }
 
         auto getArgs() const noexcept
         {
@@ -87,7 +92,23 @@ class Assembler final {
             return labels_;
         }
 
+        const auto &name() const noexcept
+        {
+            return name_;
+        }
+
+        auto offset() const noexcept
+        {
+            return offset_;
+        }
+
     private:
+        // Function offset
+        ByteOffset offset_ = 0;
+
+        // Function name
+        std::string name_ = "";
+
         // Function arguments aliases
         std::vector<std::string> args_ {};
 
@@ -216,6 +237,25 @@ class Assembler final {
         }
     }
 
+    StrId parseStrId(const std::string &str)
+    {
+        auto it = strings_.find(str);
+        assertParseError(it != strings_.end());
+        return it->second;
+    }
+
+    std::string parseString()
+    {
+        expectLexem(Lexer::LexemType::STRING);
+
+        std::string str = lexer_.YYText();
+
+        str = str.substr(1, str.size() - 2);
+        strings_.insert({str, strings_.size()});
+
+        return str;
+    }
+
     // Parse jump destination label name
     std::string parseJumpDst()
     {
@@ -227,11 +267,14 @@ class Assembler final {
     {
         static std::unordered_map<std::string, IntrinsicCode> intrinsics = {{"PRINT.I32", IntrinsicCode::PRINT_I32},
                                                                             {"PRINT.F", IntrinsicCode::PRINT_F},
+                                                                            {"PRINT.STR", IntrinsicCode::PRINT_STR},
                                                                             {"SCAN.I32", IntrinsicCode::SCAN_I32},
                                                                             {"SCAN.F", IntrinsicCode::SCAN_F},
                                                                             {"SIN", IntrinsicCode::SIN},
                                                                             {"COS", IntrinsicCode::COS},
-                                                                            {"SQRT", IntrinsicCode::SQRT}};
+                                                                            {"SQRT", IntrinsicCode::SQRT},
+                                                                            {"CONCAT", IntrinsicCode::CONCAT},
+                                                                            {"SUBSTR", IntrinsicCode::SUBSTR}};
 
         expectLexem(Lexer::LexemType::IDENTIFIER);
 
@@ -249,6 +292,7 @@ class Assembler final {
         switch (code) {
             case IntrinsicCode::PRINT_I32:
             case IntrinsicCode::PRINT_F:
+            case IntrinsicCode::PRINT_STR:
                 expectLexem(Lexer::LexemType::COMMA);
                 return {parseReg(), 0, 0, 0};
 
@@ -267,6 +311,22 @@ class Assembler final {
             case IntrinsicCode::SQRT:
                 expectLexem(Lexer::LexemType::COMMA);
                 return {parseReg(), 0, 0, 0};
+
+            case IntrinsicCode::CONCAT: {
+                expectLexem(Lexer::LexemType::COMMA);
+                auto reg1 = parseReg();
+                expectLexem(Lexer::LexemType::COMMA);
+                auto reg2 = parseReg();
+                return {reg1, reg2, 0, 0};
+            }
+
+            case IntrinsicCode::SUBSTR: {
+                expectLexem(Lexer::LexemType::COMMA);
+                auto reg1 = parseReg();
+                expectLexem(Lexer::LexemType::COMMA);
+                auto reg2 = parseReg();
+                return {reg1, reg2, 0, 0};
+            }
 
             default:
                 assert(0);
@@ -287,7 +347,9 @@ class Assembler final {
     {
         expectLexem(Lexer::LexemType::IDENTIFIER);
 
-        func_name_to_id_.insert({lexer_.YYText(), funcs_.size()});
+        std::string func_name = lexer_.YYText();
+
+        func_name_to_id_.insert({func_name, funcs_.size()});
 
         expectLexem(Lexer::LexemType::LEFT_ROUND_BRACE);
 
@@ -309,7 +371,7 @@ class Assembler final {
         static constexpr size_t MAX_FUNC_ARGS_NUMBER = 4;
         assertParseError(args.size() <= MAX_FUNC_ARGS_NUMBER);
 
-        funcs_.emplace_back(args);
+        funcs_.emplace_back(curr_offset_, func_name, args);
         curr_func_ = &funcs_.back();
     }
 
@@ -350,24 +412,75 @@ class Assembler final {
         }
     }
 
-    void write(std::ofstream &out)
+    void write(shrimp::shrimpfile::File &out)
+    {
+        writeCode(out);
+        writeStrings(out);
+        writeFunctions(out);
+        out.fillHeaders();
+        out.serialize();
+    }
+
+    void writeFunctions(shrimp::shrimpfile::File &out)
+    {
+        for (auto &&func : funcs_) {
+            writeFunction(out, func);
+        }
+    }
+
+    void writeStrings(shrimp::shrimpfile::File &out)
+    {
+        for (auto [str, str_id] : strings_) {
+            writeString(out, str, str_id);
+        }
+    }
+
+    void writeCode(shrimp::shrimpfile::File &out)
     {
         for (auto &&func : funcs_) {
             for (auto &&instr_ptr : func.instrs()) {
                 const char *bin_code = reinterpret_cast<const char *>(instr_ptr->getBinCode());
-                out.write(bin_code, instr_ptr->getByteSize());
+                writeBytes(out, bin_code, instr_ptr->getByteSize());
             }
         }
     }
 
-public:
-    void assemble(std::ifstream &in, std::ofstream &out)
+    void writeBytes(shrimp::shrimpfile::File &out, const char *bin_code, size_t size)
     {
-        lexer_.switch_streams(&in);
+        out.writeBytes(bin_code, size);
+    }
+
+    void writeString(shrimp::shrimpfile::File &out, const std::string &str, StrId id)
+    {
+        out.writeString(str, id);
+    }
+
+    void writeFunction(shrimp::shrimpfile::File &out, const FuncInfo &func)
+    {
+        shrimpfile::File::FileFunction file_func;
+        file_func.name = func.name();
+        file_func.name_size = file_func.name.size();
+        file_func.id = func_name_to_id_[file_func.name];
+        file_func.func_start = func.offset();
+        file_func.num_of_args = func.getArgs().size();
+        file_func.num_of_vregs = 256;
+        out.writeFunction(file_func);
+    }
+
+public:
+    void assemble(const std::string &in, const std::string &out)
+    {
+        shrimpfile::File of {in, out};
+
+        std::ifstream in_stream {in};
+
+        lexer_.switch_streams(&in_stream);
 
         firstPass();
         resloveJumps();
-        write(out);
+        write(of);
+
+        of.serialize();
     }
 
 private:
@@ -376,6 +489,8 @@ private:
     ByteOffset curr_offset_ = 0;
 
     std::unordered_map<std::string, FuncId> func_name_to_id_ {};
+
+    std::unordered_map<std::string, StrId> strings_ {};
 
     std::vector<FuncInfo> funcs_ {};
     FuncInfo *curr_func_ = nullptr;

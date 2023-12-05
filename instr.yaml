@@ -169,7 +169,6 @@ JUMP.LL:
 CALL.0ARG:
     desct: "call function with no arguments"
     opcode: 23
-    gen_handler: false
     size: "Word"
     fields:
         func_id: [8, 31]
@@ -177,7 +176,6 @@ CALL.0ARG:
 CALL.1ARG:
     desct: "call function with one argument"
     opcode: 24
-    gen_handler: false
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
@@ -185,7 +183,6 @@ CALL.1ARG:
 CALL.2ARG:
     desct: "call function with two arguments"
     opcode: 25
-    gen_handler: false
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
@@ -194,7 +191,6 @@ CALL.2ARG:
 CALL.3ARG:
     desct: "call function with three arguments"
     opcode: 26
-    gen_handler: false
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
@@ -204,13 +200,12 @@ CALL.3ARG:
 CALL.4ARG:
     desct: "call function with four arguments"
     opcode: 27
-    gen_handler: false
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
         func_arg1: [40, 47]
         func_arg2: [48, 55]
-        func_arg2: [56, 63]
+        func_arg3: [56, 63]
 
 I32TOF:
     descr: "acc = (acc as float)"
@@ -221,3 +216,10 @@ FTOI32:
     descr: "acc = (acc as i32)"
     opcode: 29
     size: "Byte"
+
+LDA.STR:
+    desc: "Load string in accumulator."
+    opcode: 30
+    size: "Word"
+    fields:
+        str_id: [8, 23]

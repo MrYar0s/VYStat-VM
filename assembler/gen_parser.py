@@ -53,6 +53,10 @@ def write_instr_parser(out: TextIOWrapper, instr: Instr) :
             case "func_id" :
                 out.write("auto func_id = parseCallFuncId();")
 
+            case "str_id" :
+                out.write("auto str = parseString();\n")
+                out.write("auto str_id = parseStrId(str);")
+
             case _:
                 raise RuntimeError("Unknown field in instruction %s: %s" % (instr.name, field_name))
 
@@ -106,6 +110,11 @@ def write_parse_func_body(out: TextIOWrapper, instrs: list) :
             "}\n"
             "if (lexer_.currLexemType() == Lexer::LexemType::LABEL) {\n"
                 "addLexedLabel();\n"
+                "continue;\n"
+            "}\n\n"
+
+            "if (lexer_.currLexemType() == Lexer::LexemType::STRING) {\n"
+                "parseString();\n"
                 "continue;\n"
             "}\n\n"
 

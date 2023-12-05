@@ -9,7 +9,7 @@ namespace shrimp::assembler {
 
 class Lexer final : public yyFlexLexer {
 public:
-    enum class LexemType { NUMBER, COMMA, LABEL, IDENTIFIER, FUNC, LEFT_ROUND_BRACE, RIGHT_ROUND_BRACE };
+    enum class LexemType { NUMBER, COMMA, LABEL, IDENTIFIER, FUNC, LEFT_ROUND_BRACE, RIGHT_ROUND_BRACE, STRING };
 
     static constexpr int LEXING_OK = 1;
     static constexpr int LEXING_ERROR_CODE = -1;
@@ -54,6 +54,12 @@ private:
     int processIdentifier() noexcept
     {
         curr_lexem_type_ = LexemType::IDENTIFIER;
+        return LEXING_OK;
+    }
+
+    int processString() noexcept
+    {
+        curr_lexem_type_ = LexemType::STRING;
         return LEXING_OK;
     }
 

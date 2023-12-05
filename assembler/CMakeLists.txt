@@ -34,4 +34,5 @@ target_link_libraries(assembler
 PRIVATE
     CLI11
     common
+    shrimpfile
 )

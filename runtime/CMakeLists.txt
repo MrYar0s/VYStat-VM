@@ -17,4 +17,5 @@ PUBLIC
     shrimp::common
     shrimp::runtime::common
     shrimp::runtime::runtime
+    shrimpfile
 )

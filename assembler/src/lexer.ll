@@ -13,6 +13,8 @@ NUMBER          [+-]?([1-9][0-9]*\.?[0-9]*|0\.[0-9]*|0)
 
 IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_.]*
 
+STRING          \"[^\"]*\"
+
 %%
 
 {WHITE_SPACE}       /* Skip */
@@ -23,6 +25,7 @@ IDENTIFIER      [a-zA-Z_][a-zA-Z0-9_.]*
 "("                 return processLeftRoundBrace();
 ")"                 return processRightRoundBrace();
 
+{STRING}            return processString();
 {NUMBER}            return processNumber();
 {IDENTIFIER}":"     return processLabel();
 {IDENTIFIER}        return processIdentifier();

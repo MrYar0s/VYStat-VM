@@ -31,10 +31,9 @@ int main(int argc, char **argv)
 
     assembler::Assembler assembler {};
 
-    std::ifstream in {input_file};
     std::ofstream out {output_file, std::ios_base::binary};
 
-    assembler.assemble(in, out);
+    assembler.assemble(input_file, output_file);
 
     return 0;
 }

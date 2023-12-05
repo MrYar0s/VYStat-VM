@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstdint>
 #include <iostream>
 #include <array>
 #include <sstream>
@@ -10,9 +11,11 @@
 
 #include <shrimp/runtime/interpreter/intrinsics.hpp>
 #include <shrimp/runtime/interpreter.hpp>
+#include <shrimp/runtime/shrimp_vm.hpp>
 
 #include <shrimp/runtime/interpreter/instr.gen.hpp>
 #include <shrimp/runtime/interpreter/dispatch_table.gen.hpp>
+#include <shrimp/runtime/register.hpp>
 
 namespace shrimp::runtime::interpreter {
 
@@ -27,6 +30,18 @@ std::string Instr<InstrOpcode::INTRINSIC>::toString() const
 
         case IntrinsicCode::PRINT_F:
             out << "PRINT.F, R" << getIntrinsicArg0();
+            break;
+
+        case IntrinsicCode::PRINT_STR:
+            out << "PRINT.STR, R" << getIntrinsicArg0();
+            break;
+
+        case IntrinsicCode::CONCAT:
+            out << "CONCAT, R" << getIntrinsicArg0() << ", R" << getIntrinsicArg1();
+            break;
+
+        case IntrinsicCode::SUBSTR:
+            out << "SUBSTR, R" << getIntrinsicArg0() << ", R" << getIntrinsicArg1();
             break;
 
         case IntrinsicCode::SCAN_I32:
@@ -324,6 +339,7 @@ int handleIntrinsic(ShrimpVM *vm)
     auto intrinsic_code = static_cast<IntrinsicCode>(instr.getIntrinsicCode());
 
     auto arg0_idx = instr.getIntrinsicArg0();
+    auto arg1_idx = instr.getIntrinsicArg1();
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -340,6 +356,39 @@ int handleIntrinsic(ShrimpVM *vm)
             auto value = bit::getValue<float>(value_raw);
 
             intrinsics::PrintF(value);
+            break;
+        }
+        case IntrinsicCode::PRINT_STR: {
+            auto str_id = frame.getReg(arg0_idx).getValue();
+            const std::string &str = vm->resolveString(str_id);
+
+            intrinsics::PrintStr(str);
+            break;
+        }
+        case IntrinsicCode::CONCAT: {
+            auto str0_id = frame.getReg(arg0_idx).getValue();
+            auto str1_id = frame.getReg(arg1_idx).getValue();
+            const std::string &str0 = vm->resolveString(str0_id);
+            const std::string &str1 = vm->resolveString(str1_id);
+
+            const std::string &str = intrinsics::Concat(str0, str1);
+            uint64_t str_id = vm->addStringToAccessor(str);
+
+            vm->acc().setValue(bit::castToWritable(str_id));
+
+            break;
+        }
+        case IntrinsicCode::SUBSTR: {
+            auto pos = frame.getReg(arg0_idx).getValue();
+            auto len = frame.getReg(arg1_idx).getValue();
+            auto str_id = vm->acc().getValue();
+            const std::string &str = vm->resolveString(str_id);
+
+            const std::string &substr = intrinsics::Substr(str, pos, len);
+            uint64_t substr_id = vm->addStringToAccessor(substr);
+
+            vm->acc().setValue(bit::castToWritable(substr_id));
+
             break;
         }
         case IntrinsicCode::SCAN_I32: {
@@ -387,11 +436,152 @@ int handleIntrinsic(ShrimpVM *vm)
     return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
+int handleCall0arg(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CALL_0ARG> instr {vm->pc()};
+
+    auto func_id = instr.getFuncId();
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+
+    auto &frame = vm->currFrame();
+
+    ByteOffset offset = frame.getOffsetToFunc();
+    frame.setRetPc(vm->pc() + instr.getByteSize());
+    vm->pc() = vm->getPcFromStart(offset);
+
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleCall1arg(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CALL_1ARG> instr {vm->pc()};
+
+    auto func_id = instr.getFuncId();
+    auto func_0arg_idx = instr.getFuncArg0();
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    auto &prev_frame = vm->currFrame();
+    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto &frame = vm->currFrame();
+
+    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
+    // TODO(VasiliyMatr): replace magic number to function
+    frame.setReg(func_0arg, 255);
+
+    ByteOffset offset = frame.getOffsetToFunc();
+    frame.setRetPc(vm->pc() + instr.getByteSize());
+    vm->pc() = vm->getPcFromStart(offset);
+
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleCall2arg(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CALL_2ARG> instr {vm->pc()};
+
+    auto func_id = instr.getFuncId();
+    auto func_0arg_idx = instr.getFuncArg0();
+    auto func_1arg_idx = instr.getFuncArg1();
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    auto &prev_frame = vm->currFrame();
+    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto &frame = vm->currFrame();
+
+    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
+    auto func_1arg = prev_frame.getReg(func_1arg_idx).getValue();
+    // TODO(VasiliyMatr): replace magic number to function
+    frame.setReg(func_0arg, 255);
+    frame.setReg(func_1arg, 254);
+
+    ByteOffset offset = frame.getOffsetToFunc();
+    frame.setRetPc(vm->pc() + instr.getByteSize());
+    vm->pc() = vm->getPcFromStart(offset);
+
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleCall3arg(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CALL_3ARG> instr {vm->pc()};
+
+    auto func_id = instr.getFuncId();
+    auto func_0arg_idx = instr.getFuncArg0();
+    auto func_1arg_idx = instr.getFuncArg1();
+    auto func_2arg_idx = instr.getFuncArg2();
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    auto &prev_frame = vm->currFrame();
+    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto &frame = vm->currFrame();
+
+    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
+    auto func_1arg = prev_frame.getReg(func_1arg_idx).getValue();
+    auto func_2arg = prev_frame.getReg(func_2arg_idx).getValue();
+    // TODO(VasiliyMatr): replace magic number to function
+    frame.setReg(func_0arg, 255);
+    frame.setReg(func_1arg, 254);
+    frame.setReg(func_2arg, 253);
+
+    ByteOffset offset = frame.getOffsetToFunc();
+    frame.setRetPc(vm->pc() + instr.getByteSize());
+    vm->pc() = vm->getPcFromStart(offset);
+
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleCall4arg(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CALL_4ARG> instr {vm->pc()};
+
+    auto func_id = instr.getFuncId();
+    auto func_0arg_idx = instr.getFuncArg0();
+    auto func_1arg_idx = instr.getFuncArg1();
+    auto func_2arg_idx = instr.getFuncArg2();
+    auto func_3arg_idx = instr.getFuncArg3();
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    auto &prev_frame = vm->currFrame();
+    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto &frame = vm->currFrame();
+
+    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
+    auto func_1arg = prev_frame.getReg(func_1arg_idx).getValue();
+    auto func_2arg = prev_frame.getReg(func_2arg_idx).getValue();
+    auto func_3arg = prev_frame.getReg(func_3arg_idx).getValue();
+    // TODO(VasiliyMatr): replace magic number to function
+    frame.setReg(func_0arg, 255);
+    frame.setReg(func_1arg, 254);
+    frame.setReg(func_2arg, 253);
+    frame.setReg(func_3arg, 252);
+
+    ByteOffset offset = frame.getOffsetToFunc();
+    frame.setRetPc(vm->pc() + instr.getByteSize());
+    vm->pc() = vm->getPcFromStart(offset);
+
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
 int handleRet(ShrimpVM *vm)
 {
     Instr<InstrOpcode::RET> instr {vm->pc()};
+    auto &frame = vm->currFrame();
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    auto *ret_pc = frame.getRetPc();
+    if (ret_pc != nullptr) {
+        vm->pc() = ret_pc;
+        vm->stack().pop();
+        return dispatch_table[getOpcode(vm->pc())](vm);
+    }
 
     return 0;
 }
@@ -414,7 +604,7 @@ int handleJumpGg(ShrimpVM *vm)
     auto rs_idx = instr.getRs();
     auto offset = instr.getJumpOffset();
 
-    auto gg = vm->acc().getValue() > frame.getReg(rs_idx).getValue();
+    auto gg = bit::getValue<int32_t>(vm->acc().getValue()) > bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -429,7 +619,7 @@ int handleJumpEq(ShrimpVM *vm)
     auto rs_idx = instr.getRs();
     auto offset = instr.getJumpOffset();
 
-    auto eq = vm->acc().getValue() == frame.getReg(rs_idx).getValue();
+    auto eq = bit::getValue<int32_t>(vm->acc().getValue()) == bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -439,12 +629,12 @@ int handleJumpEq(ShrimpVM *vm)
 
 int handleJumpLl(ShrimpVM *vm)
 {
-    Instr<InstrOpcode::JUMP_EQ> instr {vm->pc()};
+    Instr<InstrOpcode::JUMP_LL> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
     auto offset = instr.getJumpOffset();
 
-    auto ll = vm->acc().getValue() < frame.getReg(rs_idx).getValue();
+    auto ll = bit::getValue<int32_t>(vm->acc().getValue()) < bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -474,6 +664,19 @@ int handleFtoi32(ShrimpVM *vm)
     auto acc_f = bit::getValue<float>(acc);
     int32_t acc_i = acc_f;
     vm->acc().setValue(bit::castToWritable(acc_i));
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleLdaStr(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::LDA_STR>(vm->pc());
+
+    auto str_id = instr.getStrId();
+    vm->acc().setValue(bit::castToWritable(str_id));
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 

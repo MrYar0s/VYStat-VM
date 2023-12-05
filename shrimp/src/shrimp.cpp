@@ -11,25 +11,12 @@
 
 #include <shrimp/runtime/shrimp_vm.hpp>
 
+#include <shrimp/shrimpfile.hpp>
+
 #include <CLI/CLI.hpp>
 #include <CLI/App.hpp>
 
 namespace shrimp {
-
-std::vector<Byte> readFromFile(std::string file_name)
-{
-    FILE *file = fopen(file_name.data(), "rb");
-    fseek(file, 0, SEEK_END);
-    size_t len = ftell(file);
-    fseek(file, 0L, SEEK_SET);
-    Byte *buf = (Byte *)calloc(sizeof(Byte), len);
-    fread(buf, sizeof(Byte), len, file);
-    std::vector<Byte> code;
-    code.assign(buf, buf + len);
-    free(buf);
-    fclose(file);
-    return code;
-}
 
 int Main(int argc, char *argv[])
 {
@@ -46,8 +33,14 @@ int Main(int argc, char *argv[])
     CLI11_PARSE(app, argc, argv);
 
     LogLevel log_level = getLogLevelByString(log_level_str);
-    auto native_code = readFromFile(input_file);
-    runtime::ShrimpVM svm {native_code, log_level};
+
+    shrimpfile::File ifile {input_file};
+
+    auto native_code = ifile.getCode();
+    auto strings_info = ifile.getStringsInfo();
+    auto funcs_info = ifile.getFuncsInfo();
+
+    runtime::ShrimpVM svm {native_code, strings_info, funcs_info, log_level};
 
     return svm.runImpl();
 }

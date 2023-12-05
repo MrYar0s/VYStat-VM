@@ -6,4 +6,5 @@ target_link_libraries(shrimp
 PRIVATE
     shrimp::runtime
     CLI11
+    shrimpfile
 )

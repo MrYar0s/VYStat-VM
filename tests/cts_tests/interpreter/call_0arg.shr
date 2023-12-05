@@ -1,0 +1,14 @@
+func foo ()
+    lda.imm.i32 4
+    ret
+
+func main ()
+    call.0arg foo
+    mov.imm.i32 r1, 4
+    jump.eq r1, label_2
+label_1:
+    lda.imm.i32 1
+    ret
+label_2:
+    lda.imm.i32 0
+    ret

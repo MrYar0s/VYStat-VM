@@ -1,0 +1,16 @@
+func foo (a0)
+    intrinsic print.i32, a0
+    lda a0
+    ret
+
+func main ()
+    mov.imm.i32 r0, 4
+    call.1arg foo, r0
+    mov.imm.i32 r1, 4
+    jump.eq r1, label_2
+label_1:
+    lda.imm.i32 1
+    ret
+label_2:
+    lda.imm.i32 0
+    ret
