@@ -15,6 +15,21 @@ void PrintF(float val)
     std::cout << val << std::endl;
 }
 
+void PrintStr(const std::string &str)
+{
+    std::cout << str << std::endl;
+}
+
+std::string Concat(const std::string &str1, const std::string &str2)
+{
+    return str1 + str2;
+}
+
+std::string Substr(const std::string &str, size_t pos, size_t len)
+{
+    return str.substr(pos, len);
+}
+
 int ScanI()
 {
     int val;

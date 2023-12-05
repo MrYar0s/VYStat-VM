@@ -42,6 +42,11 @@ set(TEST_FILES
 	"div_f"
 	"mul_f"
 	"sub_f"
+	"call_0arg"
+	"call_1arg"
+	"call_2arg"
+	"call_3arg"
+	"call_4arg"
 )
 
 foreach(file IN LISTS TEST_FILES)

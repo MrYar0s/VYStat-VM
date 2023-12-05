@@ -25,19 +25,19 @@ inline LogLevel getLogLevelByString(std::string str)
 }  // namespace shrimp
 #define LOG_(os, data) os << data << std::endl;
 
-#define LOG_INFO(data, level)                   \
-    if (level == LogLevel::INFO) {              \
-        LOG_(std::cout, "LOG[INFO]: " << data)   \
+#define LOG_INFO(data, level)                  \
+    if (level == LogLevel::INFO) {             \
+        LOG_(std::cout, "LOG[INFO]: " << data) \
     }
 
 #define LOG_ERROR(data, level)                  \
     if (level == LogLevel::ERROR) {             \
-        LOG_(std::cout, "LOG[ERROR]: " << data)  \
+        LOG_(std::cout, "LOG[ERROR]: " << data) \
     }
 
 #define LOG_DEBUG(data, level)                  \
     if (level == LogLevel::DEBUG) {             \
-        LOG_(std::cout, "LOG[DEBUG]: " << data)  \
+        LOG_(std::cout, "LOG[DEBUG]: " << data) \
     }
 
 #endif  // SHRIMP_COMMON_LOGGER_HPP

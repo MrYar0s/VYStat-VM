@@ -1,0 +1,24 @@
+func foo()
+    ret
+
+func bar()
+    lda.imm.i32 0
+    ret
+
+func main ()
+    lda.str "Hello,"
+    sta r0
+    intrinsic print.str, r0
+    lda.str " world!"
+    sta r1
+    intrinsic print.str, r1
+    intrinsic concat, r0, r1
+    sta r2
+    intrinsic print.str, r2
+    mov.imm.i32 r2, 3
+    mov.imm.i32 r3, 5
+    intrinsic substr, r2, r3
+    sta r3
+    intrinsic print.str, r3
+    lda.imm.i32 0
+    ret
