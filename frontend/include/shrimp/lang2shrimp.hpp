@@ -66,6 +66,7 @@ public:
     bool ast2file(std::unique_ptr<ASTNode> &&astRoot, std::string input_file, std::string output_file);
     void compileFunc(const std::unique_ptr<ASTNode> &func);
     void compileVarDecl(const std::unique_ptr<ASTNode> &instr);
+    void compileRetStmt(const std::unique_ptr<ASTNode> &instr);
 
     void write(shrimp::shrimpfile::File &out);
     void writeCode(shrimp::shrimpfile::File &out);
@@ -91,6 +92,6 @@ private:
     Parser parser_;
 };
 
-}
+}  // namespace shrimp
 
 #endif  // FRONTEND_LANG2SHRIMP_HPP

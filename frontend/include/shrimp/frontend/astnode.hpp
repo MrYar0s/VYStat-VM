@@ -19,6 +19,12 @@ public:
         PARAM_VAR_DECL,
         PROGRAM,
 
+        // Statements
+        RETURN_STATEMENT,
+
+        // General Exprs
+        EXPR,
+
         // Expressions
         ASSIGN_EXPR,
         IDENTIFIER,
@@ -60,6 +66,12 @@ private:
     ChildNodes childs_;
 };
 
+class RetStmt : public ASTNode {
+public:
+    explicit RetStmt(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    virtual ~RetStmt() = default;
+};
+
 class VarDecl : public ASTNode {
 public:
     explicit VarDecl(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
@@ -78,22 +90,10 @@ public:
     virtual ~FunctionDecl() = default;
 };
 
-class Expr : public ASTNode {
-public:
-    explicit Expr(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
-    virtual ~Expr() = default;
-};
-
 class AssignExpr : public ASTNode {
 public:
     explicit AssignExpr(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
     virtual ~AssignExpr() = default;
-};
-
-class Stmt : public ASTNode {
-public:
-    explicit Stmt(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
-    virtual ~Stmt() = default;
 };
 
 class Number : public ASTNode {
@@ -101,7 +101,8 @@ public:
     explicit Number(NodeKind kind, int val, std::string name = "") : ASTNode(kind, name), val_(val) {}
     virtual ~Number() = default;
 
-    int getValue() {
+    int getValue()
+    {
         return val_;
     }
 

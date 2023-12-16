@@ -6,11 +6,7 @@
 #include <shrimp/lexer.hpp>
 #include <iostream>
 
-enum class STATUS : uint8_t {
-    SUCCESS,
-    END,
-    FAIL
-};
+enum class STATUS : uint8_t { SUCCESS, END, FAIL };
 
 using TokensIter = std::vector<Token>::const_iterator;
 using AstRet = std::pair<std::unique_ptr<ASTNode>, enum STATUS>;
@@ -20,7 +16,8 @@ public:
     Parser() = default;
     void run(std::vector<Token> &&tokens, std::unique_ptr<ASTNode> &&root);
 
-    AstRet &&getRoot() {
+    AstRet &&getRoot()
+    {
         return std::move(root_);
     }
 
@@ -46,6 +43,10 @@ private:
     AstRet factor(AstRet &&head);
     AstRet primary(AstRet &&head);
     AstRet value(AstRet &&head);
+
+    AstRet expressionDash(AstRet &&head);
+    AstRet simpleDash(AstRet &&head);
+    AstRet factorDash(AstRet &&head);
 
     STATUS programDecl();
     STATUS funcDecl();

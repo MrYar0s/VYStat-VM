@@ -97,7 +97,6 @@ STATUS Parser::funcDecl()
 
     root_.first->AddChildNode(std::move(head.first));
 
-
     reserved_token_iter_ = token_iter_;
     return STATUS::SUCCESS;
 }
@@ -139,12 +138,157 @@ AstRet Parser::retStmt(AstRet &&head)
     }
     token_iter_--;
 
+    if (!term<TokenType::RETURN>()) {
+        std::cout << "Expected return keyword" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    auto child = std::make_unique<RetStmt>(ASTNode::NodeKind::RETURN_STATEMENT);
+    AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+
+    if ((child_pair = expression(std::move(child_pair))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong Expression parsing" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::SEMICOLON>()) {
+        std::cout << "Expected \';\'" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    head.first->AddChildNode(std::move(child_pair.first));
+    head.second = STATUS::SUCCESS;
+
     return head;
 }
 
 AstRet Parser::expression(AstRet &&head)
 {
+    reserved_token_iter_ = token_iter_;
+
+    // auto child = std::make_unique<AssignExpr>(ASTNode::NodeKind::EXPR);
+    // AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+
+    if ((head = simple(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+
+    token_iter_ = reserved_token_iter_;
+    head.second = STATUS::FAIL;
+    return head;
+}
+
+AstRet Parser::simpleDash(AstRet &&head)
+{
+    if (token_iter_->type != TokenType::PLUS && token_iter_->type != TokenType::MINUS) {
+        std::cout << "Wrong token, expected: [+|-]" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+    token_iter_++;
+
+    reserved_token_iter_ = token_iter_;
+    if ((head = simple(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        return head;
+    }
+    return head;
+}
+
+AstRet Parser::simple(AstRet &&head)
+{
+    if ((head = summand(std::move(head))).second == STATUS::SUCCESS) {
+        head = simpleDash(std::move(head));
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+
+    token_iter_ = reserved_token_iter_;
+    head.second = STATUS::FAIL;
+    return head;
+}
+
+AstRet Parser::factorDash(AstRet &&head)
+{
+    if (token_iter_->type != TokenType::MUL && token_iter_->type != TokenType::DIVIDE) {
+        std::cout << "Wrong token, expected: [*|/]" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+    token_iter_++;
+
+    reserved_token_iter_ = token_iter_;
+    if ((head = factor(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        return head;
+    }
+    return head;
+}
+
+AstRet Parser::summand(AstRet &&head)
+{
+    if ((head = factor(std::move(head))).second == STATUS::SUCCESS) {
+        head = factorDash(std::move(head));
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+
+    token_iter_ = reserved_token_iter_;
+    head.second = STATUS::FAIL;
+    return head;
+}
+
+AstRet Parser::factor(AstRet &&head)
+{
+    if ((head = primary(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+    if (!term<TokenType::OPEN_BRACKET>()) {
+        std::cout << "Expected \'(\'" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+    if ((head = expression(std::move(head))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong Expression parsing" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+    if (!term<TokenType::CLOSE_BRACKET>()) {
+        std::cout << "Expected \')\'" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+    reserved_token_iter_ = token_iter_;
+    head.second = STATUS::SUCCESS;
+    return head;
+}
+
+AstRet Parser::primary(AstRet &&head)
+{
     std::string number = "";
+
+    if ((head = value(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
 
     if (term<TokenType::NUMBER>(&number)) {
         std::cout << "Found number as expression" << std::endl;
@@ -156,8 +300,10 @@ AstRet Parser::expression(AstRet &&head)
         head.first->AddChildNode(std::move(child));
 
         reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
         return head;
     }
+    token_iter_--;
 
     token_iter_ = reserved_token_iter_;
     head.second = STATUS::FAIL;
@@ -222,7 +368,6 @@ AstRet Parser::varDecl(AstRet &&head)
 AstRet Parser::value(AstRet &&head)
 {
     std::string ident;
-
     if (!term<TokenType::IDENTIFIER>(&ident)) {
         std::cout << "Expected identifier" << std::endl;
         token_iter_ = reserved_token_iter_;
@@ -234,6 +379,7 @@ AstRet Parser::value(AstRet &&head)
 
     head.first->AddChildNode(std::move(child));
     reserved_token_iter_ = token_iter_;
+    head.second = STATUS::SUCCESS;
     return head;
 }
 

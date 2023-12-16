@@ -100,24 +100,48 @@ void Compiler::compileFunc(const std::unique_ptr<ASTNode> &ast)
     auto &instrsuctions = func->GetChildrenNodes();
 
     for (const auto &instr : instrsuctions) {
-        switch(instr->GetKind()) {
-            case ASTNode::NodeKind::ASSIGN_EXPR :
+        switch (instr->GetKind()) {
+            case ASTNode::NodeKind::ASSIGN_EXPR:
                 compileVarDecl(instr);
+                break;
+            case ASTNode::NodeKind::RETURN_STATEMENT:
+                compileRetStmt(instr);
                 break;
             default:
                 std::abort();
                 break;
         }
     }
+}
+
+void Compiler::compileRetStmt(const std::unique_ptr<ASTNode> &instr)
+{
+    auto *stmt = reinterpret_cast<RetStmt *>(instr.get());
 
     auto &instrs = curr_func_->getInstrs();
 
-    auto asm_instr = assembler::Instr<InstrOpcode::RET>();
-    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::RET>>(asm_instr));
-    curr_offset_ += asm_instr.getByteSize();
+    const auto &childs = stmt->GetChildrenNodes();
+
+    auto &val = childs[0];
+
+    if (val->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
+        auto asm_lda = assembler::Instr<InstrOpcode::LDA>(varIdent_to_reg_[val->GetName()]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(asm_lda));
+        curr_offset_ += asm_lda.getByteSize();
+    } else if (val->GetKind() == ASTNode::NodeKind::NUMBER) {
+        auto *number = reinterpret_cast<Number *>(val.get());
+        auto asm_lda = assembler::Instr<InstrOpcode::LDA_IMM_I32>(number->getValue());
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA_IMM_I32>>(asm_lda));
+        curr_offset_ += asm_lda.getByteSize();
+    }
+
+    auto asm_ret = assembler::Instr<InstrOpcode::RET>();
+    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::RET>>(asm_ret));
+    curr_offset_ += asm_ret.getByteSize();
 }
 
-void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr) {
+void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr)
+{
     auto *var = reinterpret_cast<VarDecl *>(instr.get());
 
     auto &instrs = curr_func_->getInstrs();
@@ -133,15 +157,14 @@ void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr) {
     auto &expr = childs[1];
 
     if (expr->GetKind() == ASTNode::NodeKind::NUMBER) {
-
         auto *number = reinterpret_cast<Number *>(expr.get());
 
-        auto asm_instr = assembler::Instr<InstrOpcode::MOV_IMM_I32>(varIdent_to_reg_[val->GetName()], number->getValue());
+        auto asm_instr =
+            assembler::Instr<InstrOpcode::MOV_IMM_I32>(varIdent_to_reg_[val->GetName()], number->getValue());
 
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MOV_IMM_I32>>(asm_instr));
         curr_offset_ += asm_instr.getByteSize();
     }
-
 }
 
-}
+}  // namespace shrimp

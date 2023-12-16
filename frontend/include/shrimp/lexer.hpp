@@ -13,8 +13,8 @@ enum class TokenType {
     TYPE,
 
     // Operators
-    DIVIDE,
     EQUAL,
+    DIVIDE,
     MINUS,
     MUL,
     PLUS,
