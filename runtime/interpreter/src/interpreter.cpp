@@ -705,6 +705,22 @@ int handleArrNewI32(ShrimpVM *vm)
     return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
+int handleCmpEqI32(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CMP_EQ_I32> instr {vm->pc()};
+    auto &frame = vm->currFrame();
+    auto rs_idx = instr.getRs();
+
+    auto eq = bit::getValue<int32_t>(vm->acc().getValue()) == bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
+
+    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(eq)));
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
 int handleArrNewF(ShrimpVM *vm)
 {
     auto instr = Instr<InstrOpcode::ARR_NEW_F>(vm->pc());
@@ -719,6 +735,21 @@ int handleArrNewF(ShrimpVM *vm)
     float *ptr = std::bit_cast<float *>(vm->getAllocator().allocate(size));
 
     frame.setReg(bit::castToWritable(ptr), rd_idx);
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+int handleCmpGgI32(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CMP_GG_I32> instr {vm->pc()};
+    auto &frame = vm->currFrame();
+    auto rs_idx = instr.getRs();
+
+    auto gg = bit::getValue<int32_t>(vm->acc().getValue()) > bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
+
+    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(gg)));
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -803,6 +834,22 @@ int handleArrStaF(ShrimpVM *vm)
     auto ptr = std::bit_cast<float *>(frame.getReg(rd_idx).getValue());
 
     ptr[pos] = acc_val;
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleCmpLlI32(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::CMP_LL_I32> instr {vm->pc()};
+    auto &frame = vm->currFrame();
+    auto rs_idx = instr.getRs();
+
+    auto ll = bit::getValue<int32_t>(vm->acc().getValue()) < bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
+
+    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(ll)));
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 

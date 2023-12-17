@@ -22,6 +22,9 @@ public:
 
         // Statements
         RETURN_STATEMENT,
+        IF_STATEMENT,
+
+        IF_BODY,
 
         // General Exprs
         EXPR,
@@ -113,6 +116,18 @@ class Expr : public ASTNode {
 public:
     explicit Expr(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
     virtual ~Expr() = default;
+};
+
+class IfStmt : public ASTNode {
+public:
+    explicit IfStmt(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    virtual ~IfStmt() = default;
+};
+
+class IfBody : public ASTNode {
+public:
+    explicit IfBody(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    virtual ~IfBody() = default;
 };
 
 class FunctionCall : public ASTNode {

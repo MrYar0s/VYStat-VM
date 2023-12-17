@@ -123,6 +123,10 @@ AstRet Parser::stmtsDecl(AstRet &&head)
         head = stmtsDeclDash(std::move(head));
         return head;
     }
+    if ((head = ifStmt(std::move(head))).second == STATUS::SUCCESS) {
+        head = stmtsDeclDash(std::move(head));
+        return head;
+    }
     token_iter_ = reserved_token_iter_;
     head.second = head.second;
     return head;
@@ -135,6 +139,81 @@ AstRet Parser::stmtsDeclDash(AstRet &&head)
         reserved_token_iter_ = token_iter_;
         return head;
     }
+    return head;
+}
+
+AstRet Parser::ifStmt(AstRet &&head)
+{
+    std::cout << "IfStatement" << std::endl;
+
+    if (term<TokenType::CLOSE_FIG_BRACKET>()) {
+        token_iter_--;
+        head.second = STATUS::END;
+        return head;
+    }
+    token_iter_--;
+
+    if (!term<TokenType::IF>()) {
+        std::cout << "Expected if keyword" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::OPEN_BRACKET>()) {
+        std::cout << "Expected \'(\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    auto child = std::make_unique<IfStmt>(ASTNode::NodeKind::IF_STATEMENT);
+    AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+
+    if ((child_pair = expression(std::move(child_pair))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong Expression parsing" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::CLOSE_BRACKET>()) {
+        std::cout << "Expected \')\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::OPEN_FIG_BRACKET>()) {
+        std::cout << "Expected \'{\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    auto stmts =
+            AstRet(std::make_unique<IfBody>(ASTNode::NodeKind::IF_BODY), STATUS::SUCCESS);
+
+    reserved_token_iter_ = token_iter_;
+    if ((stmts = stmtsDecl(std::move(stmts))).second == STATUS::FAIL) {
+        std::cout << "Wrong statements declaration" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        return head;
+    }
+
+    child_pair.first->AddChildNode(std::move(stmts.first));
+
+    if (!term<TokenType::CLOSE_FIG_BRACKET>()) {
+        std::cout << "Expected \'}\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    head.first->AddChildNode(std::move(child_pair.first));
+
+    head.second = STATUS::SUCCESS;
+    reserved_token_iter_ = token_iter_;
     return head;
 }
 

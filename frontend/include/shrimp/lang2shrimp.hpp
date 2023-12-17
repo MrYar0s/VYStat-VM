@@ -66,15 +66,19 @@ private:
 
 class Compiler {
 public:
-    explicit Compiler(const std::string &programFile) : program_file_ {programFile} {}
+    explicit Compiler(const std::string &input_file, const std::string &output_file) : input_file_ {input_file}, output_file_(output_file) {}
 
     void run();
 
     bool ast2file(std::unique_ptr<ASTNode> &&astRoot, std::string input_file, std::string output_file);
     void compileFunc(const std::unique_ptr<ASTNode> &func);
+    void compileStatements(const ASTNode *node);
+
     void compileVarDecl(const std::unique_ptr<ASTNode> &instr);
     void compileRetStmt(const std::unique_ptr<ASTNode> &instr);
+    void compileIfStmt(const std::unique_ptr<ASTNode> &instr);
     void compileExpr(const std::unique_ptr<ASTNode> &expr, const std::string &name);
+    void compileLogic(const std::unique_ptr<ASTNode> &expr, const std::string &name);
     void compileArithm(const std::unique_ptr<ASTNode> &expr, const std::string &name);
     void compileArithmOperation(const std::unique_ptr<ASTNode> &expr, const std::string &source);
     void getFromExpr(const std::unique_ptr<ASTNode> &child);
@@ -85,7 +89,8 @@ public:
     void writeFunctions(shrimp::shrimpfile::File &out);
 
 private:
-    std::string program_file_;
+    std::string input_file_;
+    std::string output_file_;
 
     ByteOffset curr_offset_ = 0;
 

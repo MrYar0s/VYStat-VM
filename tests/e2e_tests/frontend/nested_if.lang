@@ -1,0 +1,21 @@
+function main () {
+    int a = 4;
+    int b = square(a);
+    int c = 5+(b*3);
+    if (c > 52) {
+        int d = 53;
+        if (d > 10) {
+            if (d < 60) {
+                int e = 23;
+                return 0;
+            }
+            return 1;
+        }
+        return 1;
+    }
+    return 1;
+}
+
+function square (a) {
+    return a*a;
+}

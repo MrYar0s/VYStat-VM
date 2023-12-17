@@ -277,3 +277,24 @@ ARR.STA.F:
         rs: [16, 23]
 
 # ARR.STA.REF
+
+CMP.EQ.I32:
+    desc: "acc == rs ? 1 : 0"
+    opcode: 35
+    size: "HWord"
+    fields:
+        rs: [8, 15]
+
+CMP.GG.I32:
+    desc: "acc > rs ? 1 : 0"
+    opcode: 36
+    size: "HWord"
+    fields:
+        rs: [8, 15]
+
+CMP.LL.I32:
+    desc: "acc < rs ? 1 : 0"
+    opcode: 37
+    size: "HWord"
+    fields:
+        rs: [8, 15]

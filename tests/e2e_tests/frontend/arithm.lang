@@ -1,0 +1,10 @@
+function main () {
+    int a = 4;
+    int b = square(a);
+    int c = 4+(b*3);
+    return c < 52;
+}
+
+function square (a) {
+    return a*a;
+}
