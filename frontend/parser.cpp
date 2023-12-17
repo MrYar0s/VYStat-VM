@@ -1,3 +1,4 @@
+#include <cassert>
 #include <memory>
 #include <shrimp/parser.hpp>
 #include <shrimp/frontend/astnode.hpp>
@@ -172,15 +173,17 @@ AstRet Parser::expression(AstRet &&head)
 {
     reserved_token_iter_ = token_iter_;
 
-    // auto child = std::make_unique<AssignExpr>(ASTNode::NodeKind::EXPR);
-    // AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
-
-    if ((head = simple(std::move(head))).second == STATUS::SUCCESS) {
+    auto child = std::make_unique<Expr>(ASTNode::NodeKind::EXPR);
+    AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+    if ((child_pair = simple(std::move(child_pair))).second == STATUS::SUCCESS) {
+        assert(child_pair.first != nullptr);
         reserved_token_iter_ = token_iter_;
+        head.first->AddChildNode(std::move(child_pair.first));
         head.second = STATUS::SUCCESS;
         return head;
     }
 
+    assert(child_pair.first != nullptr);
     token_iter_ = reserved_token_iter_;
     head.second = STATUS::FAIL;
     return head;
@@ -194,6 +197,8 @@ AstRet Parser::simpleDash(AstRet &&head)
         head.second = STATUS::SUCCESS;
         return head;
     }
+    std::cout << "Found " << token_iter_->value << std::endl;
+    head.first->setName(token_iter_->value);
     token_iter_++;
 
     reserved_token_iter_ = token_iter_;
@@ -206,6 +211,7 @@ AstRet Parser::simpleDash(AstRet &&head)
 
 AstRet Parser::simple(AstRet &&head)
 {
+    assert(head.first != nullptr);
     if ((head = summand(std::move(head))).second == STATUS::SUCCESS) {
         head = simpleDash(std::move(head));
         reserved_token_iter_ = token_iter_;
@@ -226,6 +232,8 @@ AstRet Parser::factorDash(AstRet &&head)
         head.second = STATUS::SUCCESS;
         return head;
     }
+    std::cout << "Found " << token_iter_->value << std::endl;
+    head.first->setName(token_iter_->value);
     token_iter_++;
 
     reserved_token_iter_ = token_iter_;
@@ -284,12 +292,6 @@ AstRet Parser::primary(AstRet &&head)
 {
     std::string number = "";
 
-    if ((head = value(std::move(head))).second == STATUS::SUCCESS) {
-        reserved_token_iter_ = token_iter_;
-        head.second = STATUS::SUCCESS;
-        return head;
-    }
-
     if (term<TokenType::NUMBER>(&number)) {
         std::cout << "Found number as expression" << std::endl;
 
@@ -304,6 +306,12 @@ AstRet Parser::primary(AstRet &&head)
         return head;
     }
     token_iter_--;
+
+    if ((head = value(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
 
     token_iter_ = reserved_token_iter_;
     head.second = STATUS::FAIL;
@@ -359,6 +367,7 @@ AstRet Parser::varDecl(AstRet &&head)
         return head;
     }
 
+    assert(child_pair.first != nullptr);
     head.first->AddChildNode(std::move(child_pair.first));
 
     reserved_token_iter_ = token_iter_;

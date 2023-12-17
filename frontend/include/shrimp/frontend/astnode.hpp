@@ -50,6 +50,11 @@ public:
         return childs_;
     }
 
+    void setName(const std::string &str)
+    {
+        name_ = str;
+    }
+
     void AddChildNode(std::unique_ptr<ASTNode> &&node)
     {
         childs_.emplace_back(std::move(node));
@@ -72,12 +77,6 @@ public:
     virtual ~RetStmt() = default;
 };
 
-class VarDecl : public ASTNode {
-public:
-    explicit VarDecl(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
-    virtual ~VarDecl() = default;
-};
-
 class Identifier : public ASTNode {
 public:
     explicit Identifier(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
@@ -94,6 +93,12 @@ class AssignExpr : public ASTNode {
 public:
     explicit AssignExpr(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
     virtual ~AssignExpr() = default;
+};
+
+class Expr : public ASTNode {
+public:
+    explicit Expr(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    virtual ~Expr() = default;
 };
 
 class Number : public ASTNode {
