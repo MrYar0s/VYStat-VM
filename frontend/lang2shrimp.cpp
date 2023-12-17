@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <shrimp/shrimpfile.hpp>
+#include "shrimp/common/types.hpp"
 
 namespace shrimp {
 
@@ -92,11 +93,17 @@ void Compiler::compileFunc(const std::unique_ptr<ASTNode> &ast)
 {
     auto *func = reinterpret_cast<FunctionDecl *>(ast.get());
 
-    std::vector<std::string> args {};
-
-    funcs_.emplace_back(curr_offset_, func->GetName(), args);
+    funcs_.emplace_back(curr_offset_, func->GetName(), func->getArgs());
+    funcName_to_id_.insert({func->GetName(), funcs_.size()});
 
     curr_func_ = &funcs_.back();
+
+    auto &regMap = curr_func_->getRegMap();
+
+    R8Id pos = 255;
+    for (auto &arg : func->getArgs()) {
+        regMap.insert({arg, pos});
+    }
 
     auto &instrsuctions = func->GetChildrenNodes();
 
@@ -133,10 +140,10 @@ void Compiler::compileRetStmt(const std::unique_ptr<ASTNode> &instr)
         name = node_name->GetName();
     }
 
-    varIdent_to_reg_.insert({name, varIdent_to_reg_.size()});
+    curr_func_->getRegMap().insert({name, curr_func_->getRegMap().size()});
     compileExpr(expr, name);
 
-    auto asm_lda = assembler::Instr<InstrOpcode::LDA>(varIdent_to_reg_[name]);
+    auto asm_lda = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[name]);
     instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(asm_lda));
     curr_offset_ += asm_lda.getByteSize();
 
@@ -154,7 +161,7 @@ void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr)
     auto &val = childs[0];
 
     if (val->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
-        varIdent_to_reg_.insert({childs[0]->GetName(), varIdent_to_reg_.size()});
+        curr_func_->getRegMap().insert({childs[0]->GetName(), curr_func_->getRegMap().size()});
     }
 
     auto &expr = childs[1];
@@ -179,29 +186,29 @@ void Compiler::compileArithm(const std::unique_ptr<ASTNode> &expr, const std::st
     if (right->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
         right_name = right->GetName();
     }
-    varIdent_to_reg_.insert({left_name, varIdent_to_reg_.size()});
+    curr_func_->getRegMap().insert({left_name, curr_func_->getRegMap().size()});
     compileExpr(left, left_name);
-    auto asm_instr = assembler::Instr<InstrOpcode::LDA>(varIdent_to_reg_[left_name]);
+    auto asm_instr = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[left_name]);
     instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(asm_instr));
 
-    varIdent_to_reg_.insert({right_name, varIdent_to_reg_.size()});
+    curr_func_->getRegMap().insert({right_name, curr_func_->getRegMap().size()});
     compileExpr(right, right_name);
 
     if (expr->GetName() == "*") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::MUL_I32>(varIdent_to_reg_[right_name]);
+        auto asm_op_instr = assembler::Instr<InstrOpcode::MUL_I32>(curr_func_->getRegMap()[right_name]);
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MUL_I32>>(asm_op_instr));
     } else if (expr->GetName() == "/") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::DIV_I32>(varIdent_to_reg_[right_name]);
+        auto asm_op_instr = assembler::Instr<InstrOpcode::DIV_I32>(curr_func_->getRegMap()[right_name]);
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::DIV_I32>>(asm_op_instr));
     } else if (expr->GetName() == "+") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::ADD_I32>(varIdent_to_reg_[right_name]);
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ADD_I32>(curr_func_->getRegMap()[right_name]);
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ADD_I32>>(asm_op_instr));
     } else if (expr->GetName() == "-") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::SUB_I32>(varIdent_to_reg_[right_name]);
+        auto asm_op_instr = assembler::Instr<InstrOpcode::SUB_I32>(curr_func_->getRegMap()[right_name]);
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::SUB_I32>>(asm_op_instr));
     }
 
-    auto ret_instr = assembler::Instr<InstrOpcode::STA>(varIdent_to_reg_[name]);
+    auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name]);
     instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
 }
 
@@ -209,8 +216,7 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
 {
     auto &instrs = curr_func_->getInstrs();
 
-    if (expr->GetName() == "*" || expr->GetName() == "/" ||
-        expr->GetName() == "+" || expr->GetName() == "-") {
+    if (expr->GetName() == "*" || expr->GetName() == "/" || expr->GetName() == "+" || expr->GetName() == "-") {
         compileArithm(expr, name);
     } else {
         auto &childs = expr->GetChildrenNodes();
@@ -223,11 +229,62 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
     if (expr->GetKind() == ASTNode::NodeKind::NUMBER) {
         auto *number = reinterpret_cast<Number *>(expr.get());
 
-        auto asm_instr =
-            assembler::Instr<InstrOpcode::MOV_IMM_I32>(varIdent_to_reg_[name], number->getValue());
+        auto asm_instr = assembler::Instr<InstrOpcode::MOV_IMM_I32>(curr_func_->getRegMap()[name], number->getValue());
 
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MOV_IMM_I32>>(asm_instr));
         curr_offset_ += asm_instr.getByteSize();
+    }
+
+    if (expr->GetKind() == ASTNode::NodeKind::FUNCTION_CALL) {
+        auto *funcCall = reinterpret_cast<FunctionCall *>(expr.get());
+
+        auto &func_name = funcCall->GetName();
+        auto &args = funcCall->getArgs();
+
+        switch (funcCall->getArgs().size()) {
+            case 0: {
+                auto asm_instr = assembler::Instr<InstrOpcode::CALL_0ARG>(funcName_to_id_[func_name]);
+                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_0ARG>>(asm_instr));
+                curr_offset_ += asm_instr.getByteSize();
+                break;
+            }
+            case 1: {
+                auto asm_instr =
+                    assembler::Instr<InstrOpcode::CALL_1ARG>(funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]]);
+                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_1ARG>>(asm_instr));
+                curr_offset_ += asm_instr.getByteSize();
+                break;
+            }
+            case 2: {
+                auto asm_instr = assembler::Instr<InstrOpcode::CALL_2ARG>(
+                    funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]], curr_func_->getRegMap()[args[1]]);
+                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_2ARG>>(asm_instr));
+                curr_offset_ += asm_instr.getByteSize();
+                break;
+            }
+            case 3: {
+                auto asm_instr = assembler::Instr<InstrOpcode::CALL_3ARG>(
+                    funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]], curr_func_->getRegMap()[args[1]],
+                    curr_func_->getRegMap()[args[2]]);
+                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_3ARG>>(asm_instr));
+                curr_offset_ += asm_instr.getByteSize();
+                break;
+            }
+            case 4: {
+                auto asm_instr = assembler::Instr<InstrOpcode::CALL_4ARG>(
+                    funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]], curr_func_->getRegMap()[args[1]],
+                    curr_func_->getRegMap()[args[2]], curr_func_->getRegMap()[args[3]]);
+                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_4ARG>>(asm_instr));
+                curr_offset_ += asm_instr.getByteSize();
+                break;
+            }
+            default:
+                std::abort();
+                break;
+        }
+        auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
+        curr_offset_ += ret_instr.getByteSize();
     }
 }
 

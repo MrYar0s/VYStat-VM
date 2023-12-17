@@ -43,6 +43,11 @@ public:
         return offset_;
     }
 
+    auto &getRegMap() noexcept
+    {
+        return varIdent_to_reg_;
+    }
+
 private:
     // Function offset
     ByteOffset offset_ = 0;
@@ -55,6 +60,8 @@ private:
 
     // Parsed instructions
     std::vector<std::unique_ptr<assembler::InterfaceInstr>> instrs_ {};
+
+    std::unordered_map<std::string, R8Id> varIdent_to_reg_;
 };
 
 class Compiler {
@@ -81,8 +88,6 @@ private:
     ByteOffset curr_offset_ = 0;
 
     std::vector<std::unique_ptr<assembler::InterfaceInstr>> instrs_ {};
-
-    std::unordered_map<std::string, R8Id> varIdent_to_reg_;
 
     std::unordered_map<std::string, FuncId> funcName_to_id_;
     std::unordered_map<std::string, StrId> strings_ {};

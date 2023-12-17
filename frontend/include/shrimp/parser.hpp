@@ -44,6 +44,8 @@ private:
     AstRet primary(AstRet &&head);
     AstRet value(AstRet &&head);
 
+    AstRet functionCall(AstRet &&head);
+
     AstRet expressionDash(AstRet &&head);
     AstRet simpleDash(AstRet &&head);
     AstRet factorDash(AstRet &&head);
@@ -56,7 +58,8 @@ private:
 
     STATUS programDecl1();
     STATUS programDecl2();
-    bool funcParamDecl();
+
+    std::vector<std::string> funcParamDecl();
 
 private:
     std::vector<Token> tokens_ {};

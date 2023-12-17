@@ -70,8 +70,16 @@ STATUS Parser::funcDecl()
         return STATUS::FAIL;
     }
 
-    if (!(term<TokenType::OPEN_BRACKET>() && funcParamDecl() && term<TokenType::CLOSE_BRACKET>())) {
-        std::cout << "Wrong function arguments" << std::endl;
+    if (!term<TokenType::OPEN_BRACKET>()) {
+        std::cout << "Expected \'(\'" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        return STATUS::FAIL;
+    }
+
+    auto funcArgs = funcParamDecl();
+
+    if (!term<TokenType::CLOSE_BRACKET>()) {
+        std::cout << "Expected \')\'" << std::endl;
         token_iter_ = reserved_token_iter_;
         return STATUS::FAIL;
     }
@@ -82,8 +90,10 @@ STATUS Parser::funcDecl()
         return STATUS::FAIL;
     }
 
-    auto head = AstRet(std::make_unique<ASTNode>(ASTNode::NodeKind::FUNCTION_DECL, ident), STATUS::SUCCESS);
+    auto head =
+        AstRet(std::make_unique<FunctionDecl>(ASTNode::NodeKind::FUNCTION_DECL, funcArgs, ident), STATUS::SUCCESS);
 
+    reserved_token_iter_ = token_iter_;
     if ((head = stmtsDecl(std::move(head))).second == STATUS::FAIL) {
         std::cout << "Wrong statements declaration" << std::endl;
         token_iter_ = reserved_token_iter_;
@@ -288,8 +298,50 @@ AstRet Parser::factor(AstRet &&head)
     return head;
 }
 
+AstRet Parser::functionCall(AstRet &&head)
+{
+    std::string name;
+
+    if (!term<TokenType::IDENTIFIER>(&name)) {
+        std::cout << "Expected identifier (name of function)" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::OPEN_BRACKET>()) {
+        std::cout << "Expected \'(\'" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    const auto &args = funcParamDecl();
+
+    if (!term<TokenType::CLOSE_BRACKET>()) {
+        std::cout << "Expected \')\'" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    auto child = std::make_unique<FunctionCall>(ASTNode::NodeKind::FUNCTION_CALL, args, name);
+
+    head.first->AddChildNode(std::move(child));
+
+    reserved_token_iter_ = token_iter_;
+    head.second = STATUS::SUCCESS;
+    return head;
+}
+
 AstRet Parser::primary(AstRet &&head)
 {
+    if ((head = functionCall(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+
     std::string number = "";
 
     if (term<TokenType::NUMBER>(&number)) {
@@ -392,9 +444,27 @@ AstRet Parser::value(AstRet &&head)
     return head;
 }
 
-bool Parser::funcParamDecl()
+std::vector<std::string> Parser::funcParamDecl()
 {
     std::cout << "FuncParamDecl" << std::endl;
+
+    std::vector<std::string> funcArgs;
+
+    for (int i = 0; i < 4; i++) {
+        std::string name = "";
+        if (!term<TokenType::IDENTIFIER>(&name)) {
+            token_iter_--;
+            reserved_token_iter_ = token_iter_;
+            return funcArgs;
+        }
+        funcArgs.emplace_back(name);
+        if (!term<TokenType::COMMA>()) {
+            token_iter_--;
+            reserved_token_iter_ = token_iter_;
+            return funcArgs;
+        }
+    }
+
     reserved_token_iter_ = token_iter_;
-    return true;
+    return funcArgs;
 }

@@ -25,6 +25,8 @@ public:
         // General Exprs
         EXPR,
 
+        FUNCTION_CALL,
+
         // Expressions
         ASSIGN_EXPR,
         IDENTIFIER,
@@ -85,8 +87,19 @@ public:
 
 class FunctionDecl : public ASTNode {
 public:
-    explicit FunctionDecl(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    explicit FunctionDecl(NodeKind kind, std::vector<std::string> args, std::string name = "")
+        : ASTNode(kind, name), args_(args)
+    {
+    }
     virtual ~FunctionDecl() = default;
+
+    const auto &getArgs() const
+    {
+        return args_;
+    }
+
+private:
+    std::vector<std::string> args_;
 };
 
 class AssignExpr : public ASTNode {
@@ -99,6 +112,23 @@ class Expr : public ASTNode {
 public:
     explicit Expr(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
     virtual ~Expr() = default;
+};
+
+class FunctionCall : public ASTNode {
+public:
+    explicit FunctionCall(NodeKind kind, std::vector<std::string> args, std::string name = "")
+        : ASTNode(kind, name), args_(args)
+    {
+    }
+    virtual ~FunctionCall() = default;
+
+    const auto &getArgs() const
+    {
+        return args_;
+    }
+
+private:
+    std::vector<std::string> args_;
 };
 
 class Number : public ASTNode {
