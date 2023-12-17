@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include "shrimp/common/types.hpp"
 
 class ASTNode;
 
@@ -133,7 +134,9 @@ private:
 
 class Number : public ASTNode {
 public:
-    explicit Number(NodeKind kind, int val, std::string name = "") : ASTNode(kind, name), val_(val) {}
+    explicit Number(NodeKind kind, int val, shrimp::R8Id tmp_reg_num, std::string name = "") : ASTNode(kind, name), val_(val) {
+        tmp_reg_name_ = "<tmp>" + std::to_string(tmp_reg_num);
+    }
     virtual ~Number() = default;
 
     int getValue()
@@ -141,8 +144,14 @@ public:
         return val_;
     }
 
+    const std::string &getTmpName() const
+    {
+        return tmp_reg_name_;
+    }
+
 private:
     int val_;
+    std::string tmp_reg_name_;
 };
 
 #endif  // FRONTEND_INCLUDE_SHRIMP_FRONTEND_ASTNODE_HPP

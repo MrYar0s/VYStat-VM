@@ -5,6 +5,7 @@
 #include <shrimp/frontend/astnode.hpp>
 #include <shrimp/lexer.hpp>
 #include <iostream>
+#include "shrimp/common/types.hpp"
 
 enum class STATUS : uint8_t { SUCCESS, END, FAIL };
 
@@ -65,6 +66,8 @@ private:
     std::vector<Token> tokens_ {};
     TokensIter token_iter_ {};
     TokensIter reserved_token_iter_ {};
+
+    shrimp::R8Id num_of_tmp_regs_;
 
     AstRet root_;
 };

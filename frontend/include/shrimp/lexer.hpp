@@ -18,6 +18,8 @@ enum class TokenType {
     MINUS,
     MUL,
     PLUS,
+    IS_GREATER,
+    IS_LESS,
 
     // Misc
     COMMA,

@@ -76,6 +76,8 @@ public:
     void compileRetStmt(const std::unique_ptr<ASTNode> &instr);
     void compileExpr(const std::unique_ptr<ASTNode> &expr, const std::string &name);
     void compileArithm(const std::unique_ptr<ASTNode> &expr, const std::string &name);
+    void compileArithmOperation(const std::unique_ptr<ASTNode> &expr, const std::string &source);
+    void getFromExpr(const std::unique_ptr<ASTNode> &child);
 
     void write(shrimp::shrimpfile::File &out);
     void writeCode(shrimp::shrimpfile::File &out);

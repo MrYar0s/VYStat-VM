@@ -179,6 +179,25 @@ AstRet Parser::retStmt(AstRet &&head)
     return head;
 }
 
+AstRet Parser::expressionDash(AstRet &&head) {
+    if (token_iter_->type != TokenType::IS_LESS && token_iter_->type != TokenType::IS_GREATER) {
+        std::cout << "Wrong token, expected: [<|>]" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+    std::cout << "Found " << token_iter_->value << std::endl;
+    head.first->setName(token_iter_->value);
+    token_iter_++;
+
+    reserved_token_iter_ = token_iter_;
+    if ((head = expression(std::move(head))).second == STATUS::SUCCESS) {
+        reserved_token_iter_ = token_iter_;
+        return head;
+    }
+    return head;
+}
+
 AstRet Parser::expression(AstRet &&head)
 {
     reserved_token_iter_ = token_iter_;
@@ -186,7 +205,7 @@ AstRet Parser::expression(AstRet &&head)
     auto child = std::make_unique<Expr>(ASTNode::NodeKind::EXPR);
     AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
     if ((child_pair = simple(std::move(child_pair))).second == STATUS::SUCCESS) {
-        assert(child_pair.first != nullptr);
+        child_pair = expressionDash(std::move(child_pair));
         reserved_token_iter_ = token_iter_;
         head.first->AddChildNode(std::move(child_pair.first));
         head.second = STATUS::SUCCESS;
@@ -211,8 +230,12 @@ AstRet Parser::simpleDash(AstRet &&head)
     head.first->setName(token_iter_->value);
     token_iter_++;
 
+    auto child = std::make_unique<Expr>(ASTNode::NodeKind::EXPR);
+    AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+
     reserved_token_iter_ = token_iter_;
-    if ((head = simple(std::move(head))).second == STATUS::SUCCESS) {
+    if ((child_pair = simple(std::move(child_pair))).second == STATUS::SUCCESS) {
+        head.first->AddChildNode(std::move(child_pair.first));
         reserved_token_iter_ = token_iter_;
         return head;
     }
@@ -246,8 +269,12 @@ AstRet Parser::factorDash(AstRet &&head)
     head.first->setName(token_iter_->value);
     token_iter_++;
 
+    auto child = std::make_unique<Expr>(ASTNode::NodeKind::EXPR);
+    AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+
     reserved_token_iter_ = token_iter_;
-    if ((head = factor(std::move(head))).second == STATUS::SUCCESS) {
+    if ((child_pair = factor(std::move(child_pair))).second == STATUS::SUCCESS) {
+        head.first->AddChildNode(std::move(child_pair.first));
         reserved_token_iter_ = token_iter_;
         return head;
     }
@@ -349,7 +376,8 @@ AstRet Parser::primary(AstRet &&head)
 
         int32_t num = atoi(number.data());
 
-        auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, num);
+        auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, num, num_of_tmp_regs_);
+        num_of_tmp_regs_++;
 
         head.first->AddChildNode(std::move(child));
 

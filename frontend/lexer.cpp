@@ -73,6 +73,16 @@ void Lexer::run()
                 tokens_.emplace_back(currentChar, TokenType::EQUAL);
                 break;
 
+            case '>':
+                ++program_it_;
+                tokens_.emplace_back(currentChar, TokenType::IS_GREATER);
+                break;
+
+            case '<':
+                ++program_it_;
+                tokens_.emplace_back(currentChar, TokenType::IS_LESS);
+                break;
+
             default:
                 if (isalpha(currentChar)) {
                     curr_ident_ = currentChar;

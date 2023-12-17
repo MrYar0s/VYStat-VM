@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <cstdint>
 #include <memory>
 #include <shrimp/lang2shrimp.hpp>
 #include <shrimp/frontend/astnode.hpp>
@@ -170,46 +171,117 @@ void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr)
     }
 }
 
+void Compiler::compileArithmOperation(const std::unique_ptr<ASTNode> &expr, const std::string &source)
+{
+    auto &instrs = curr_func_->getInstrs();
+
+    if (expr->GetName() == "*") {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::MUL_I32>(curr_func_->getRegMap()[source]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MUL_I32>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    } else if (expr->GetName() == "/") {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::DIV_I32>(curr_func_->getRegMap()[source]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::DIV_I32>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    } else if (expr->GetName() == "+") {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ADD_I32>(curr_func_->getRegMap()[source]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ADD_I32>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    } else if (expr->GetName() == "-") {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::SUB_I32>(curr_func_->getRegMap()[source]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::SUB_I32>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    }
+}
+
 void Compiler::compileArithm(const std::unique_ptr<ASTNode> &expr, const std::string &name)
 {
     auto &instrs = curr_func_->getInstrs();
 
+    std::cout << expr->GetName() << std::endl;
+    std::cout << expr->GetChildrenNodes().size() << std::endl;
+
     auto &left = expr->GetChildrenNodes()[0];
     auto &right = expr->GetChildrenNodes()[1];
 
-    std::string left_name = "<left>";
-    std::string right_name = "<right>";
+    std::cout << "Left name: " << left->GetName() << std::endl;
+    std::cout << "Right name: " << right->GetName() << std::endl;
 
-    if (left->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
-        left_name = left->GetName();
+    for (auto &child : expr->GetChildrenNodes()) {
+        if (child->GetName() == "*" || child->GetName() == "/" || child->GetName() == "+" || child->GetName() == "-") {
+            compileExpr(child, "");
+        } else if (child->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
+            auto child_name = child->GetName();
+            std::cout << "Ident name : " << child_name << std::endl;
+            child->setName(child_name);
+            compileExpr(child, child_name);
+        } else if (child->GetKind() == ASTNode::NodeKind::NUMBER) {
+            auto *child_number = reinterpret_cast<Number *>(child.get());
+            auto child_name = child_number->getTmpName();
+            curr_func_->getRegMap().insert({child_name, curr_func_->getRegMap().size()});
+            std::cout << "Number name : " << child_name << std::endl;
+            child->setName(child_name);
+            compileExpr(child, child_name);
+        } else if (child->GetKind() == ASTNode::NodeKind::EXPR) {
+            if (child->GetChildrenNodes().size() == 1) {
+                auto *child_of_child = child->GetChildrenNodes()[0].get();
+                while(child_of_child->GetKind() == ASTNode::NodeKind::EXPR && child->GetChildrenNodes().size() == 1) {
+                    child_of_child = child_of_child->GetChildrenNodes()[0].get();
+                }
+                if (child_of_child->GetKind() == ASTNode::NodeKind::NUMBER) {
+                    auto *child_number = reinterpret_cast<Number *>(child_of_child);
+                    auto child_name = child_number->getTmpName();
+                    curr_func_->getRegMap().insert({child_name, curr_func_->getRegMap().size()});
+                    std::cout << "Number name : " << child_name << std::endl;
+                    child->setName(child_name);
+                    compileExpr(child, child_name);
+                } else if (child_of_child->GetKind() == ASTNode::NodeKind::IDENTIFIER){
+                    auto child_name = child_of_child->GetName();
+                    std::cout << "Ident name : " << child_name << std::endl;
+                    child->setName(child_name);
+                    compileExpr(child, child_name);
+                }
+            }
+        }
     }
-    if (right->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
-        right_name = right->GetName();
-    }
-    curr_func_->getRegMap().insert({left_name, curr_func_->getRegMap().size()});
-    compileExpr(left, left_name);
-    auto asm_instr = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[left_name]);
-    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(asm_instr));
 
-    curr_func_->getRegMap().insert({right_name, curr_func_->getRegMap().size()});
-    compileExpr(right, right_name);
+    std::string left_name = expr->GetChildrenNodes()[0]->GetName();
+    std::string right_name = expr->GetChildrenNodes()[1]->GetName();
 
-    if (expr->GetName() == "*") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::MUL_I32>(curr_func_->getRegMap()[right_name]);
-        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MUL_I32>>(asm_op_instr));
-    } else if (expr->GetName() == "/") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::DIV_I32>(curr_func_->getRegMap()[right_name]);
-        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::DIV_I32>>(asm_op_instr));
-    } else if (expr->GetName() == "+") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::ADD_I32>(curr_func_->getRegMap()[right_name]);
-        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ADD_I32>>(asm_op_instr));
-    } else if (expr->GetName() == "-") {
-        auto asm_op_instr = assembler::Instr<InstrOpcode::SUB_I32>(curr_func_->getRegMap()[right_name]);
-        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::SUB_I32>>(asm_op_instr));
+    std::cout << left_name << std::endl;
+    std::cout << right_name << std::endl;
+
+    if (right_name == "*" || right_name == "/" || right_name == "+" || right_name == "-") {
+        std::string tmp_swap_reg = "<tmp_swap>";
+        curr_func_->getRegMap().insert({tmp_swap_reg, curr_func_->getRegMap().size()});
+        auto tmp_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[tmp_swap_reg]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(tmp_instr));
+        curr_offset_ += tmp_instr.getByteSize();
+
+        auto swap_instr_1 = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[left_name]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(swap_instr_1));
+        curr_offset_ += swap_instr_1.getByteSize();
+
+        auto swap_instr_2 = assembler::Instr<InstrOpcode::MOV>(curr_func_->getRegMap()[tmp_swap_reg], curr_func_->getRegMap()[left_name]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MOV>>(swap_instr_2));
+        curr_offset_ += swap_instr_2.getByteSize();
     }
 
-    auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name]);
-    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
+    if (right_name != "*" && right_name != "/" && right_name != "+" && right_name != "-" &&
+        left_name != "*" && left_name != "/" && left_name != "+" && left_name != "-") {
+        auto asm_instr= assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[left_name]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(asm_instr));
+        curr_offset_ += asm_instr.getByteSize();
+    }
+
+    compileArithmOperation(expr, right_name);
+
+    if (name == "<ret>" || curr_func_->getRegMap().find(name) != curr_func_->getRegMap().end())
+    {
+        auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
+        curr_offset_ += ret_instr.getByteSize();
+    }
 }
 
 void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::string &name)
