@@ -223,3 +223,45 @@ LDA.STR:
     size: "Word"
     fields:
         str_id: [8, 23]
+
+ARR.NEW.I32:
+    descr: "Create new i32 array of size rs"
+    opcode: 31
+    size: "Word"
+    gen_handler: False
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
+        # dim: [24, 31]
+
+ARR.NEW.F32:
+    descr: "Create new f32 array of size rs"
+    opcode: 32
+    size: "Word"
+    gen_handler: False
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
+        # dim: [24, 31]
+
+ARR.LDA:
+    descr: "Load rs1[rs2] to acc"
+    opcode: 33
+    size: "Word"
+    gen_handler: False
+    fields:
+        rs1: [8, 15]
+        rs2: [16, 23]
+
+# ARR.LDA.REF
+
+ARR.STA:
+    descr: "Store acc to rd[rs]"
+    opcode: 34
+    size: "Word"
+    gen_handler: False
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
+
+# ARR.STA.REF
