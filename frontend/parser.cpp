@@ -492,19 +492,27 @@ AstRet Parser::primary(AstRet &&head)
     }
 
     std::string number = "";
+    std::string neg = "";
+
+    // Parsing of negative number
+    if (term<TokenType::MINUS>()) {
+        neg = "-";
+    } else {
+        token_iter_--;
+    }
 
     if (term<TokenType::NUMBER>(&number)) {
         std::cout << "Found number as expression" << std::endl;
 
         auto val_type = number.find('.');
         if (val_type == std::string::npos) {
-            int32_t num = atoi(number.data());
+            int32_t num = atoi((neg + number).data());
             uint64_t val = shrimp::bit::castToWritable<int>(num);
             auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, NumberType::INT, num_of_tmp_regs_);
             num_of_tmp_regs_++;
             head.first->AddChildNode(std::move(child));
         } else {
-            float num = atof(number.data());
+            float num = atof((neg + number).data());
             uint64_t val = shrimp::bit::castToWritable<float>(num);
             auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, NumberType::FLOAT, num_of_tmp_regs_);
             num_of_tmp_regs_++;

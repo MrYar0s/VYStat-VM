@@ -1,7 +1,7 @@
 function main () {
     float a = 1.0;
     float b = 1.0;
-    float c = 0.0-6.0;
+    float c = -6.0;
 
     float d = square(b);
     float prod = a*c;
@@ -14,9 +14,8 @@ function main () {
     float x1 = x12/2.0;
     float x2 = x22/2.0;
 
-
     if (x1 == 2.0) {
-        float expectedneg = 0.0-3.0;
+        float expectedneg = -3.0;
         if (x2 == expectedneg) {
             return 0;
         }
