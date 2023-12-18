@@ -97,12 +97,14 @@ void Lexer::run()
                         tokens_.emplace_back(curr_ident_, TokenType::RETURN);
                     } else if (curr_ident_ == "int") {
                         tokens_.emplace_back(curr_ident_, TokenType::TYPE);
+                    } else if (curr_ident_ == "float") {
+                        tokens_.emplace_back(curr_ident_, TokenType::TYPE);
                     } else {
                         tokens_.emplace_back(curr_ident_, TokenType::IDENTIFIER);
                     }
                 } else if (isdigit(currentChar)) {
                     std::string numberStr;
-                    while (isdigit(*program_it_)) {
+                    while (isdigit(*program_it_) || *program_it_ == '.') {
                         numberStr.append(std::string {*program_it_});
                         ++program_it_;
                     }

@@ -61,12 +61,15 @@ private:
     // Parsed instructions
     std::vector<std::unique_ptr<assembler::InterfaceInstr>> instrs_ {};
 
-    std::unordered_map<std::string, R8Id> varIdent_to_reg_;
+    std::unordered_map<std::string, std::pair<R8Id, NumberType>> varIdent_to_reg_;
 };
 
 class Compiler {
 public:
-    explicit Compiler(const std::string &input_file, const std::string &output_file) : input_file_ {input_file}, output_file_(output_file) {}
+    explicit Compiler(const std::string &input_file, const std::string &output_file)
+        : input_file_ {input_file}, output_file_(output_file)
+    {
+    }
 
     void run();
 

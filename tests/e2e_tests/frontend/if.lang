@@ -10,6 +10,6 @@ function main () {
     return 1;
 }
 
-function square (a) {
+function square (int a) {
     return a*a;
 }

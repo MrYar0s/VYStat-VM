@@ -5,6 +5,7 @@
 #include <shrimp/frontend/astnode.hpp>
 #include <shrimp/lexer.hpp>
 #include <iostream>
+#include <unordered_map>
 #include "shrimp/common/types.hpp"
 
 enum class STATUS : uint8_t { SUCCESS, END, FAIL };
@@ -44,7 +45,7 @@ private:
     AstRet summand(AstRet &&head);
     AstRet factor(AstRet &&head);
     AstRet primary(AstRet &&head);
-    AstRet value(AstRet &&head);
+    AstRet value(AstRet &&head, NumberType type = NumberType::FLOAT, bool need_to_init = false);
 
     AstRet functionCall(AstRet &&head);
 
@@ -61,7 +62,8 @@ private:
     STATUS programDecl1();
     STATUS programDecl2();
 
-    std::vector<std::string> funcParamDecl();
+    std::vector<std::pair<std::string, NumberType>> funcParamDecl();
+    std::vector<std::string> funcParamCall();
 
 private:
     std::vector<Token> tokens_ {};
@@ -69,6 +71,8 @@ private:
     TokensIter reserved_token_iter_ {};
 
     shrimp::R8Id num_of_tmp_regs_;
+
+    std::unordered_map<std::string, NumberType> ident_to_type;
 
     AstRet root_;
 };

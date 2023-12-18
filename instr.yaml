@@ -280,21 +280,21 @@ ARR.STA.F:
 
 CMP.EQ.I32:
     desc: "acc == rs ? 1 : 0"
-    opcode: 35
+    opcode: 37
     size: "HWord"
     fields:
         rs: [8, 15]
 
 CMP.GG.I32:
     desc: "acc > rs ? 1 : 0"
-    opcode: 36
+    opcode: 38
     size: "HWord"
     fields:
         rs: [8, 15]
 
 CMP.LL.I32:
     desc: "acc < rs ? 1 : 0"
-    opcode: 37
+    opcode: 39
     size: "HWord"
     fields:
         rs: [8, 15]

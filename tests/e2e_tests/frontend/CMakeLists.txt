@@ -23,3 +23,5 @@ endfunction()
 
 shrimp_e2e_test(arithm)
 shrimp_e2e_test(if)
+shrimp_e2e_test(nested_if)
+shrimp_e2e_test(floats)

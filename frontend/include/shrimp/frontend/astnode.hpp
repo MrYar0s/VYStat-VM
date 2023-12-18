@@ -1,6 +1,7 @@
 #ifndef FRONTEND_INCLUDE_SHRIMP_FRONTEND_ASTNODE_HPP
 #define FRONTEND_INCLUDE_SHRIMP_FRONTEND_ASTNODE_HPP
 
+#include <cstdint>
 #include <memory>
 #include <vector>
 #include "shrimp/common/types.hpp"
@@ -8,6 +9,8 @@
 class ASTNode;
 
 using ChildNodes = std::vector<std::unique_ptr<ASTNode>>;
+
+enum class NumberType { INT, FLOAT };
 
 class ASTNode {
 public:
@@ -85,13 +88,21 @@ public:
 
 class Identifier : public ASTNode {
 public:
-    explicit Identifier(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    explicit Identifier(NodeKind kind, NumberType type, std::string name = "") : ASTNode(kind, name), type_(type) {}
     virtual ~Identifier() = default;
+
+    auto getType() const
+    {
+        return type_;
+    }
+
+private:
+    NumberType type_;
 };
 
 class FunctionDecl : public ASTNode {
 public:
-    explicit FunctionDecl(NodeKind kind, std::vector<std::string> args, std::string name = "")
+    explicit FunctionDecl(NodeKind kind, std::vector<std::pair<std::string, NumberType>> args, std::string name = "")
         : ASTNode(kind, name), args_(args)
     {
     }
@@ -103,7 +114,7 @@ public:
     }
 
 private:
-    std::vector<std::string> args_;
+    std::vector<std::pair<std::string, NumberType>> args_;
 };
 
 class AssignExpr : public ASTNode {
@@ -149,12 +160,19 @@ private:
 
 class Number : public ASTNode {
 public:
-    explicit Number(NodeKind kind, int val, shrimp::R8Id tmp_reg_num, std::string name = "") : ASTNode(kind, name), val_(val) {
+    union value_t {
+        int int_val_;
+        float float_val_;
+    };
+
+    explicit Number(NodeKind kind, uint64_t val, NumberType type, shrimp::R8Id tmp_reg_num, std::string name = "")
+        : ASTNode(kind, name), val_(val), type_(type)
+    {
         tmp_reg_name_ = "<tmp>" + std::to_string(tmp_reg_num);
     }
     virtual ~Number() = default;
 
-    int getValue()
+    uint64_t getValue()
     {
         return val_;
     }
@@ -164,9 +182,15 @@ public:
         return tmp_reg_name_;
     }
 
+    auto getType() const
+    {
+        return type_;
+    }
+
 private:
-    int val_;
+    uint64_t val_;
     std::string tmp_reg_name_;
+    NumberType type_;
 };
 
 #endif  // FRONTEND_INCLUDE_SHRIMP_FRONTEND_ASTNODE_HPP

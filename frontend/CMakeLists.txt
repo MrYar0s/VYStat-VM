@@ -7,7 +7,7 @@ set(FRONTEND_SRC
 
 add_executable(lang2shrimp ${FRONTEND_SRC})
 
-target_link_libraries(lang2shrimp PRIVATE shrimpfile CLI11)
+target_link_libraries(lang2shrimp PRIVATE shrimpfile CLI11 common)
 
 target_include_directories(lang2shrimp
 PRIVATE

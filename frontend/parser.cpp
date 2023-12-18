@@ -5,6 +5,7 @@
 #include <iostream>
 #include <shrimp/lexer.hpp>
 #include <utility>
+#include <shrimp/common/bitops.hpp>
 
 void Parser::run(std::vector<Token> &&tokens, std::unique_ptr<ASTNode> &&root)
 {
@@ -191,8 +192,7 @@ AstRet Parser::ifStmt(AstRet &&head)
         return head;
     }
 
-    auto stmts =
-            AstRet(std::make_unique<IfBody>(ASTNode::NodeKind::IF_BODY), STATUS::SUCCESS);
+    auto stmts = AstRet(std::make_unique<IfBody>(ASTNode::NodeKind::IF_BODY), STATUS::SUCCESS);
 
     reserved_token_iter_ = token_iter_;
     if ((stmts = stmtsDecl(std::move(stmts))).second == STATUS::FAIL) {
@@ -258,7 +258,8 @@ AstRet Parser::retStmt(AstRet &&head)
     return head;
 }
 
-AstRet Parser::expressionDash(AstRet &&head) {
+AstRet Parser::expressionDash(AstRet &&head)
+{
     if (token_iter_->type != TokenType::IS_LESS && token_iter_->type != TokenType::IS_GREATER) {
         std::cout << "Wrong token, expected: [<|>]" << std::endl;
         token_iter_ = reserved_token_iter_;
@@ -422,7 +423,7 @@ AstRet Parser::functionCall(AstRet &&head)
         return head;
     }
 
-    const auto &args = funcParamDecl();
+    const auto &args = funcParamCall();
 
     if (!term<TokenType::CLOSE_BRACKET>()) {
         std::cout << "Expected \')\'" << std::endl;
@@ -453,13 +454,20 @@ AstRet Parser::primary(AstRet &&head)
     if (term<TokenType::NUMBER>(&number)) {
         std::cout << "Found number as expression" << std::endl;
 
-        int32_t num = atoi(number.data());
-
-        auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, num, num_of_tmp_regs_);
-        num_of_tmp_regs_++;
-
-        head.first->AddChildNode(std::move(child));
-
+        auto val_type = number.find('.');
+        if (val_type == std::string::npos) {
+            int32_t num = atoi(number.data());
+            uint64_t val = shrimp::bit::castToWritable<int>(num);
+            auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, NumberType::INT, num_of_tmp_regs_);
+            num_of_tmp_regs_++;
+            head.first->AddChildNode(std::move(child));
+        } else {
+            float num = atof(number.data());
+            uint64_t val = shrimp::bit::castToWritable<float>(num);
+            auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, NumberType::FLOAT, num_of_tmp_regs_);
+            num_of_tmp_regs_++;
+            head.first->AddChildNode(std::move(child));
+        }
         reserved_token_iter_ = token_iter_;
         head.second = STATUS::SUCCESS;
         return head;
@@ -477,6 +485,15 @@ AstRet Parser::primary(AstRet &&head)
     return head;
 }
 
+static NumberType castToNumType(std::string type)
+{
+    NumberType num_type = NumberType::INT;
+    if (type == "float") {
+        num_type = NumberType::FLOAT;
+    }
+    return num_type;
+}
+
 AstRet Parser::varDecl(AstRet &&head)
 {
     std::cout << "VarDeclaration" << std::endl;
@@ -488,7 +505,9 @@ AstRet Parser::varDecl(AstRet &&head)
     }
     token_iter_--;
 
-    if (!term<TokenType::TYPE>()) {
+    std::string type;
+
+    if (!term<TokenType::TYPE>(&type)) {
         std::cout << "Expected type" << std::endl;
         token_iter_ = reserved_token_iter_;
         head.second = STATUS::FAIL;
@@ -498,7 +517,9 @@ AstRet Parser::varDecl(AstRet &&head)
     auto child = std::make_unique<AssignExpr>(ASTNode::NodeKind::ASSIGN_EXPR);
     AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
 
-    if ((child_pair = value(std::move(child_pair))).second != STATUS::SUCCESS) {
+    auto var_type = castToNumType(type);
+
+    if ((child_pair = value(std::move(child_pair), var_type, true)).second != STATUS::SUCCESS) {
         std::cout << "Wrong Value parsing" << std::endl;
         token_iter_ = reserved_token_iter_;
         head.second = STATUS::FAIL;
@@ -533,7 +554,7 @@ AstRet Parser::varDecl(AstRet &&head)
     return head;
 }
 
-AstRet Parser::value(AstRet &&head)
+AstRet Parser::value(AstRet &&head, NumberType type, bool need_to_init)
 {
     std::string ident;
     if (!term<TokenType::IDENTIFIER>(&ident)) {
@@ -543,7 +564,12 @@ AstRet Parser::value(AstRet &&head)
         return head;
     }
 
-    auto child = std::make_unique<Identifier>(ASTNode::NodeKind::IDENTIFIER, ident);
+    if (need_to_init) {
+        ident_to_type.insert({ident, type});
+    }
+    type = ident_to_type[ident];
+
+    auto child = std::make_unique<Identifier>(ASTNode::NodeKind::IDENTIFIER, type, ident);
 
     head.first->AddChildNode(std::move(child));
     reserved_token_iter_ = token_iter_;
@@ -551,20 +577,56 @@ AstRet Parser::value(AstRet &&head)
     return head;
 }
 
-std::vector<std::string> Parser::funcParamDecl()
+std::vector<std::string> Parser::funcParamCall()
 {
-    std::cout << "FuncParamDecl" << std::endl;
+    std::cout << "FuncParamCall" << std::endl;
 
     std::vector<std::string> funcArgs;
 
     for (int i = 0; i < 4; i++) {
         std::string name = "";
         if (!term<TokenType::IDENTIFIER>(&name)) {
+            std::cout << "Expected identifier" << std::endl;
             token_iter_--;
             reserved_token_iter_ = token_iter_;
             return funcArgs;
         }
+
         funcArgs.emplace_back(name);
+        if (!term<TokenType::COMMA>()) {
+            token_iter_--;
+            reserved_token_iter_ = token_iter_;
+            return funcArgs;
+        }
+    }
+
+    reserved_token_iter_ = token_iter_;
+    return funcArgs;
+}
+
+std::vector<std::pair<std::string, NumberType>> Parser::funcParamDecl()
+{
+    std::cout << "FuncParamDecl" << std::endl;
+
+    std::vector<std::pair<std::string, NumberType>> funcArgs;
+
+    for (int i = 0; i < 4; i++) {
+        std::string type = "";
+        if (!term<TokenType::TYPE>(&type)) {
+            std::cout << "Expected type" << std::endl;
+            token_iter_--;
+            reserved_token_iter_ = token_iter_;
+            return funcArgs;
+        }
+        std::string name = "";
+        if (!term<TokenType::IDENTIFIER>(&name)) {
+            std::cout << "Expected identifier" << std::endl;
+            token_iter_--;
+            reserved_token_iter_ = token_iter_;
+            return funcArgs;
+        }
+
+        funcArgs.emplace_back(std::make_pair(name, castToNumType(type)));
         if (!term<TokenType::COMMA>()) {
             token_iter_--;
             reserved_token_iter_ = token_iter_;
