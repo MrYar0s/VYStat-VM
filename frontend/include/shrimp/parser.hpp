@@ -48,6 +48,7 @@ private:
     AstRet value(AstRet &&head, NumberType type = NumberType::FLOAT, bool need_to_init = false);
 
     AstRet functionCall(AstRet &&head);
+    AstRet intrinsicCall(AstRet &&head);
 
     AstRet expressionDash(AstRet &&head);
     AstRet simpleDash(AstRet &&head);

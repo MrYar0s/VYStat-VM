@@ -31,6 +31,13 @@ enum class TokenType {
     CLOSE_FIG_BRACKET,
     SEMICOLON,
 
+    // Intrinsics
+    SCAN,
+    PRINT,
+    SQRT,
+    SIN,
+    COS,
+
     // End of file
     END,
 

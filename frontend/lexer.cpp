@@ -86,10 +86,12 @@ void Lexer::run()
             default:
                 if (isalpha(currentChar)) {
                     curr_ident_ = currentChar;
-                    while ((++program_it_ != program_end_) && isalnum(*program_it_)) {
+                    while ((++program_it_ != program_end_) && (isalnum(*program_it_) || *program_it_ == '.')) {
                         curr_ident_ += *program_it_;
                     }
-                    if (curr_ident_ == "function") {
+                    if (curr_ident_ == "intrinsic.scan") {
+                        tokens_.emplace_back(curr_ident_, TokenType::SCAN);
+                    } else if (curr_ident_ == "function") {
                         tokens_.emplace_back(curr_ident_, TokenType::FUNCTION);
                     } else if (curr_ident_ == "if") {
                         tokens_.emplace_back(curr_ident_, TokenType::IF);

@@ -211,7 +211,7 @@ void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr)
 
     if (val->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
         auto ident_node = reinterpret_cast<Identifier *>(val.get());
-        curr_func_->getRegMap().insert({childs[0]->GetName(), {curr_func_->getRegMap().size(), ident_node->getType()}});
+        curr_func_->getRegMap().insert({val->GetName(), {curr_func_->getRegMap().size(), ident_node->getType()}});
     }
 
     auto &expr = childs[1];
@@ -462,54 +462,77 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
 
         auto &func_name = funcCall->GetName();
         auto &args = funcCall->getArgs();
+        auto type = funcCall->getIntrinsicType();
 
-        switch (funcCall->getArgs().size()) {
-            case 0: {
-                auto asm_instr = assembler::Instr<InstrOpcode::CALL_0ARG>(funcName_to_id_[func_name]);
-                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_0ARG>>(asm_instr));
-                curr_offset_ += asm_instr.getByteSize();
-                break;
+        if (type == ASTNode::IntrinsicType::NONE) {
+            switch (funcCall->getArgs().size()) {
+                case 0: {
+                    auto asm_instr = assembler::Instr<InstrOpcode::CALL_0ARG>(funcName_to_id_[func_name]);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_0ARG>>(asm_instr));
+                    curr_offset_ += asm_instr.getByteSize();
+                    break;
+                }
+                case 1: {
+                    auto asm_instr = assembler::Instr<InstrOpcode::CALL_1ARG>(funcName_to_id_[func_name],
+                                                                            curr_func_->getRegMap()[args[0]].first);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_1ARG>>(asm_instr));
+                    curr_offset_ += asm_instr.getByteSize();
+                    break;
+                }
+                case 2: {
+                    auto asm_instr = assembler::Instr<InstrOpcode::CALL_2ARG>(funcName_to_id_[func_name],
+                                                                            curr_func_->getRegMap()[args[0]].first,
+                                                                            curr_func_->getRegMap()[args[1]].first);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_2ARG>>(asm_instr));
+                    curr_offset_ += asm_instr.getByteSize();
+                    break;
+                }
+                case 3: {
+                    auto asm_instr = assembler::Instr<InstrOpcode::CALL_3ARG>(
+                        funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]].first,
+                        curr_func_->getRegMap()[args[1]].first, curr_func_->getRegMap()[args[2]].first);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_3ARG>>(asm_instr));
+                    curr_offset_ += asm_instr.getByteSize();
+                    break;
+                }
+                case 4: {
+                    auto asm_instr = assembler::Instr<InstrOpcode::CALL_4ARG>(
+                        funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]].first,
+                        curr_func_->getRegMap()[args[1]].first, curr_func_->getRegMap()[args[2]].first,
+                        curr_func_->getRegMap()[args[3]].first);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_4ARG>>(asm_instr));
+                    curr_offset_ += asm_instr.getByteSize();
+                    break;
+                }
+                default:
+                    std::abort();
+                    break;
             }
-            case 1: {
-                auto asm_instr = assembler::Instr<InstrOpcode::CALL_1ARG>(funcName_to_id_[func_name],
-                                                                          curr_func_->getRegMap()[args[0]].first);
-                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_1ARG>>(asm_instr));
-                curr_offset_ += asm_instr.getByteSize();
-                break;
+        } else {
+            // auto &args = funcCall->getArgs();
+            switch (type) {
+                case ASTNode::IntrinsicType::SCAN: {
+                    if (curr_func_->getRegMap()[name].second == NumberType::INT) {
+                        auto asm_instr = assembler::Instr<InstrOpcode::INTRINSIC>(static_cast<uint8_t>(IntrinsicCode::SCAN_I32), 0, 0, 0, 0);
+                        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
+                        curr_offset_ += asm_instr.getByteSize();
+                    } else if (curr_func_->getRegMap()[name].second == NumberType::FLOAT) {
+                        auto asm_instr = assembler::Instr<InstrOpcode::INTRINSIC>(static_cast<uint8_t>(IntrinsicCode::SCAN_F), 0, 0, 0, 0);
+                        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
+                        curr_offset_ += asm_instr.getByteSize();
+                    }
+                    break;
+                }
+                default:
+                    std::abort();
+                    break;
             }
-            case 2: {
-                auto asm_instr = assembler::Instr<InstrOpcode::CALL_2ARG>(funcName_to_id_[func_name],
-                                                                          curr_func_->getRegMap()[args[0]].first,
-                                                                          curr_func_->getRegMap()[args[1]].first);
-                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_2ARG>>(asm_instr));
-                curr_offset_ += asm_instr.getByteSize();
-                break;
-            }
-            case 3: {
-                auto asm_instr = assembler::Instr<InstrOpcode::CALL_3ARG>(
-                    funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]].first,
-                    curr_func_->getRegMap()[args[1]].first, curr_func_->getRegMap()[args[2]].first);
-                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_3ARG>>(asm_instr));
-                curr_offset_ += asm_instr.getByteSize();
-                break;
-            }
-            case 4: {
-                auto asm_instr = assembler::Instr<InstrOpcode::CALL_4ARG>(
-                    funcName_to_id_[func_name], curr_func_->getRegMap()[args[0]].first,
-                    curr_func_->getRegMap()[args[1]].first, curr_func_->getRegMap()[args[2]].first,
-                    curr_func_->getRegMap()[args[3]].first);
-                instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::CALL_4ARG>>(asm_instr));
-                curr_offset_ += asm_instr.getByteSize();
-                break;
-            }
-            default:
-                std::abort();
-                break;
         }
-        auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name].first);
-        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
-        curr_offset_ += ret_instr.getByteSize();
     }
+
+    auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name].first);
+    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
+    curr_offset_ += ret_instr.getByteSize();
 }
 
 }  // namespace shrimp

@@ -409,11 +409,17 @@ AstRet Parser::functionCall(AstRet &&head)
 {
     std::string name;
 
+    ASTNode::IntrinsicType type = ASTNode::IntrinsicType::NONE;
+
     if (!term<TokenType::IDENTIFIER>(&name)) {
-        std::cout << "Expected identifier (name of function)" << std::endl;
-        token_iter_ = reserved_token_iter_;
-        head.second = STATUS::FAIL;
-        return head;
+        token_iter_--;
+        if(!term<TokenType::SCAN>(&name)) {
+            token_iter_--;
+            token_iter_ = reserved_token_iter_;
+            head.second = STATUS::FAIL;
+            return head;
+        }
+        type = ASTNode::IntrinsicType::SCAN;
     }
 
     if (!term<TokenType::OPEN_BRACKET>()) {
@@ -432,7 +438,7 @@ AstRet Parser::functionCall(AstRet &&head)
         return head;
     }
 
-    auto child = std::make_unique<FunctionCall>(ASTNode::NodeKind::FUNCTION_CALL, args, name);
+    auto child = std::make_unique<FunctionCall>(ASTNode::NodeKind::FUNCTION_CALL, args, name, type);
 
     head.first->AddChildNode(std::move(child));
 

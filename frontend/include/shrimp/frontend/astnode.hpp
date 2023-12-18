@@ -41,6 +41,15 @@ public:
         STRING,
     };
 
+    enum class IntrinsicType {
+        NONE,
+        SCAN,
+        PRINT,
+        SQRT,
+        SIN,
+        COS,
+    };
+
 public:
     explicit ASTNode(NodeKind kind, std::string name = "") : kind_ {kind}, name_ {name} {}
     virtual ~ASTNode() = default;
@@ -143,8 +152,8 @@ public:
 
 class FunctionCall : public ASTNode {
 public:
-    explicit FunctionCall(NodeKind kind, std::vector<std::string> args, std::string name = "")
-        : ASTNode(kind, name), args_(args)
+    explicit FunctionCall(NodeKind kind, std::vector<std::string> args, std::string name = "", IntrinsicType type = IntrinsicType::NONE)
+        : ASTNode(kind, name), args_(args), type_(type)
     {
     }
     virtual ~FunctionCall() = default;
@@ -154,8 +163,14 @@ public:
         return args_;
     }
 
+    auto getIntrinsicType() const
+    {
+        return type_;
+    }
+
 private:
     std::vector<std::string> args_;
+    IntrinsicType type_;
 };
 
 class Number : public ASTNode {

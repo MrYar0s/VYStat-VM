@@ -1,0 +1,6 @@
+function main () {
+    float a = intrinsic.scan();
+    float b = intrinsic.scan();
+    float c = intrinsic.scan();
+    return 0;
+}
