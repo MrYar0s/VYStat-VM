@@ -38,3 +38,9 @@ make -j16
 ```
 
 Test .shr sources can be found in tests/e2e
+
+* To run tests:
+
+```bash
+make tests
+```
