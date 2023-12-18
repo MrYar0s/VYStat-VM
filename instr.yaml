@@ -228,38 +228,50 @@ ARR.NEW.I32:
     descr: "Create new i32 array of size rs"
     opcode: 31
     size: "Word"
-    gen_handler: False
     fields:
         rd: [8, 15]
         rs: [16, 23]
         # dim: [24, 31]
 
-ARR.NEW.F32:
-    descr: "Create new f32 array of size rs"
+ARR.NEW.F:
+    descr: "Create new f array of size rs"
     opcode: 32
     size: "Word"
-    gen_handler: False
     fields:
         rd: [8, 15]
         rs: [16, 23]
         # dim: [24, 31]
 
-ARR.LDA:
+ARR.LDA.I32:
     descr: "Load rs1[rs2] to acc"
     opcode: 33
     size: "Word"
-    gen_handler: False
+    fields:
+        rs1: [8, 15]
+        rs2: [16, 23]
+
+ARR.LDA.F:
+    descr: "Load rs1[rs2] to acc"
+    opcode: 34
+    size: "Word"
     fields:
         rs1: [8, 15]
         rs2: [16, 23]
 
 # ARR.LDA.REF
 
-ARR.STA:
+ARR.STA.I32:
     descr: "Store acc to rd[rs]"
-    opcode: 34
+    opcode: 35
     size: "Word"
-    gen_handler: False
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
+
+ARR.STA.F:
+    descr: "Store acc to rd[rs]"
+    opcode: 36
+    size: "Word"
     fields:
         rd: [8, 15]
         rs: [16, 23]
