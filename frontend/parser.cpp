@@ -116,6 +116,10 @@ STATUS Parser::funcDecl()
 AstRet Parser::stmtsDecl(AstRet &&head)
 {
     std::cout << "Statements" << std::endl;
+    if ((head = assignmentExpr(std::move(head))).second == STATUS::SUCCESS) {
+        head = stmtsDeclDash(std::move(head));
+        return head;
+    }
     if ((head = varDecl(std::move(head))).second == STATUS::SUCCESS) {
         head = stmtsDeclDash(std::move(head));
         return head;
@@ -150,6 +154,56 @@ AstRet Parser::stmtsDeclDash(AstRet &&head)
         reserved_token_iter_ = token_iter_;
         return head;
     }
+    return head;
+}
+
+AstRet Parser::assignmentExpr(AstRet &&head)
+{
+    std::cout << "AssignmentExpression" << std::endl;
+
+    if (term<TokenType::CLOSE_FIG_BRACKET>()) {
+        token_iter_--;
+        head.second = STATUS::END;
+        return head;
+    }
+    token_iter_--;
+
+    auto child = std::make_unique<AssignExpr>(ASTNode::NodeKind::ASSIGN_EXPR);
+    AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+
+    if ((child_pair = value(std::move(child_pair))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong Value parsing" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::EQUAL>()) {
+        std::cout << "Expected equal sign" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if ((child_pair = expression(std::move(child_pair))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong Expression parsing" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::SEMICOLON>()) {
+        std::cout << "Expected \';\'" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    assert(child_pair.first != nullptr);
+    head.first->AddChildNode(std::move(child_pair.first));
+
+    head.second = STATUS::SUCCESS;
+    reserved_token_iter_ = token_iter_;
     return head;
 }
 
@@ -623,6 +677,7 @@ AstRet Parser::varDecl(AstRet &&head)
     assert(child_pair.first != nullptr);
     head.first->AddChildNode(std::move(child_pair.first));
 
+    head.second = STATUS::SUCCESS;
     reserved_token_iter_ = token_iter_;
     return head;
 }

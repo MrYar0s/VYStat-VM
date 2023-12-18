@@ -60,6 +60,7 @@ private:
     STATUS funcDecl();
 
     AstRet varDecl(AstRet &&head);
+    AstRet assignmentExpr(AstRet &&head);
     AstRet stmtsDecl(AstRet &&head);
 
     STATUS programDecl1();
