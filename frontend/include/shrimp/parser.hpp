@@ -50,6 +50,8 @@ private:
     AstRet functionCall(AstRet &&head);
     AstRet intrinsicCall(AstRet &&head);
 
+    ASTNode::IntrinsicType parseIntrinsicType(std::string &name);
+
     AstRet expressionDash(AstRet &&head);
     AstRet simpleDash(AstRet &&head);
     AstRet factorDash(AstRet &&head);

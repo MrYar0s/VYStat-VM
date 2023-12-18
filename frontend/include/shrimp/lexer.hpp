@@ -20,6 +20,7 @@ enum class TokenType {
     PLUS,
     IS_GREATER,
     IS_LESS,
+    IS_EQUAL,
 
     // Misc
     COMMA,

@@ -16,7 +16,6 @@ void Lexer::run()
         }
 
         const char currentChar = *program_it_;
-
         switch (currentChar) {
             case '{':
                 ++program_it_;
@@ -70,6 +69,11 @@ void Lexer::run()
 
             case '=':
                 ++program_it_;
+                if (*program_it_ == '=') {
+                    program_it_++;
+                    tokens_.emplace_back("==", TokenType::IS_EQUAL);
+                    break;
+                }
                 tokens_.emplace_back(currentChar, TokenType::EQUAL);
                 break;
 
@@ -91,6 +95,10 @@ void Lexer::run()
                     }
                     if (curr_ident_ == "intrinsic.scan") {
                         tokens_.emplace_back(curr_ident_, TokenType::SCAN);
+                    } else if (curr_ident_ == "intrinsic.sqrt") {
+                        tokens_.emplace_back(curr_ident_, TokenType::SQRT);
+                    } else if (curr_ident_ == "intrinsic.print") {
+                        tokens_.emplace_back(curr_ident_, TokenType::PRINT);
                     } else if (curr_ident_ == "function") {
                         tokens_.emplace_back(curr_ident_, TokenType::FUNCTION);
                     } else if (curr_ident_ == "if") {

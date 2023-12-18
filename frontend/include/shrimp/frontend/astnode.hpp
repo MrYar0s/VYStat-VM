@@ -152,7 +152,8 @@ public:
 
 class FunctionCall : public ASTNode {
 public:
-    explicit FunctionCall(NodeKind kind, std::vector<std::string> args, std::string name = "", IntrinsicType type = IntrinsicType::NONE)
+    explicit FunctionCall(NodeKind kind, std::vector<std::string> args, std::string name = "",
+                          IntrinsicType type = IntrinsicType::NONE)
         : ASTNode(kind, name), args_(args), type_(type)
     {
     }

@@ -128,6 +128,16 @@ AstRet Parser::stmtsDecl(AstRet &&head)
         head = stmtsDeclDash(std::move(head));
         return head;
     }
+    if ((head = functionCall(std::move(head))).second == STATUS::SUCCESS) {
+        if (!term<TokenType::SEMICOLON>()) {
+            std::cout << "Expected \';\'" << std::endl;
+            token_iter_ = reserved_token_iter_;
+            head.second = STATUS::FAIL;
+            return head;
+        }
+        head = stmtsDeclDash(std::move(head));
+        return head;
+    }
     token_iter_ = reserved_token_iter_;
     head.second = head.second;
     return head;
@@ -260,8 +270,9 @@ AstRet Parser::retStmt(AstRet &&head)
 
 AstRet Parser::expressionDash(AstRet &&head)
 {
-    if (token_iter_->type != TokenType::IS_LESS && token_iter_->type != TokenType::IS_GREATER) {
-        std::cout << "Wrong token, expected: [<|>]" << std::endl;
+    if (token_iter_->type != TokenType::IS_LESS && token_iter_->type != TokenType::IS_EQUAL &&
+        token_iter_->type != TokenType::IS_GREATER) {
+        std::cout << "Wrong token, expected: [<|==|>]" << std::endl;
         token_iter_ = reserved_token_iter_;
         head.second = STATUS::SUCCESS;
         return head;
@@ -405,21 +416,46 @@ AstRet Parser::factor(AstRet &&head)
     return head;
 }
 
+ASTNode::IntrinsicType Parser::parseIntrinsicType(std::string &name)
+{
+    if (term<TokenType::SCAN>(&name)) {
+        return ASTNode::IntrinsicType::SCAN;
+    }
+    token_iter_--;
+    if (term<TokenType::PRINT>(&name)) {
+        return ASTNode::IntrinsicType::PRINT;
+    }
+    token_iter_--;
+    if (term<TokenType::SQRT>(&name)) {
+        return ASTNode::IntrinsicType::SQRT;
+    }
+    token_iter_--;
+    token_iter_ = reserved_token_iter_;
+    return ASTNode::IntrinsicType::NONE;
+}
+
 AstRet Parser::functionCall(AstRet &&head)
 {
+    std::cout << "FunctionCall" << std::endl;
+
     std::string name;
 
     ASTNode::IntrinsicType type = ASTNode::IntrinsicType::NONE;
 
+    if (term<TokenType::CLOSE_FIG_BRACKET>()) {
+        token_iter_--;
+        head.second = STATUS::END;
+        return head;
+    }
+    token_iter_--;
+
     if (!term<TokenType::IDENTIFIER>(&name)) {
         token_iter_--;
-        if(!term<TokenType::SCAN>(&name)) {
-            token_iter_--;
-            token_iter_ = reserved_token_iter_;
+        type = parseIntrinsicType(name);
+        if (type == ASTNode::IntrinsicType::NONE) {
             head.second = STATUS::FAIL;
             return head;
         }
-        type = ASTNode::IntrinsicType::SCAN;
     }
 
     if (!term<TokenType::OPEN_BRACKET>()) {
