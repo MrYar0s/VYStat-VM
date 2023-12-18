@@ -1,0 +1,12 @@
+func main ()
+    lda.imm.i32 20
+    mov.imm.i32 r0, 15
+    cmp.ll.i32 r0
+    mov.imm.i32 r0, 1
+    jump.ll r0, label_2
+label_1:
+    lda.imm.i32 1
+    ret
+label_2:
+    lda.imm.i32 0
+    ret

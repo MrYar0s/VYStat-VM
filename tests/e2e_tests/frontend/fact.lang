@@ -1,0 +1,15 @@
+function main () {
+    int arr[10];
+    int num = 10;
+    arr[1] = 1;
+    for (int i = 2; i < num; i = i + 1;) {
+        int prev = arr[i-1];
+        arr[i] = prev*i;
+        int let = arr[i];
+    }
+    int res = arr[num-1];
+    if (res == 362880) {
+        return 0;
+    }
+    return 1;
+}

@@ -68,6 +68,7 @@ add_subdirectory(third-party/CLI11)
 add_subdirectory(shrimpfile)
 add_subdirectory(common)
 add_subdirectory(runtime)
+add_subdirectory(frontend)
 
 # Add assembler executable
 add_subdirectory(assembler)

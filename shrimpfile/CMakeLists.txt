@@ -7,4 +7,4 @@ PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(shrimpfile PRIVATE common)
+target_link_libraries(shrimpfile PUBLIC common)

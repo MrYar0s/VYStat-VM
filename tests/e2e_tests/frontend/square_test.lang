@@ -1,0 +1,30 @@
+function main () {
+    float a = 1.0;
+    float b = 1.0;
+    float c = -6.0;
+
+    float d = square(b);
+    float prod = a*c;
+    float discr = d-(4.0*prod);
+
+    float discrsqrt = intrinsic.sqrt(discr);
+
+    float x12 = ((0.0-b)+discrsqrt)/a;
+    float x22 = ((0.0-b)-discrsqrt)/a;
+    float x1 = x12/2.0;
+    float x2 = x22/2.0;
+
+    if (x1 == 2.0) {
+        float expectedneg = -3.0;
+        if (x2 == expectedneg) {
+            return 0;
+        }
+        return 1;
+    }
+
+    return 1;
+}
+
+function square(float a) {
+    return a*a;
+}

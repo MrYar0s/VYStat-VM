@@ -1,0 +1,25 @@
+function main () {
+    float a = intrinsic.scan();
+    float b = intrinsic.scan();
+    float c = intrinsic.scan();
+
+    float d = square(b);
+    float prod = a*c;
+    float discr = d-(4.0*prod);
+
+    float discrsqrt = intrinsic.sqrt(discr);
+
+    float x12 = ((0.0-b)+discrsqrt)/a;
+    float x22 = ((0.0-b)-discrsqrt)/a;
+    float x1 = x12/2.0;
+    float x2 = x22/2.0;
+
+    intrinsic.print(x1);
+    intrinsic.print(x2);
+
+    return 0;
+}
+
+function square(float a) {
+    return a*a;
+}

@@ -1,0 +1,19 @@
+function main () {
+    int a = 4;
+    int b = square(a);
+    int c = 4+(b*3);
+
+    a = a + 1;
+
+    if (a == 5) {
+        if (c == 52) {
+            return 0;
+        }
+        return 1;
+    }
+    return 1;
+}
+
+function square (int a) {
+    return a*a;
+}

@@ -1,0 +1,18 @@
+function main () {
+    float a = 4.32;
+    float b = square(a);
+    float c = 0.73+(b*0.3);
+    if (c > 0.2) {
+        if (c < 16.2) {
+            int d = 53;
+            int e = 23;
+            return 0;
+        }
+        return 1;
+    }
+    return 1;
+}
+
+function square (float a) {
+    return a*a;
+}

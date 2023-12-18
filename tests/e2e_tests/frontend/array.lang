@@ -1,0 +1,9 @@
+function main () {
+    int a[40];
+    int b = 14;
+    a[b + 1] = 23;
+    if (a[b + 1] == 23) {
+        return 0;
+    }
+    return 1;
+}
