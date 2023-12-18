@@ -136,6 +136,10 @@ AstRet Parser::stmtsDecl(AstRet &&head)
         head = stmtsDeclDash(std::move(head));
         return head;
     }
+    if ((head = forStmt(std::move(head))).second == STATUS::SUCCESS) {
+        head = stmtsDeclDash(std::move(head));
+        return head;
+    }
     if ((head = functionCall(std::move(head))).second == STATUS::SUCCESS) {
         if (!term<TokenType::SEMICOLON>()) {
             std::cout << "Expected \';\'" << std::endl;
@@ -204,6 +208,92 @@ AstRet Parser::assignmentExpr(AstRet &&head)
     }
 
     assert(child_pair.first != nullptr);
+    head.first->AddChildNode(std::move(child_pair.first));
+
+    head.second = STATUS::SUCCESS;
+    reserved_token_iter_ = token_iter_;
+    return head;
+}
+
+AstRet Parser::forStmt(AstRet &&head)
+{
+    if (!term<TokenType::FOR>()) {
+        std::cout << "Expected for keyword" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::OPEN_BRACKET>()) {
+        std::cout << "Expected \'(\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    auto child = std::make_unique<ForStmt>(ASTNode::NodeKind::FOR_STATEMENT);
+    AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+
+    if ((child_pair = varDecl(std::move(child_pair), false)).second != STATUS::SUCCESS &&
+        (child_pair = assignmentExpr(std::move(child_pair))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong first statement in for statement" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if ((child_pair = expression(std::move(child_pair))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong second statement in for statement" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::SEMICOLON>()) {
+        std::cout << "Expected \';\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if ((child_pair = assignmentExpr(std::move(child_pair))).second != STATUS::SUCCESS) {
+        std::cout << "Wrong third statement in for statement" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::CLOSE_BRACKET>()) {
+        std::cout << "Expected \')\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    if (!term<TokenType::OPEN_FIG_BRACKET>()) {
+        std::cout << "Expected \'{\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
+    auto stmts = AstRet(std::make_unique<ForBody>(ASTNode::NodeKind::FOR_BODY), STATUS::SUCCESS);
+
+    reserved_token_iter_ = token_iter_;
+    if ((stmts = stmtsDecl(std::move(stmts))).second == STATUS::FAIL) {
+        std::cout << "Wrong statements declaration" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        return head;
+    }
+    child_pair.first->AddChildNode(std::move(stmts.first));
+
+    if (!term<TokenType::CLOSE_FIG_BRACKET>()) {
+        std::cout << "Expected \'}\' token" << std::endl;
+        token_iter_ = reserved_token_iter_;
+        head.second = STATUS::FAIL;
+        return head;
+    }
+
     head.first->AddChildNode(std::move(child_pair.first));
 
     head.second = STATUS::SUCCESS;

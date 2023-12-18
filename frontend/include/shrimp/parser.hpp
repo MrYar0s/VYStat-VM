@@ -36,6 +36,7 @@ private:
         return ret;
     }
 
+    AstRet forStmt(AstRet &&head);
     AstRet ifStmt(AstRet &&head);
     AstRet retStmt(AstRet &&head);
     AstRet stmtsDeclDash(AstRet &&head);

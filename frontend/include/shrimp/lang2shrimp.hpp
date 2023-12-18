@@ -77,12 +77,15 @@ public:
     void compileFunc(const std::unique_ptr<ASTNode> &func);
     void compileStatements(const ASTNode *node);
 
-    void compileArrLoad(const std::unique_ptr<ASTNode> &expr, const std::string &tmp_for_idx, const std::string &assign_to);
-    void compileArrStore(const std::unique_ptr<ASTNode> &expr, const std::string &tmp_for_idx, const std::string &need_to_assign);
+    void compileArrLoad(const std::unique_ptr<ASTNode> &expr, const std::string &tmp_for_idx,
+                        const std::string &assign_to);
+    void compileArrStore(const std::unique_ptr<ASTNode> &expr, const std::string &tmp_for_idx,
+                         const std::string &need_to_assign);
     void compileArrInit(const std::unique_ptr<ASTNode> &expr, const std::string &name);
     void compileVarDecl(const std::unique_ptr<ASTNode> &instr);
     void compileRetStmt(const std::unique_ptr<ASTNode> &instr);
     void compileIfStmt(const std::unique_ptr<ASTNode> &instr);
+    void compileForStmt(const std::unique_ptr<ASTNode> &instr);
     void compileExpr(const std::unique_ptr<ASTNode> &expr, const std::string &name);
     void compileLogic(const std::unique_ptr<ASTNode> &expr, const std::string &name);
     void compileArithm(const std::unique_ptr<ASTNode> &expr, const std::string &name);

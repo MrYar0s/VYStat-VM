@@ -8,6 +8,7 @@ enum class TokenType {
     // Keywords
     FUNCTION,
     IF,
+    FOR,
     RETURN,
     NUMBER,
     TYPE,

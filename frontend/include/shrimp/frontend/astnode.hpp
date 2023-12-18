@@ -26,9 +26,11 @@ public:
         // Statements
         RETURN_STATEMENT,
         IF_STATEMENT,
+        FOR_STATEMENT,
         ARRAY,
 
         IF_BODY,
+        FOR_BODY,
 
         // General Exprs
         EXPR,
@@ -165,6 +167,18 @@ class IfBody : public ASTNode {
 public:
     explicit IfBody(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
     virtual ~IfBody() = default;
+};
+
+class ForStmt : public ASTNode {
+public:
+    explicit ForStmt(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    virtual ~ForStmt() = default;
+};
+
+class ForBody : public ASTNode {
+public:
+    explicit ForBody(NodeKind kind, std::string name = "") : ASTNode(kind, name) {}
+    virtual ~ForBody() = default;
 };
 
 class FunctionCall : public ASTNode {

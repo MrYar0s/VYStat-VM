@@ -127,6 +127,8 @@ void Lexer::run()
                         tokens_.emplace_back(curr_ident_, TokenType::FUNCTION);
                     } else if (curr_ident_ == "if") {
                         tokens_.emplace_back(curr_ident_, TokenType::IF);
+                    } else if (curr_ident_ == "for") {
+                        tokens_.emplace_back(curr_ident_, TokenType::FOR);
                     } else if (curr_ident_ == "return") {
                         tokens_.emplace_back(curr_ident_, TokenType::RETURN);
                     } else if (curr_ident_ == "int" || curr_ident_ == "float" || curr_ident_ == "string") {
