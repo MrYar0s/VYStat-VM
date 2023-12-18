@@ -27,7 +27,6 @@ private:
     template <TokenType TOKEN_TYPE>
     bool inline term(std::string *str = nullptr)
     {
-        std::cout << "Got token_iter_->value = " << token_iter_->value << std::endl;
         auto prev_iter = token_iter_++;
         bool ret = prev_iter->type == TOKEN_TYPE;
         if (str != nullptr) {

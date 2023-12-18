@@ -6,7 +6,10 @@ function main () {
     a = a + 1;
 
     if (a == 5) {
-        return c < 52;
+        if (c == 52) {
+            return 0;
+        }
+        return 1;
     }
     return 1;
 }

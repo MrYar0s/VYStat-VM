@@ -23,9 +23,6 @@ void Compiler::run()
     lexer_ = Lexer {buffer};
     lexer_.run();
     std::vector<Token> tokens = std::move(lexer_.getTokens());
-    for (auto &&token : tokens) {
-        std::cout << "\'" << token.value << "\'" << std::endl;
-    }
 
     auto root = std::make_unique<ASTNode>(ASTNode::NodeKind::PROGRAM, "program");
     parser_.run(std::move(tokens), std::move(root));
@@ -145,14 +142,10 @@ void Compiler::compileForStmt(const std::unique_ptr<ASTNode> &instr)
 {
     auto &instrs = curr_func_->getInstrs();
 
-    std::cout << "Num of childs: " << instr->GetChildrenNodes().size() << std::endl;
-
     auto &init = instr->GetChildrenNodes()[0];
     auto &cond = instr->GetChildrenNodes()[1];
     auto &step = instr->GetChildrenNodes()[2];
     auto &stmts = instr->GetChildrenNodes()[3];
-
-    std::cout << static_cast<uint64_t>(init->GetKind()) << std::endl;
 
     compileVarDecl(init);
 
@@ -196,8 +189,6 @@ void Compiler::compileForStmt(const std::unique_ptr<ASTNode> &instr)
 void Compiler::compileIfStmt(const std::unique_ptr<ASTNode> &instr)
 {
     auto &instrs = curr_func_->getInstrs();
-
-    std::cout << "Num of childs: " << instr->GetChildrenNodes().size() << std::endl;
 
     auto &if_stmt = instr->GetChildrenNodes()[0];
 
@@ -424,16 +415,11 @@ void Compiler::compileLogic(const std::unique_ptr<ASTNode> &expr, const std::str
 {
     auto &instrs = curr_func_->getInstrs();
 
-    std::cout << expr->GetName() << std::endl;
-    std::cout << name << std::endl;
-    std::cout << expr->GetChildrenNodes().size() << std::endl;
-
     for (auto &child : expr->GetChildrenNodes()) {
         if (child->GetKind() == ASTNode::NodeKind::NUMBER) {
             auto *child_number = reinterpret_cast<Number *>(child.get());
             auto child_name = child_number->getTmpName();
             curr_func_->getRegMap().insert({child_name, {curr_func_->getRegMap().size(), child_number->getType()}});
-            std::cout << "Number name : " << child_name << std::endl;
             child->setName(child_name);
             compileExpr(child, child_name);
         } else if (child->GetKind() == ASTNode::NodeKind::EXPR) {
@@ -447,12 +433,10 @@ void Compiler::compileLogic(const std::unique_ptr<ASTNode> &expr, const std::str
                     auto child_name = child_number->getTmpName();
                     curr_func_->getRegMap().insert(
                         {child_name, {curr_func_->getRegMap().size(), child_number->getType()}});
-                    std::cout << "Number name : " << child_name << std::endl;
                     child->setName(child_name);
                     compileExpr(child, child_name);
                 } else if (child_of_child->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
                     auto child_name = child_of_child->GetName();
-                    std::cout << "Ident name : " << child_name << std::endl;
                     child->setName(child_name);
                     compileExpr(child, child_name);
                 }
@@ -468,9 +452,6 @@ void Compiler::compileLogic(const std::unique_ptr<ASTNode> &expr, const std::str
 
     std::string left_name = expr->GetChildrenNodes()[0]->GetName();
     std::string right_name = expr->GetChildrenNodes()[1]->GetName();
-
-    std::cout << "Left name: " << left_name << std::endl;
-    std::cout << "Right name: " << right_name << std::endl;
 
     auto asm_instr = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[left_name].first);
     instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(asm_instr));
@@ -501,28 +482,17 @@ void Compiler::compileArithm(const std::unique_ptr<ASTNode> &expr, const std::st
 {
     auto &instrs = curr_func_->getInstrs();
 
-    std::cout << expr->GetName() << std::endl;
-    std::cout << expr->GetChildrenNodes().size() << std::endl;
-
-    auto &left = expr->GetChildrenNodes()[0];
-    auto &right = expr->GetChildrenNodes()[1];
-
-    std::cout << "Left name: " << left->GetName() << std::endl;
-    std::cout << "Right name: " << right->GetName() << std::endl;
-
     for (auto &child : expr->GetChildrenNodes()) {
         if (child->GetName() == "*" || child->GetName() == "/" || child->GetName() == "+" || child->GetName() == "-") {
             compileExpr(child, "");
         } else if (child->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
             auto child_name = child->GetName();
-            std::cout << "Ident name : " << child_name << std::endl;
             child->setName(child_name);
             compileExpr(child, child_name);
         } else if (child->GetKind() == ASTNode::NodeKind::NUMBER) {
             auto *child_number = reinterpret_cast<Number *>(child.get());
             auto child_name = child_number->getTmpName();
             curr_func_->getRegMap().insert({child_name, {curr_func_->getRegMap().size(), child_number->getType()}});
-            std::cout << "Number name : " << child_name << std::endl;
             child->setName(child_name);
             compileExpr(child, child_name);
         } else if (child->GetKind() == ASTNode::NodeKind::EXPR) {
@@ -536,12 +506,10 @@ void Compiler::compileArithm(const std::unique_ptr<ASTNode> &expr, const std::st
                     auto child_name = child_number->getTmpName();
                     curr_func_->getRegMap().insert(
                         {child_name, {curr_func_->getRegMap().size(), child_number->getType()}});
-                    std::cout << "Number name : " << child_name << std::endl;
                     child->setName(child_name);
                     compileExpr(child, child_name);
                 } else if (child_of_child->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
                     auto child_name = child_of_child->GetName();
-                    std::cout << "Ident name : " << child_name << std::endl;
                     child->setName(child_name);
                     compileExpr(child, child_name);
                 }
@@ -551,9 +519,6 @@ void Compiler::compileArithm(const std::unique_ptr<ASTNode> &expr, const std::st
 
     std::string left_name = expr->GetChildrenNodes()[0]->GetName();
     std::string right_name = expr->GetChildrenNodes()[1]->GetName();
-
-    std::cout << left_name << std::endl;
-    std::cout << right_name << std::endl;
 
     if (right_name == "*" || right_name == "/" || right_name == "+" || right_name == "-") {
         std::string tmp_swap_reg = "<tmp_swap>";

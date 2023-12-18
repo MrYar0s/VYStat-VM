@@ -9,7 +9,7 @@ function(shrimp_e2e_frontend_test test_name)
 		COMMAND cd ${TEST_BUILD_DIR} && ${PROJECT_BINARY_DIR}/frontend/lang2shrimp
 		--in ${TEST_SOURCE_PATH}
 		--out ${TEST_BUILD_DIR}/${test_name}.imp
-		DEPENDS assembler ${TEST_SOURCE_PATH}
+		DEPENDS lang2shrimp ${TEST_SOURCE_PATH}
 	)
 	
 	add_custom_target(run_e2e_frontend_${test_name}
