@@ -684,6 +684,132 @@ int handleLdaStr(ShrimpVM *vm)
     return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
+int handleArrNewI32(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::ARR_NEW_I32>(vm->pc());
+
+    auto &frame = vm->currFrame();
+
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+
+    auto size = frame.getReg(rs_idx).getValue();
+
+    int32_t *ptr = std::bit_cast<int32_t *>(vm->getAllocator().allocate(size));
+
+    frame.setReg(bit::castToWritable(ptr), rd_idx);
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleArrNewF(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::ARR_NEW_F>(vm->pc());
+
+    auto &frame = vm->currFrame();
+
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+
+    auto size = frame.getReg(rs_idx).getValue();
+
+    float *ptr = std::bit_cast<float *>(vm->getAllocator().allocate(size));
+
+    frame.setReg(bit::castToWritable(ptr), rd_idx);
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleArrLdaI32(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::ARR_LDA_I32>(vm->pc());
+
+    auto &frame = vm->currFrame();
+
+    auto rs1_idx = instr.getRs1();
+    auto rs2_idx = instr.getRs2();
+
+    auto pos = frame.getReg(rs2_idx).getValue();
+    auto ptr = std::bit_cast<int32_t *>(frame.getReg(rs1_idx).getValue());
+
+    vm->acc().setValue(bit::castToWritable(ptr[pos]));
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleArrLdaF(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::ARR_LDA_F>(vm->pc());
+
+    auto &frame = vm->currFrame();
+
+    auto rs1_idx = instr.getRs1();
+    auto rs2_idx = instr.getRs2();
+
+    auto pos = frame.getReg(rs2_idx).getValue();
+    auto ptr = std::bit_cast<float *>(frame.getReg(rs1_idx).getValue());
+
+    vm->acc().setValue(bit::castToWritable(ptr[pos]));
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleArrStaI32(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::ARR_STA_I32>(vm->pc());
+
+    auto &frame = vm->currFrame();
+
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+
+    auto acc_val = vm->acc().getValue();
+
+    auto pos = frame.getReg(rs_idx).getValue();
+    auto ptr = std::bit_cast<int32_t *>(frame.getReg(rd_idx).getValue());
+
+    ptr[pos] = acc_val;
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleArrStaF(ShrimpVM *vm)
+{
+    auto instr = Instr<InstrOpcode::ARR_STA_F>(vm->pc());
+
+    auto &frame = vm->currFrame();
+
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+
+    auto acc_val = vm->acc().getValue();
+
+    auto pos = frame.getReg(rs_idx).getValue();
+    auto ptr = std::bit_cast<float *>(frame.getReg(rd_idx).getValue());
+
+    ptr[pos] = acc_val;
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
 }  // namespace
 
 int runImpl(ShrimpVM *vm)

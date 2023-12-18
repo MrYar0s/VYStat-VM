@@ -47,6 +47,7 @@ set(TEST_FILES
 	"call_2arg"
 	"call_3arg"
 	"call_4arg"
+	"arr_lda_sta_i32"
 )
 
 foreach(file IN LISTS TEST_FILES)

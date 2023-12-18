@@ -11,7 +11,7 @@ namespace shrimp::runtime {
 using ArenaAllocator = std::pmr::monotonic_buffer_resource;
 
 // Allocator to be used by containers. Requires ArenaAllocator to construct
-template<class T>
+template <class T>
 using ContainerAllocator = std::pmr::polymorphic_allocator<T>;
 
 }  // namespace shrimp::runtime

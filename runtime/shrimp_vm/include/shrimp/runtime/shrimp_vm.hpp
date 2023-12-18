@@ -15,6 +15,8 @@
 #include <shrimp/shrimpfile.hpp>
 #include <shrimp/common/types.hpp>
 
+#include <shrimp/runtime/memory/arena_allocator.hpp>
+
 namespace shrimp::runtime {
 
 class ShrimpVM final {
@@ -95,6 +97,11 @@ public:
         return code_.data() + offset;
     }
 
+    auto &getAllocator()
+    {
+        return allocator_;
+    }
+
 private:
     Runtime *runtime_ = nullptr;
     LogLevel log_level_ = LogLevel::NONE;
@@ -107,6 +114,8 @@ private:
 
     StringAccessor strings_;
     FuncAccessor funcs_;
+
+    ArenaAllocator allocator_;
 };
 
 }  // namespace shrimp::runtime
