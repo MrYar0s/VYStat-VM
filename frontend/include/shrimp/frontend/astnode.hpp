@@ -10,7 +10,7 @@ class ASTNode;
 
 using ChildNodes = std::vector<std::unique_ptr<ASTNode>>;
 
-enum class NumberType { INT, FLOAT };
+enum class ValueType { INT, FLOAT, STRING };
 
 class ASTNode {
 public:
@@ -48,6 +48,8 @@ public:
         SQRT,
         SIN,
         COS,
+        CONCAT,
+        SUBSTR,
     };
 
 public:
@@ -97,7 +99,7 @@ public:
 
 class Identifier : public ASTNode {
 public:
-    explicit Identifier(NodeKind kind, NumberType type, std::string name = "") : ASTNode(kind, name), type_(type) {}
+    explicit Identifier(NodeKind kind, ValueType type, std::string name = "") : ASTNode(kind, name), type_(type) {}
     virtual ~Identifier() = default;
 
     auto getType() const
@@ -106,12 +108,12 @@ public:
     }
 
 private:
-    NumberType type_;
+    ValueType type_;
 };
 
 class FunctionDecl : public ASTNode {
 public:
-    explicit FunctionDecl(NodeKind kind, std::vector<std::pair<std::string, NumberType>> args, std::string name = "")
+    explicit FunctionDecl(NodeKind kind, std::vector<std::pair<std::string, ValueType>> args, std::string name = "")
         : ASTNode(kind, name), args_(args)
     {
     }
@@ -123,7 +125,7 @@ public:
     }
 
 private:
-    std::vector<std::pair<std::string, NumberType>> args_;
+    std::vector<std::pair<std::string, ValueType>> args_;
 };
 
 class AssignExpr : public ASTNode {
@@ -181,7 +183,7 @@ public:
         float float_val_;
     };
 
-    explicit Number(NodeKind kind, uint64_t val, NumberType type, shrimp::R8Id tmp_reg_num, std::string name = "")
+    explicit Number(NodeKind kind, uint64_t val, ValueType type, shrimp::R8Id tmp_reg_num, std::string name = "")
         : ASTNode(kind, name), val_(val), type_(type)
     {
         tmp_reg_name_ = "<tmp>" + std::to_string(tmp_reg_num);
@@ -206,7 +208,42 @@ public:
 private:
     uint64_t val_;
     std::string tmp_reg_name_;
-    NumberType type_;
+    ValueType type_;
+};
+
+class String : public ASTNode {
+public:
+    union value_t {
+        int int_val_;
+        float float_val_;
+    };
+
+    explicit String(NodeKind kind, std::string str, ValueType type, shrimp::R8Id tmp_reg_num, std::string name = "")
+        : ASTNode(kind, name), str_(str), type_(type)
+    {
+        tmp_reg_name_ = "<str>" + std::to_string(tmp_reg_num);
+    }
+    virtual ~String() = default;
+
+    auto getValue()
+    {
+        return str_;
+    }
+
+    const std::string &getTmpName() const
+    {
+        return tmp_reg_name_;
+    }
+
+    auto getType() const
+    {
+        return type_;
+    }
+
+private:
+    std::string str_;
+    std::string tmp_reg_name_;
+    ValueType type_;
 };
 
 #endif  // FRONTEND_INCLUDE_SHRIMP_FRONTEND_ASTNODE_HPP

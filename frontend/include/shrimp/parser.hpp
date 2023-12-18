@@ -45,7 +45,7 @@ private:
     AstRet summand(AstRet &&head);
     AstRet factor(AstRet &&head);
     AstRet primary(AstRet &&head);
-    AstRet value(AstRet &&head, NumberType type = NumberType::FLOAT, bool need_to_init = false);
+    AstRet value(AstRet &&head, ValueType type = ValueType::FLOAT, bool need_to_init = false);
 
     AstRet functionCall(AstRet &&head);
     AstRet intrinsicCall(AstRet &&head);
@@ -65,7 +65,7 @@ private:
     STATUS programDecl1();
     STATUS programDecl2();
 
-    std::vector<std::pair<std::string, NumberType>> funcParamDecl();
+    std::vector<std::pair<std::string, ValueType>> funcParamDecl();
     std::vector<std::string> funcParamCall();
 
 private:
@@ -75,7 +75,7 @@ private:
 
     shrimp::R8Id num_of_tmp_regs_;
 
-    std::unordered_map<std::string, NumberType> ident_to_type;
+    std::unordered_map<std::string, ValueType> ident_to_type;
 
     AstRet root_;
 };

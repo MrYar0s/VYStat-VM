@@ -148,7 +148,7 @@ void Compiler::compileIfStmt(const std::unique_ptr<ASTNode> &instr)
 
     std::string reg_for_if_stmt = "<if_stmt>";
 
-    curr_func_->getRegMap().insert({reg_for_if_stmt, {curr_func_->getRegMap().size(), NumberType::INT}});
+    curr_func_->getRegMap().insert({reg_for_if_stmt, {curr_func_->getRegMap().size(), ValueType::INT}});
     compileLogic(if_stmt, reg_for_if_stmt);
 
     auto if_stmt_instr = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[reg_for_if_stmt].first);
@@ -193,7 +193,7 @@ void Compiler::compileRetStmt(const std::unique_ptr<ASTNode> &instr)
         name = node_name->GetName();
     }
 
-    curr_func_->getRegMap().insert({name, {curr_func_->getRegMap().size(), NumberType::INT}});
+    curr_func_->getRegMap().insert({name, {curr_func_->getRegMap().size(), ValueType::INT}});
     compileExpr(expr, name);
 
     auto asm_lda = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[name].first);
@@ -230,7 +230,7 @@ void Compiler::compileArithmOperation(const std::unique_ptr<ASTNode> &expr, cons
 
     auto pair = curr_func_->getRegMap()[source];
 
-    if (pair.second == NumberType::INT) {
+    if (pair.second == ValueType::INT) {
         if (expr->GetName() == "*") {
             auto asm_op_instr = assembler::Instr<InstrOpcode::MUL_I32>(pair.first);
             instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MUL_I32>>(asm_op_instr));
@@ -248,7 +248,7 @@ void Compiler::compileArithmOperation(const std::unique_ptr<ASTNode> &expr, cons
             instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::SUB_I32>>(asm_op_instr));
             curr_offset_ += asm_op_instr.getByteSize();
         }
-    } else if (pair.second == NumberType::FLOAT) {
+    } else if (pair.second == ValueType::FLOAT) {
         if (expr->GetName() == "*") {
             auto asm_op_instr = assembler::Instr<InstrOpcode::MUL_F>(pair.first);
             instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MUL_F>>(asm_op_instr));
@@ -402,7 +402,7 @@ void Compiler::compileArithm(const std::unique_ptr<ASTNode> &expr, const std::st
 
     if (right_name == "*" || right_name == "/" || right_name == "+" || right_name == "-") {
         std::string tmp_swap_reg = "<tmp_swap>";
-        curr_func_->getRegMap().insert({tmp_swap_reg, {curr_func_->getRegMap().size(), NumberType::INT}});
+        curr_func_->getRegMap().insert({tmp_swap_reg, {curr_func_->getRegMap().size(), ValueType::INT}});
         auto tmp_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[tmp_swap_reg].first);
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(tmp_instr));
         curr_offset_ += tmp_instr.getByteSize();
@@ -452,17 +452,33 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
     if (expr->GetKind() == ASTNode::NodeKind::NUMBER) {
         auto *number = reinterpret_cast<Number *>(expr.get());
 
-        if (number->getType() == NumberType::INT) {
+        if (number->getType() == ValueType::INT) {
             auto asm_instr =
                 assembler::Instr<InstrOpcode::MOV_IMM_I32>(curr_func_->getRegMap()[name].first, number->getValue());
             instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MOV_IMM_I32>>(asm_instr));
             curr_offset_ += asm_instr.getByteSize();
-        } else if (number->getType() == NumberType::FLOAT) {
+        } else if (number->getType() == ValueType::FLOAT) {
             auto asm_instr =
                 assembler::Instr<InstrOpcode::MOV_IMM_F>(curr_func_->getRegMap()[name].first, number->getValue());
             instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::MOV_IMM_F>>(asm_instr));
             curr_offset_ += asm_instr.getByteSize();
         }
+    }
+
+    if (expr->GetKind() == ASTNode::NodeKind::STRING) {
+        auto *str = reinterpret_cast<String *>(expr.get());
+
+        strings_.insert({str->getValue(), strings_.size()});
+
+        auto lda_instr =
+            assembler::Instr<InstrOpcode::LDA_STR>(strings_[str->getValue()]);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA_STR>>(lda_instr));
+        curr_offset_ += lda_instr.getByteSize();
+
+        auto asm_instr =
+            assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name].first);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(asm_instr));
+        curr_offset_ += asm_instr.getByteSize();
     }
 
     if (expr->GetKind() == ASTNode::NodeKind::FUNCTION_CALL) {
@@ -520,12 +536,12 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
             auto &args = funcCall->getArgs();
             switch (type) {
                 case ASTNode::IntrinsicType::SCAN: {
-                    if (curr_func_->getRegMap()[name].second == NumberType::INT) {
+                    if (curr_func_->getRegMap()[name].second == ValueType::INT) {
                         auto asm_instr = assembler::Instr<InstrOpcode::INTRINSIC>(
                             static_cast<uint8_t>(IntrinsicCode::SCAN_I32), 0, 0, 0, 0);
                         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
                         curr_offset_ += asm_instr.getByteSize();
-                    } else if (curr_func_->getRegMap()[name].second == NumberType::FLOAT) {
+                    } else if (curr_func_->getRegMap()[name].second == ValueType::FLOAT) {
                         auto asm_instr = assembler::Instr<InstrOpcode::INTRINSIC>(
                             static_cast<uint8_t>(IntrinsicCode::SCAN_F), 0, 0, 0, 0);
                         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
@@ -541,19 +557,45 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
                     break;
                 }
                 case ASTNode::IntrinsicType::PRINT: {
-                    if (curr_func_->getRegMap()[args[0]].second == NumberType::INT) {
+                    if (curr_func_->getRegMap()[args[0]].second == ValueType::INT) {
                         auto asm_instr =
                             assembler::Instr<InstrOpcode::INTRINSIC>(static_cast<uint8_t>(IntrinsicCode::PRINT_I32),
                                                                      curr_func_->getRegMap()[args[0]].first, 0, 0, 0);
                         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
                         curr_offset_ += asm_instr.getByteSize();
-                    } else if (curr_func_->getRegMap()[args[0]].second == NumberType::FLOAT) {
+                    } else if (curr_func_->getRegMap()[args[0]].second == ValueType::FLOAT) {
                         auto asm_instr =
                             assembler::Instr<InstrOpcode::INTRINSIC>(static_cast<uint8_t>(IntrinsicCode::PRINT_F),
                                                                      curr_func_->getRegMap()[args[0]].first, 0, 0, 0);
                         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
                         curr_offset_ += asm_instr.getByteSize();
+                    } else if (curr_func_->getRegMap()[args[0]].second == ValueType::STRING) {
+                        auto asm_instr =
+                            assembler::Instr<InstrOpcode::INTRINSIC>(static_cast<uint8_t>(IntrinsicCode::PRINT_STR),
+                                                                     curr_func_->getRegMap()[args[0]].first, 0, 0, 0);
+                        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
+                        curr_offset_ += asm_instr.getByteSize();
                     }
+                    break;
+                }
+                case ASTNode::IntrinsicType::CONCAT: {
+                    auto asm_instr =
+                        assembler::Instr<InstrOpcode::INTRINSIC>(static_cast<uint8_t>(IntrinsicCode::CONCAT),
+                                                                    curr_func_->getRegMap()[args[0]].first, curr_func_->getRegMap()[args[1]].first, 0, 0);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
+                    curr_offset_ += asm_instr.getByteSize();
+                    break;
+                }
+                case ASTNode::IntrinsicType::SUBSTR: {
+                    auto sta_instr = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[args[0]].first);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(sta_instr));
+                    curr_offset_ += sta_instr.getByteSize();
+
+                    auto asm_instr =
+                        assembler::Instr<InstrOpcode::INTRINSIC>(static_cast<uint8_t>(IntrinsicCode::SUBSTR),
+                                                                    curr_func_->getRegMap()[args[1]].first, curr_func_->getRegMap()[args[2]].first, 0, 0);
+                    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::INTRINSIC>>(asm_instr));
+                    curr_offset_ += asm_instr.getByteSize();
                     break;
                 }
                 default:
@@ -561,9 +603,11 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
                     break;
             }
         }
-        auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name].first);
-        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
-        curr_offset_ += ret_instr.getByteSize();
+        if (type != ASTNode::IntrinsicType::PRINT) {
+            auto ret_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name].first);
+            instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(ret_instr));
+            curr_offset_ += ret_instr.getByteSize();
+        }
     }
 }
 

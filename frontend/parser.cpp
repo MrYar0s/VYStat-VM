@@ -430,6 +430,14 @@ ASTNode::IntrinsicType Parser::parseIntrinsicType(std::string &name)
         return ASTNode::IntrinsicType::SQRT;
     }
     token_iter_--;
+    if (term<TokenType::CONCAT>(&name)) {
+        return ASTNode::IntrinsicType::CONCAT;
+    }
+    token_iter_--;
+    if (term<TokenType::SUBSTR>(&name)) {
+        return ASTNode::IntrinsicType::SUBSTR;
+    }
+    token_iter_--;
     token_iter_ = reserved_token_iter_;
     return ASTNode::IntrinsicType::NONE;
 }
@@ -491,33 +499,46 @@ AstRet Parser::primary(AstRet &&head)
         return head;
     }
 
-    std::string number = "";
+    std::string variable = "";
     std::string neg = "";
 
-    // Parsing of negative number
+    // Parsing of negative value
     if (term<TokenType::MINUS>()) {
         neg = "-";
     } else {
         token_iter_--;
     }
 
-    if (term<TokenType::NUMBER>(&number)) {
-        std::cout << "Found number as expression" << std::endl;
+    if (term<TokenType::NUMBER>(&variable)) {
+        std::cout << "Found value as expression" << std::endl;
 
-        auto val_type = number.find('.');
+        auto val_type = variable.find('.');
         if (val_type == std::string::npos) {
-            int32_t num = atoi((neg + number).data());
+            int32_t num = atoi((neg + variable).data());
             uint64_t val = shrimp::bit::castToWritable<int>(num);
-            auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, NumberType::INT, num_of_tmp_regs_);
+            auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, ValueType::INT, num_of_tmp_regs_);
             num_of_tmp_regs_++;
             head.first->AddChildNode(std::move(child));
         } else {
-            float num = atof((neg + number).data());
+            float num = atof((neg + variable).data());
             uint64_t val = shrimp::bit::castToWritable<float>(num);
-            auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, NumberType::FLOAT, num_of_tmp_regs_);
+            auto child = std::make_unique<Number>(ASTNode::NodeKind::NUMBER, val, ValueType::FLOAT, num_of_tmp_regs_);
             num_of_tmp_regs_++;
             head.first->AddChildNode(std::move(child));
         }
+        reserved_token_iter_ = token_iter_;
+        head.second = STATUS::SUCCESS;
+        return head;
+    }
+    token_iter_--;
+
+    if (term<TokenType::STRING>(&variable)) {
+        std::cout << "String found" << std::endl;
+
+        std::string str = variable;
+        auto child = std::make_unique<String>(ASTNode::NodeKind::STRING, str, ValueType::STRING, num_of_tmp_regs_);
+        num_of_tmp_regs_++;
+        head.first->AddChildNode(std::move(child));
         reserved_token_iter_ = token_iter_;
         head.second = STATUS::SUCCESS;
         return head;
@@ -535,13 +556,15 @@ AstRet Parser::primary(AstRet &&head)
     return head;
 }
 
-static NumberType castToNumType(std::string type)
+static ValueType castToVarType(std::string type)
 {
-    NumberType num_type = NumberType::INT;
+    ValueType var_type = ValueType::INT;
     if (type == "float") {
-        num_type = NumberType::FLOAT;
+        var_type = ValueType::FLOAT;
+    } else if (type == "string") {
+        var_type = ValueType::STRING;
     }
-    return num_type;
+    return var_type;
 }
 
 AstRet Parser::varDecl(AstRet &&head)
@@ -567,7 +590,7 @@ AstRet Parser::varDecl(AstRet &&head)
     auto child = std::make_unique<AssignExpr>(ASTNode::NodeKind::ASSIGN_EXPR);
     AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
 
-    auto var_type = castToNumType(type);
+    auto var_type = castToVarType(type);
 
     if ((child_pair = value(std::move(child_pair), var_type, true)).second != STATUS::SUCCESS) {
         std::cout << "Wrong Value parsing" << std::endl;
@@ -604,7 +627,7 @@ AstRet Parser::varDecl(AstRet &&head)
     return head;
 }
 
-AstRet Parser::value(AstRet &&head, NumberType type, bool need_to_init)
+AstRet Parser::value(AstRet &&head, ValueType type, bool need_to_init)
 {
     std::string ident;
     if (!term<TokenType::IDENTIFIER>(&ident)) {
@@ -654,11 +677,11 @@ std::vector<std::string> Parser::funcParamCall()
     return funcArgs;
 }
 
-std::vector<std::pair<std::string, NumberType>> Parser::funcParamDecl()
+std::vector<std::pair<std::string, ValueType>> Parser::funcParamDecl()
 {
     std::cout << "FuncParamDecl" << std::endl;
 
-    std::vector<std::pair<std::string, NumberType>> funcArgs;
+    std::vector<std::pair<std::string, ValueType>> funcArgs;
 
     for (int i = 0; i < 4; i++) {
         std::string type = "";
@@ -676,7 +699,7 @@ std::vector<std::pair<std::string, NumberType>> Parser::funcParamDecl()
             return funcArgs;
         }
 
-        funcArgs.emplace_back(std::make_pair(name, castToNumType(type)));
+        funcArgs.emplace_back(std::make_pair(name, castToVarType(type)));
         if (!term<TokenType::COMMA>()) {
             token_iter_--;
             reserved_token_iter_ = token_iter_;

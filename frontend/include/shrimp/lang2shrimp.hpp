@@ -61,7 +61,7 @@ private:
     // Parsed instructions
     std::vector<std::unique_ptr<assembler::InterfaceInstr>> instrs_ {};
 
-    std::unordered_map<std::string, std::pair<R8Id, NumberType>> varIdent_to_reg_;
+    std::unordered_map<std::string, std::pair<R8Id, ValueType>> varIdent_to_reg_;
 };
 
 class Compiler {
