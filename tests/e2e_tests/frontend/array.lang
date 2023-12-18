@@ -1,0 +1,12 @@
+function main () {
+    int a[40];
+    a[15] = 16;
+    if (a[15] == 16) {
+        a[21] = 102;
+        if (a[21] == 102) {
+            return 0;
+        }
+        return 1;
+    }
+    return 1;
+}

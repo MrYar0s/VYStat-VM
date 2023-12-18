@@ -59,7 +59,7 @@ private:
     STATUS programDecl();
     STATUS funcDecl();
 
-    AstRet varDecl(AstRet &&head);
+    AstRet varDecl(AstRet &&head, bool is_array = false);
     AstRet assignmentExpr(AstRet &&head);
     AstRet stmtsDecl(AstRet &&head);
 

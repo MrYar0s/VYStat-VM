@@ -2,7 +2,13 @@ function main () {
     int a = 4;
     int b = square(a);
     int c = 4+(b*3);
-    return c < 52;
+
+    a = a + 1;
+
+    if (a == 5) {
+        return c < 52;
+    }
+    return 1;
 }
 
 function square (int a) {

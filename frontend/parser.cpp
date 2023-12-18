@@ -120,6 +120,10 @@ AstRet Parser::stmtsDecl(AstRet &&head)
         head = stmtsDeclDash(std::move(head));
         return head;
     }
+    if ((head = varDecl(std::move(head), true)).second == STATUS::SUCCESS) {
+        head = stmtsDeclDash(std::move(head));
+        return head;
+    }
     if ((head = varDecl(std::move(head))).second == STATUS::SUCCESS) {
         head = stmtsDeclDash(std::move(head));
         return head;
@@ -492,7 +496,6 @@ ASTNode::IntrinsicType Parser::parseIntrinsicType(std::string &name)
         return ASTNode::IntrinsicType::SUBSTR;
     }
     token_iter_--;
-    token_iter_ = reserved_token_iter_;
     return ASTNode::IntrinsicType::NONE;
 }
 
@@ -621,9 +624,13 @@ static ValueType castToVarType(std::string type)
     return var_type;
 }
 
-AstRet Parser::varDecl(AstRet &&head)
+AstRet Parser::varDecl(AstRet &&head, bool is_array)
 {
-    std::cout << "VarDeclaration" << std::endl;
+    if (is_array) {
+        std::cout << "ArrayDeclaration" << std::endl;
+    } else {
+        std::cout << "VarDeclaration" << std::endl;
+    }
 
     if (term<TokenType::CLOSE_FIG_BRACKET>()) {
         token_iter_--;
@@ -653,18 +660,20 @@ AstRet Parser::varDecl(AstRet &&head)
         return head;
     }
 
-    if (!term<TokenType::EQUAL>()) {
-        std::cout << "Expected equal sign" << std::endl;
-        token_iter_ = reserved_token_iter_;
-        head.second = STATUS::FAIL;
-        return head;
-    }
+    if (!is_array) {
+        if (!term<TokenType::EQUAL>()) {
+            std::cout << "Expected equal sign" << std::endl;
+            token_iter_ = reserved_token_iter_;
+            head.second = STATUS::FAIL;
+            return head;
+        }
 
-    if ((child_pair = expression(std::move(child_pair))).second != STATUS::SUCCESS) {
-        std::cout << "Wrong Expression parsing" << std::endl;
-        token_iter_ = reserved_token_iter_;
-        head.second = STATUS::FAIL;
-        return head;
+        if ((child_pair = expression(std::move(child_pair))).second != STATUS::SUCCESS) {
+            std::cout << "Wrong Expression parsing" << std::endl;
+            token_iter_ = reserved_token_iter_;
+            head.second = STATUS::FAIL;
+            return head;
+        }
     }
 
     if (!term<TokenType::SEMICOLON>()) {
@@ -697,10 +706,36 @@ AstRet Parser::value(AstRet &&head, ValueType type, bool need_to_init)
     }
     type = ident_to_type[ident];
 
+    if (term<TokenType::OPEN_SQUARE_BRACKET>()) {
+        std::cout << "Found \'[\'" << std::endl;
+        auto child = std::make_unique<Array>(ASTNode::NodeKind::ARRAY, type, ident);
+        AstRet child_pair = std::make_pair(std::move(child), STATUS::SUCCESS);
+        if (need_to_init) {
+            if ((child_pair = primary(std::move(child_pair))).second != STATUS::SUCCESS) {
+                token_iter_ = reserved_token_iter_;
+                head.second = STATUS::FAIL;
+            }
+        } else {
+            if ((child_pair = expression(std::move(child_pair))).second != STATUS::SUCCESS) {
+                token_iter_ = reserved_token_iter_;
+                head.second = STATUS::FAIL;
+            }
+        }
+        if (!term<TokenType::CLOSE_SQUARE_BRACKET>()) {
+            std::cout << "Expected \']\'" << std::endl;
+            token_iter_ = reserved_token_iter_;
+            head.second = STATUS::FAIL;
+        }
+        head.first->AddChildNode(std::move(child_pair.first));
+        head.second = STATUS::SUCCESS;
+        return head;
+    } else {
+        token_iter_--;
+    }
+
     auto child = std::make_unique<Identifier>(ASTNode::NodeKind::IDENTIFIER, type, ident);
 
     head.first->AddChildNode(std::move(child));
-    reserved_token_iter_ = token_iter_;
     head.second = STATUS::SUCCESS;
     return head;
 }

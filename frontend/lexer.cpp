@@ -37,6 +37,16 @@ void Lexer::run()
                 tokens_.emplace_back(currentChar, TokenType::CLOSE_BRACKET);
                 break;
 
+            case '[':
+                ++program_it_;
+                tokens_.emplace_back(currentChar, TokenType::OPEN_SQUARE_BRACKET);
+                break;
+
+            case ']':
+                ++program_it_;
+                tokens_.emplace_back(currentChar, TokenType::CLOSE_SQUARE_BRACKET);
+                break;
+
             case ',':
                 ++program_it_;
                 tokens_.emplace_back(currentChar, TokenType::COMMA);
@@ -132,7 +142,9 @@ void Lexer::run()
                     }
                     tokens_.emplace_back(numberStr, TokenType::NUMBER);
                 } else {
+                    std::cout << "Unknown token: " << currentChar << std::endl;
                     tokens_.emplace_back(currentChar, TokenType::UNKNOWN);
+                    std::abort();
                 }
                 break;
         }

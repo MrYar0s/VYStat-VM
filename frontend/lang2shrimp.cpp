@@ -149,7 +149,7 @@ void Compiler::compileIfStmt(const std::unique_ptr<ASTNode> &instr)
     std::string reg_for_if_stmt = "<if_stmt>";
 
     curr_func_->getRegMap().insert({reg_for_if_stmt, {curr_func_->getRegMap().size(), ValueType::INT}});
-    compileLogic(if_stmt, reg_for_if_stmt);
+    compileExpr(if_stmt, reg_for_if_stmt);
 
     auto if_stmt_instr = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[reg_for_if_stmt].first);
     instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(if_stmt_instr));
@@ -205,6 +205,68 @@ void Compiler::compileRetStmt(const std::unique_ptr<ASTNode> &instr)
     curr_offset_ += asm_ret.getByteSize();
 }
 
+void Compiler::compileArrInit(const std::unique_ptr<ASTNode> &expr, const std::string &name)
+{
+    auto &instrs = curr_func_->getInstrs();
+
+    auto *arr = reinterpret_cast<Array *>(expr.get());
+    auto type = arr->getType();
+
+    if (type == ValueType::INT) {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ARR_NEW_I32>(curr_func_->getRegMap()[expr->GetName()].first, curr_func_->getRegMap()[name].first);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ARR_NEW_I32>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    } else if (type == ValueType::FLOAT) {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ARR_NEW_F>(curr_func_->getRegMap()[expr->GetName()].first, curr_func_->getRegMap()[name].first);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ARR_NEW_F>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    }
+}
+
+void Compiler::compileArrStore(const std::unique_ptr<ASTNode> &expr, const std::string &tmp_for_idx, const std::string &need_to_assign)
+{
+    auto &instrs = curr_func_->getInstrs();
+
+    auto *arr = reinterpret_cast<Array *>(expr.get());
+    auto type = arr->getType();
+
+    auto load_instr = assembler::Instr<InstrOpcode::LDA>(curr_func_->getRegMap()[need_to_assign].first);
+    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::LDA>>(load_instr));
+    curr_offset_ += load_instr.getByteSize();
+    if (type == ValueType::INT) {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ARR_STA_I32>(curr_func_->getRegMap()[expr->GetName()].first, curr_func_->getRegMap()[tmp_for_idx].first);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ARR_STA_I32>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    } else if (type == ValueType::FLOAT) {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ARR_STA_F>(curr_func_->getRegMap()[expr->GetName()].first, curr_func_->getRegMap()[tmp_for_idx].first);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ARR_STA_F>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    }
+}
+
+void Compiler::compileArrLoad(const std::unique_ptr<ASTNode> &expr, const std::string &tmp_for_idx, const std::string &assign_to)
+{
+    auto &instrs = curr_func_->getInstrs();
+
+    auto *arr = reinterpret_cast<Array *>(expr.get());
+    auto type = arr->getType();
+
+    if (type == ValueType::INT) {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ARR_LDA_I32>(curr_func_->getRegMap()[expr->GetName()].first, curr_func_->getRegMap()[tmp_for_idx].first);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ARR_LDA_I32>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    } else if (type == ValueType::FLOAT) {
+        auto asm_op_instr = assembler::Instr<InstrOpcode::ARR_LDA_F>(curr_func_->getRegMap()[expr->GetName()].first, curr_func_->getRegMap()[tmp_for_idx].first);
+        instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::ARR_LDA_F>>(asm_op_instr));
+        curr_offset_ += asm_op_instr.getByteSize();
+    }
+
+
+    auto load_instr = assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[assign_to].first);
+    instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(load_instr));
+    curr_offset_ += load_instr.getByteSize();
+}
+
 void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr)
 {
     auto *var = reinterpret_cast<AssignExpr *>(instr.get());
@@ -216,11 +278,37 @@ void Compiler::compileVarDecl(const std::unique_ptr<ASTNode> &instr)
     if (val->GetKind() == ASTNode::NodeKind::IDENTIFIER) {
         auto ident_node = reinterpret_cast<Identifier *>(val.get());
         curr_func_->getRegMap().insert({val->GetName(), {curr_func_->getRegMap().size(), ident_node->getType()}});
+        auto &expr = childs[1];
+        if (expr->GetKind() == ASTNode::NodeKind::EXPR) {
+            compileExpr(expr, val->GetName());
+        }
     }
 
-    auto &expr = childs[1];
-    if (expr->GetKind() == ASTNode::NodeKind::EXPR) {
-        compileExpr(expr, val->GetName());
+    if (childs.size() == 1) {    // Array creation case
+        if (val->GetKind() == ASTNode::NodeKind::ARRAY) {
+            auto *arr = reinterpret_cast<Array *>(val.get());
+            auto &child = val->GetChildrenNodes()[0];
+            if (child->GetKind() == ASTNode::NodeKind::NUMBER) {
+                auto *number = reinterpret_cast<Number *>(child.get());
+                curr_func_->getRegMap().insert({arr->GetName(), {curr_func_->getRegMap().size(), arr->getType()}});
+                curr_func_->getRegMap().insert({number->getTmpName(), {curr_func_->getRegMap().size(), number->getType()}});
+                compileExpr(child, number->getTmpName());
+                compileArrInit(val, number->getTmpName());
+            }
+        }
+    } else {
+        auto &expr = childs[1];
+        if (val->GetKind() == ASTNode::NodeKind::ARRAY) {
+            auto *arr = reinterpret_cast<Array *>(val.get());
+            auto &child = val->GetChildrenNodes()[0];
+            std::string tmp_for_idx = "<idx_for_store_arr>";
+            curr_func_->getRegMap().insert({tmp_for_idx, {curr_func_->getRegMap().size(), ValueType::INT}});
+            compileExpr(child, tmp_for_idx);
+            std::string need_to_assign = "<assign_val_arr>";
+            curr_func_->getRegMap().insert({need_to_assign, {curr_func_->getRegMap().size(), arr->getType()}});
+            compileExpr(expr, need_to_assign);
+            compileArrStore(val, tmp_for_idx, need_to_assign);
+        }
     }
 }
 
@@ -277,8 +365,6 @@ void Compiler::compileLogic(const std::unique_ptr<ASTNode> &expr, const std::str
     std::cout << name << std::endl;
     std::cout << expr->GetChildrenNodes().size() << std::endl;
 
-    std::cout << static_cast<u_int64_t>(expr->GetChildrenNodes()[0]->GetKind()) << std::endl;
-
     for (auto &child : expr->GetChildrenNodes()) {
         if (child->GetKind() == ASTNode::NodeKind::NUMBER) {
             auto *child_number = reinterpret_cast<Number *>(child.get());
@@ -308,6 +394,12 @@ void Compiler::compileLogic(const std::unique_ptr<ASTNode> &expr, const std::str
                     compileExpr(child, child_name);
                 }
             }
+        } else if (child->GetKind() == ASTNode::NodeKind::ARRAY) {
+            std::string tmp_reg_for_arr = "<tmp_reg_arr>";
+            auto *arr = reinterpret_cast<Array *>(child.get());
+            curr_func_->getRegMap().insert({tmp_reg_for_arr, {curr_func_->getRegMap().size(), arr->getType()}});
+            compileExpr(child, tmp_reg_for_arr);
+            child->setName(tmp_reg_for_arr);
         }
     }
 
@@ -479,6 +571,14 @@ void Compiler::compileExpr(const std::unique_ptr<ASTNode> &expr, const std::stri
             assembler::Instr<InstrOpcode::STA>(curr_func_->getRegMap()[name].first);
         instrs.emplace_back(std::make_unique<assembler::Instr<InstrOpcode::STA>>(asm_instr));
         curr_offset_ += asm_instr.getByteSize();
+    }
+
+    if (expr->GetKind() == ASTNode::NodeKind::ARRAY) {
+        auto &child = expr->GetChildrenNodes()[0];
+        std::string index_to_load = "<idx_for_load_arr>";
+        curr_func_->getRegMap().insert({index_to_load, {curr_func_->getRegMap().size(), ValueType::INT}});
+        compileExpr(child, index_to_load);
+        compileArrLoad(expr, index_to_load, name);
     }
 
     if (expr->GetKind() == ASTNode::NodeKind::FUNCTION_CALL) {

@@ -26,6 +26,7 @@ public:
         // Statements
         RETURN_STATEMENT,
         IF_STATEMENT,
+        ARRAY,
 
         IF_BODY,
 
@@ -101,6 +102,20 @@ class Identifier : public ASTNode {
 public:
     explicit Identifier(NodeKind kind, ValueType type, std::string name = "") : ASTNode(kind, name), type_(type) {}
     virtual ~Identifier() = default;
+
+    auto getType() const
+    {
+        return type_;
+    }
+
+private:
+    ValueType type_;
+};
+
+class Array : public ASTNode {
+public:
+    explicit Array(NodeKind kind, ValueType type, std::string name = "") : ASTNode(kind, name), type_(type) {}
+    virtual ~Array() = default;
 
     auto getType() const
     {

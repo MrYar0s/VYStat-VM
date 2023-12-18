@@ -1,0 +1,19 @@
+function main () {
+    string a = "Hello, world!";
+    string b = ", world";
+    string c = "o, wor";
+
+    intrinsic.print(a);
+    intrinsic.print(b);
+    intrinsic.print(c);
+
+    string d = intrinsic.concat(b, c);
+    intrinsic.print(d);
+
+    int pos1 = 3;
+    int pos2 = 5;
+    string e = intrinsic.substr(a, pos1, pos2);
+    intrinsic.print(e);
+
+    return 0;
+}
