@@ -2,7 +2,7 @@ import os
 import sys
 import re
 
-from instr import*
+from isa import*
 
 from io import TextIOWrapper
 

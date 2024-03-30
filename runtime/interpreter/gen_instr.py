@@ -1,7 +1,7 @@
 import os
 import sys
 
-from instr import*
+from isa import*
 
 from io import TextIOWrapper
 

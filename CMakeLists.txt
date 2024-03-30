@@ -15,29 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 set(PROJECT_THIRD_PARTY ${CMAKE_CURRENT_SOURCE_DIR}/third-party)
 set(PROJECT_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/scripts)
 
-# Path to yaml file with instructions description
-set(INSTR_YAML ${CMAKE_CURRENT_SOURCE_DIR}/instr.yaml)
-# Path to python library for instructions description processing
-set(INSTR_PYTHONPATH ${CMAKE_CURRENT_SOURCE_DIR})
-
-# Add file generation based on instructions description.
-# Provided python script is run with ${INSTR_YAML} and ${output} args.
-# ${INSTR_PY} is added to PYTHONPATH env variable
-function(shrimp_add_instr_gen script output)
-    add_custom_command(
-        OUTPUT ${output}
-        COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${INSTR_PYTHONPATH} python3 ${script} ${INSTR_YAML} ${output}
-        DEPENDS ${INSTR_PY} ${INSTR_YAML} ${script}
-    )
-endfunction(shrimp_add_instr_gen)
-
-# Call shrimp_add_instr_gen(${script} ${output}) and make ${dependent_target} dependent on ${output}
-# Custom target ${custom_target} is created to add dependency
-function(shrimp_add_instr_dep_gen script output dependent_target custom_target)
-    shrimp_add_instr_gen(${script} ${output})
-    add_custom_target(${custom_target} DEPENDS ${output})
-    add_dependencies(${dependent_target} ${custom_target})
-endfunction(shrimp_add_instr_dep_gen)
+include(isa/isa.cmake)
 
 # Add third party
 execute_process(
