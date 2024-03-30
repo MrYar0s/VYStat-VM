@@ -17,7 +17,7 @@ constexpr size_t FILENAME_SIZE = 32;
 
 class File final {
 public:
-    enum Headers { CODE = 0, LITERALS, FUNCTIONS, HEADERS_NUM };
+    enum Headers { CODE = 0, LITERALS, FUNCTIONS, CLASSES, HEADERS_NUM };
 
     File() = default;
     explicit File(const std::string &src_file_name, const std::string &bin_file_name);
@@ -41,19 +41,22 @@ public:
         SegmentsHeader headers[Headers::HEADERS_NUM];
     } __attribute__((packed));
 
-    struct StringHeader_t {
-        uint16_t num_of_strings = 0;
-        uint32_t header_size = sizeof(StringHeader_t);
-    } __attribute__((packed));
-
-    struct FunctionHeader_t {
-        uint32_t num_of_functions = 0;
-        uint32_t header_size = sizeof(FunctionHeader_t);
+    struct EntityHeader_t {
+        uint32_t num = 0;
+        uint32_t header_size = sizeof(EntityHeader_t);
     } __attribute__((packed));
 
     Header_t FileHeader;
-    StringHeader_t FileStringHeader;
-    FunctionHeader_t FileFuncHeader;
+    EntityHeader_t FileStringHeader;
+    EntityHeader_t FileFuncHeader;
+    EntityHeader_t FileClassHeader;
+
+    struct FileField {
+        FieldId id = 0;
+        uint64_t size = 0;
+        uint64_t name_size = 0;
+        std::string name = "";
+    };
 
     struct FileFunction {
         FuncId id = 0;
@@ -62,6 +65,15 @@ public:
         uint8_t num_of_args = 4;
         uint16_t num_of_vregs = 256;
         std::string name = "";
+    };
+
+    struct FileClass {
+        ClassId id = 0;
+        uint64_t size = 0;
+        uint64_t name_size = 0;
+        std::string name = "";
+        uint32_t num_of_fields = 0;
+        std::vector<FileField> fields;
     };
 
     struct FileString {
@@ -73,7 +85,8 @@ public:
     void writeBytes(const char *bin_code, size_t size);
     void writeString(const std::string &str, StrId str_id);
     void writeFunction(const FileFunction &func);
-    void dump();
+    void writeClass(const FileClass &klass);
+    std::string dump();
 
     auto getCode() noexcept
     {
@@ -90,14 +103,21 @@ public:
         return Functions;
     }
 
+    auto &getClassesInfo() noexcept
+    {
+        return Classes;
+    }
+
 private:
     void fillCodeHeader();
     void fillStringsHeader();
     void fillFunctionsHeader();
+    void fillClassesHeader();
 
     std::string bin_file_path_;
     std::vector<FileString> Strings;
     std::vector<FileFunction> Functions;
+    std::vector<FileClass> Classes;
     std::vector<Byte> Code;
 
     void serializeCode(std::FILE *out);
@@ -105,14 +125,17 @@ private:
     void serializeStrings(std::FILE *out);
     void serializeFunctions(std::FILE *out);
     void serializeHeaders(std::FILE *out);
+    void serializeClasses(std::FILE *out);
 
-    void dumpFileHeader();
-    void dumpCodeHeader();
-    void dumpCode();
-    void dumpStringHeader();
-    void dumpString();
-    void dumpFunctionHeader();
-    void dumpFunction();
+    void dumpFileHeader(std::stringstream &ss);
+    void dumpCodeHeader(std::stringstream &ss);
+    void dumpCode(std::stringstream &ss);
+    void dumpStringHeader(std::stringstream &ss);
+    void dumpString(std::stringstream &ss);
+    void dumpFunctionHeader(std::stringstream &ss);
+    void dumpFunction(std::stringstream &ss);
+    void dumpClassHeader(std::stringstream &ss);
+    void dumpClasses(std::stringstream &ss);
 };
 
 constexpr size_t HEADERS_NUM = File::Headers::HEADERS_NUM;

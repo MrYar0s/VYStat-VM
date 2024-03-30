@@ -36,11 +36,14 @@ int Main(int argc, char *argv[])
 
     shrimpfile::File ifile {input_file};
 
+    LOG_DEBUG(ifile.dump(), log_level);
+
     auto native_code = ifile.getCode();
     auto strings_info = ifile.getStringsInfo();
     auto funcs_info = ifile.getFuncsInfo();
+    auto classes_info = ifile.getClassesInfo();
 
-    runtime::ShrimpVM svm {native_code, strings_info, funcs_info, log_level};
+    runtime::ShrimpVM svm {native_code, strings_info, funcs_info, classes_info, log_level};
 
     return svm.runImpl();
 }

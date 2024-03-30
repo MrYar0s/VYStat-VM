@@ -6,14 +6,14 @@ function(shrimp_e2e_frontend_test test_name)
 	file(MAKE_DIRECTORY ${TEST_BUILD_DIR})
 
 	add_custom_target(compile_e2e_frontend_${test_name}
-		COMMAND cd ${TEST_BUILD_DIR} && ${PROJECT_BINARY_DIR}/frontend/lang2shrimp
+		COMMAND cd ${TEST_BUILD_DIR} && ${PROJECT_BINARY_DIR}/bin/lang2shrimp
 		--in ${TEST_SOURCE_PATH}
 		--out ${TEST_BUILD_DIR}/${test_name}.imp
 		DEPENDS lang2shrimp ${TEST_SOURCE_PATH}
 	)
 	
 	add_custom_target(run_e2e_frontend_${test_name}
-		COMMAND ${PROJECT_BINARY_DIR}/shrimp/shrimp
+		COMMAND ${PROJECT_BINARY_DIR}/bin/shrimp
 		--in ${TEST_BUILD_DIR}/${test_name}.imp
 		DEPENDS compile_e2e_frontend_${test_name} shrimp
 	)

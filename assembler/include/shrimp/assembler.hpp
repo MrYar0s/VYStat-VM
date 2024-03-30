@@ -67,6 +67,63 @@ class Assembler final {
         int lineno_ = 0;
     };
 
+    class FieldInfo final {
+    public:
+        FieldInfo(std::string name, size_t size) : name_(name), size_(size) {}
+
+        auto getSize() const noexcept
+        {
+            return size_;
+        }
+
+        const auto &getName() const noexcept
+        {
+            return name_;
+        }
+
+    private:
+        // Field name
+        std::string name_ = "";
+
+        // Field type size
+        size_t size_ = 0;
+    };
+
+    class ClassInfo final {
+    public:
+        ClassInfo(std::string name, size_t size) : name_(name), size_(size) {}
+
+        const auto &name() const noexcept
+        {
+            return name_;
+        }
+
+        auto &fields() noexcept
+        {
+            return fields_;
+        }
+
+        const auto &fields() const noexcept
+        {
+            return fields_;
+        }
+
+        auto size() const noexcept
+        {
+            return size_;
+        }
+
+    private:
+        // Class name
+        std::string name_ = "";
+
+        // Parsed fields
+        std::vector<std::unique_ptr<FieldInfo>> fields_ {};
+
+        // Class size
+        size_t size_ = fields_.size();
+    };
+
     class FuncInfo final {
     public:
         FuncInfo(ByteOffset offset, std::string name, std::vector<std::string> args)
@@ -387,12 +444,66 @@ class Assembler final {
         int lexing_status = lexer_.yylex();
 
         while (lexing_status == Lexer::LEXING_OK) {
-            // Parse next function
-            assertParseError(lexer_.currLexemType() == Lexer::LexemType::FUNC);
-
-            parseFuncDecl();
-            lexing_status = parseFuncBody();
+            // Parse next function or class
+            assertParseError(lexer_.currLexemType() == Lexer::LexemType::FUNC ||
+                             lexer_.currLexemType() == Lexer::LexemType::CLASS);
+            if (lexer_.currLexemType() == Lexer::LexemType::FUNC) {
+                parseFuncDecl();
+                lexing_status = parseFuncBody();
+            } else if (lexer_.currLexemType() == Lexer::LexemType::CLASS) {
+                parseClass();
+            } else {
+                assert(0);
+            }
         }
+    }
+
+    size_t typeNameToSize(const std::string &str)
+    {
+        if (str == "i32") {
+            return 4U;
+        } else if (str == "f") {
+            return 4U;
+        } else if (auto it = class_name_to_id_.find(str); it != class_name_to_id_.end()) {
+            return 8U;
+        } else {
+            assertParseError(0);
+            return 0U;
+        }
+    }
+
+    void parseClass()
+    {
+        expectLexem(Lexer::LexemType::IDENTIFIER);
+
+        std::string class_name = lexer_.YYText();
+
+        std::vector<std::unique_ptr<FieldInfo>> fields;
+
+        size_t class_size = 0;
+
+        while (lexer_.yylex() == Lexer::LEXING_OK) {
+            if (lexer_.currLexemType() == Lexer::LexemType::FUNC || lexer_.currLexemType() == Lexer::LexemType::CLASS) {
+                break;
+            }
+
+            std::string type = lexer_.YYText();
+
+            expectLexem(Lexer::LexemType::IDENTIFIER);
+
+            std::string field_name = lexer_.YYText();
+
+            auto type_size = typeNameToSize(type);
+
+            fields.emplace_back(std::make_unique<FieldInfo>(field_name, type_size));
+
+            class_size += type_size;
+        }
+
+        class_name_to_id_.insert({class_name, classes_.size()});
+
+        classes_.emplace_back(class_name, class_size);
+        classes_.back().fields() = std::move(fields);
     }
 
     void resloveJumps()
@@ -417,8 +528,15 @@ class Assembler final {
         writeCode(out);
         writeStrings(out);
         writeFunctions(out);
+        writeClasses(out);
         out.fillHeaders();
-        out.serialize();
+    }
+
+    void writeClasses(shrimp::shrimpfile::File &out)
+    {
+        for (auto &&klass : classes_) {
+            writeClass(out, klass);
+        }
     }
 
     void writeFunctions(shrimp::shrimpfile::File &out)
@@ -448,6 +566,23 @@ class Assembler final {
     void writeBytes(shrimp::shrimpfile::File &out, const char *bin_code, size_t size)
     {
         out.writeBytes(bin_code, size);
+    }
+
+    void writeClass(shrimp::shrimpfile::File &out, const ClassInfo &klass)
+    {
+        shrimpfile::File::FileClass class_info;
+        class_info.name = klass.name();
+        class_info.name_size = klass.name().size();
+        class_info.size = klass.size();
+        class_info.id = class_name_to_id_[class_info.name];
+        auto &fields = class_info.fields;
+        uint32_t start_id = 0;
+        for (const auto &klass_field : klass.fields()) {
+            auto &name = klass_field->getName();
+            fields.push_back(shrimpfile::File::FileField {start_id++, klass_field->getSize(), name.size(), name});
+        }
+        class_info.num_of_fields = class_info.fields.size();
+        out.writeClass(class_info);
     }
 
     void writeString(shrimp::shrimpfile::File &out, const std::string &str, StrId id)
@@ -492,7 +627,12 @@ private:
 
     std::unordered_map<std::string, StrId> strings_ {};
 
+    std::unordered_map<std::string, ClassId> class_name_to_id_ {};
+
     std::vector<FuncInfo> funcs_ {};
+
+    std::vector<ClassInfo> classes_ {};
+
     FuncInfo *curr_func_ = nullptr;
 };
 

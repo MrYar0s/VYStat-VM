@@ -1,0 +1,19 @@
+class A
+    i32 field0
+    f field1
+
+class B
+    i32 field0
+
+class C
+    A field0
+    B field1
+
+func main()
+    lda.imm.i32 5
+    mov.imm.i32 r0, 5
+    jump.eq r0, case_1
+    ret
+case_1:
+    lda.imm.i32 0
+    ret
