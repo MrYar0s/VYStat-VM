@@ -20,6 +20,7 @@ STRING          \"[^\"]*\"
 {WHITE_SPACE}       /* Skip */
 {COMMENT}           /* Skip */
 
+"class"             return processClass();
 "func"              return processFunc();
 ","                 return processComma();
 "("                 return processLeftRoundBrace();

@@ -7,14 +7,14 @@ function(shrimp_cts_test test_name)
 	file(MAKE_DIRECTORY ${TEST_BUILD_DIR})
 
 	add_custom_target(compile_cts_${test_name}
-		COMMAND cd ${TEST_BUILD_DIR} && ${PROJECT_BINARY_DIR}/assembler/assembler
+		COMMAND cd ${TEST_BUILD_DIR} && ${PROJECT_BINARY_DIR}/bin/assembler
 		--in ${TEST_SOURCE_PATH}
 		--out ${TEST_BUILD_DIR}/${test_name}.imp
 		DEPENDS assembler ${TEST_SOURCE_PATH}
 	)
 	
 	add_custom_target(run_cts_${test_name}
-		COMMAND ${PROJECT_BINARY_DIR}/shrimp/shrimp
+		COMMAND ${PROJECT_BINARY_DIR}/bin/shrimp
 		--in ${TEST_BUILD_DIR}/${test_name}.imp
 		DEPENDS compile_cts_${test_name} shrimp
 	)

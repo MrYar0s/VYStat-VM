@@ -22,7 +22,8 @@ namespace shrimp::runtime {
 class ShrimpVM final {
 public:
     ShrimpVM(std::vector<Byte> code, std::vector<shrimpfile::File::FileString> strings,
-             std::vector<shrimpfile::File::FileFunction> funcs, LogLevel log_level)
+             std::vector<shrimpfile::File::FileFunction> funcs, std::vector<shrimpfile::File::FileClass> classes,
+             LogLevel log_level)
         : log_level_(log_level), code_(std::move(code))
     {
         for (auto &&str : strings) {
@@ -30,6 +31,13 @@ public:
         }
         for (auto &&func : funcs) {
             funcs_.emplace(func.id, RuntimeFunc {func.func_start, func.num_of_args, func.num_of_vregs, func.name});
+        }
+        for (auto &&klass : classes) {
+            FieldAccessor fields;
+            for (auto &&field : klass.fields) {
+                fields.emplace(field.id, RuntimeField {field.size, field.name});
+            }
+            classes_.emplace(klass.id, RuntimeClass {klass.size, klass.name, std::move(fields)});
         }
         auto is_main = [](const std::pair<const unsigned int, shrimp::RuntimeFunc> &func_pair) {
             return func_pair.second.name == "main";
@@ -114,6 +122,7 @@ private:
 
     StringAccessor strings_;
     FuncAccessor funcs_;
+    ClassAccessor classes_;
 
     ArenaAllocator allocator_;
 };

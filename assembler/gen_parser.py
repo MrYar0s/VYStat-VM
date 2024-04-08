@@ -105,7 +105,8 @@ def write_parse_func_body(out: TextIOWrapper, instrs: list) :
         "int lexing_status = Lexer::LEXING_ERROR_CODE;\n\n"
 
         "while ((lexing_status = lexer_.yylex()) == Lexer::LEXING_OK) {\n"
-            "if (lexer_.currLexemType() == Lexer::LexemType::FUNC) {\n"
+            "if (lexer_.currLexemType() == Lexer::LexemType::CLASS ||\
+                 lexer_.currLexemType() == Lexer::LexemType::FUNC) {\n"
             "return lexing_status;\n"
             "}\n"
             "if (lexer_.currLexemType() == Lexer::LexemType::LABEL) {\n"
