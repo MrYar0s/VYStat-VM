@@ -57,6 +57,15 @@ def write_instr_parser(out: TextIOWrapper, instr: Instr) :
                 out.write("auto str = parseString();\n")
                 out.write("auto str_id = parseStrId(str);")
 
+            case "class_id":
+                out.write("auto class_id = parseDefinedClassId();")
+
+            case "field_size":
+                out.write("auto [field_offset, field_size] = parseClassFieldLoc();")
+                need_comma = False
+            case "field_offset":
+                pass # Already parsed
+
             case _:
                 raise RuntimeError("Unknown field in instruction %s: %s" % (instr.name, field_name))
 

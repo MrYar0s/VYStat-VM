@@ -857,6 +857,73 @@ int handleCmpLlI32(ShrimpVM *vm)
     return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
+int handleObjNew(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::OBJ_NEW> instr {vm->pc()};
+    auto &frame = vm->currFrame();
+    auto rd_idx = instr.getRd();
+
+    auto class_size = vm->getClasses().find(instr.getClassId())->second.size;
+    auto new_obj_ptr = vm->getAllocator().allocate(class_size);
+
+    frame.setReg(bit::castToWritable(new_obj_ptr), rd_idx);
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleLdfield(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::LDFIELD> instr {vm->pc()};
+    auto &frame = vm->currFrame();
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+    auto field_size = instr.getFieldSize();
+    auto field_offset = instr.getFieldOffset();
+    uint64_t ld_tmp = 0;
+
+    auto class_ptr = bit::getValue<Byte *>(frame.getReg(rs_idx).getValue());
+
+    if constexpr (std::endian::native == std::endian::big) {
+        std::memcpy(&ld_tmp + sizeof(ld_tmp) - field_size, class_ptr + field_offset, field_size);
+    } else {
+        std::memcpy(&ld_tmp, class_ptr + field_offset, field_size);
+    }
+
+    frame.setReg(ld_tmp, rd_idx);
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
+int handleStfield(ShrimpVM *vm)
+{
+    Instr<InstrOpcode::STFIELD> instr {vm->pc()};
+    auto &frame = vm->currFrame();
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+    auto field_size = instr.getFieldSize();
+    auto field_offset = instr.getFieldOffset();
+
+    auto class_ptr = bit::getValue<Byte *>(frame.getReg(rd_idx).getValue());
+    uint64_t field_val = frame.getReg(rs_idx).getValue();
+
+    if constexpr (std::endian::native == std::endian::big) {
+        std::memcpy(class_ptr + field_offset, &field_val + sizeof(field_val) - field_size, field_size);
+    } else {
+        std::memcpy(class_ptr + field_offset, &field_val, field_size);
+    }
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    return dispatch_table[getOpcode(vm->pc())](vm);
+}
+
 }  // namespace
 
 int runImpl(ShrimpVM *vm)

@@ -278,6 +278,48 @@ class Assembler final {
         return std::bit_cast<uint64_t>(value);
     }
 
+    ClassId parseDefinedClassId()
+    {
+        expectLexem(Lexer::LexemType::IDENTIFIER);
+
+        auto it = class_name_to_id_.find(lexer_.YYText());
+        assertParseError(it != class_name_to_id_.end());
+
+        return it->second;
+    }
+
+    // (field offset, field size)
+    std::pair<ByteOffset, size_t>  parseClassFieldLoc()
+    {
+        expectLexem(Lexer::LexemType::IDENTIFIER);
+
+        auto field_name_off = std::strcspn(lexer_.YYText(), ".");
+
+        std::string class_name(lexer_.YYText(), 0, field_name_off);
+        auto class_it = class_name_to_id_.find(class_name);
+        assertParseError(class_it != class_name_to_id_.end());
+
+        auto &class_info = classes_[class_it->second];
+
+        std::string field_name(lexer_.YYText() + field_name_off + 1);
+        const auto &class_fields = class_info.fields();
+
+        ByteOffset field_off = 0;
+        auto field_it =
+            std::find_if(class_fields.cbegin(), class_fields.cend(), [&](const std::unique_ptr<FieldInfo> &info) {
+                if (field_name == info->getName()) {
+                    return true;
+                }
+
+                field_off += info->getSize();
+                return false;
+            });
+
+        assertParseError(field_it != class_fields.cend());
+
+        return {field_off, (*field_it)->getSize()};
+    }
+
     // Add lexed label to current function labels
     void addLexedLabel()
     {
