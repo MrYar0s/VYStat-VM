@@ -100,14 +100,19 @@ public:
         strings_.emplace(str_id, std::move(str));
         return str_id;
     }
-    const Byte *getPcFromStart(ByteOffset offset)
+    const Byte *getPcFromStart(ByteOffset offset) noexcept
     {
         return code_.data() + offset;
     }
 
-    auto &getAllocator()
+    auto &getAllocator() noexcept
     {
         return allocator_;
+    }
+
+    auto &getClasses() noexcept
+    {
+        return classes_;
     }
 
 private:

@@ -31,8 +31,6 @@ int main(int argc, char **argv)
 
     assembler::Assembler assembler {};
 
-    std::ofstream out {output_file, std::ios_base::binary};
-
     assembler.assemble(input_file, output_file);
 
     return 0;
