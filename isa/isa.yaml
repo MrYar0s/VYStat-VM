@@ -312,8 +312,8 @@ LDFIELD:
     fields:
         rd: [8, 15]
         rs: [16, 23]
-        field_size: [24, 31]
-        field_offset: [32, 63]
+        class_id: [24, 47]
+        field_id: [48, 63]
 
 STFIELD:
     desc: "Store rs value to obj field by ref in rd"
@@ -321,5 +321,5 @@ STFIELD:
     fields:
         rd: [8, 15]
         rs: [16, 23]
-        field_size: [24, 31]
-        field_offset: [32, 63]
+        class_id: [24, 47]
+        field_id: [48, 63]

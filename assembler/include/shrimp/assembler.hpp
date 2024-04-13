@@ -118,7 +118,7 @@ class Assembler final {
         std::string name_ = "";
 
         // Parsed fields
-        std::vector<std::unique_ptr<FieldInfo>> fields_ {};
+        std::vector<FieldInfo> fields_ {};
 
         // Class size
         size_t size_ = fields_.size();
@@ -288,36 +288,17 @@ class Assembler final {
         return it->second;
     }
 
-    // (field offset, field size)
-    std::pair<ByteOffset, size_t>  parseClassFieldLoc()
+    FieldId parseClassFieldId(ClassId class_id)
     {
         expectLexem(Lexer::LexemType::IDENTIFIER);
 
-        auto field_name_off = std::strcspn(lexer_.YYText(), ".");
+        const auto &class_fields = classes_[class_id].fields();
 
-        std::string class_name(lexer_.YYText(), 0, field_name_off);
-        auto class_it = class_name_to_id_.find(class_name);
-        assertParseError(class_it != class_name_to_id_.end());
-
-        auto &class_info = classes_[class_it->second];
-
-        std::string field_name(lexer_.YYText() + field_name_off + 1);
-        const auto &class_fields = class_info.fields();
-
-        ByteOffset field_off = 0;
-        auto field_it =
-            std::find_if(class_fields.cbegin(), class_fields.cend(), [&](const std::unique_ptr<FieldInfo> &info) {
-                if (field_name == info->getName()) {
-                    return true;
-                }
-
-                field_off += info->getSize();
-                return false;
-            });
+        auto field_it = std::find_if(class_fields.cbegin(), class_fields.cend(),
+                                     [&](const FieldInfo &info) { return info.getName() == lexer_.YYText(); });
 
         assertParseError(field_it != class_fields.cend());
-
-        return {field_off, (*field_it)->getSize()};
+        return field_it - class_fields.cbegin();
     }
 
     // Add lexed label to current function labels
@@ -520,7 +501,7 @@ class Assembler final {
 
         std::string class_name = lexer_.YYText();
 
-        std::vector<std::unique_ptr<FieldInfo>> fields;
+        std::vector<FieldInfo> fields {};
 
         size_t class_size = 0;
 
@@ -537,7 +518,7 @@ class Assembler final {
 
             auto type_size = typeNameToSize(type);
 
-            fields.emplace_back(std::make_unique<FieldInfo>(field_name, type_size));
+            fields.emplace_back(field_name, type_size);
 
             class_size += type_size;
         }
@@ -620,8 +601,8 @@ class Assembler final {
         auto &fields = class_info.fields;
         uint32_t start_id = 0;
         for (const auto &klass_field : klass.fields()) {
-            auto &name = klass_field->getName();
-            fields.push_back(shrimpfile::File::FileField {start_id++, klass_field->getSize(), name.size(), name});
+            auto &name = klass_field.getName();
+            fields.push_back(shrimpfile::File::FileField {start_id++, klass_field.getSize(), name.size(), name});
         }
         class_info.num_of_fields = class_info.fields.size();
         out.writeClass(class_info);
