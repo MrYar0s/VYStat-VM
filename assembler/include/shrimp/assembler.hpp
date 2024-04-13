@@ -69,11 +69,16 @@ class Assembler final {
 
     class FieldInfo final {
     public:
-        FieldInfo(std::string name, size_t size) : name_(name), size_(size) {}
+        FieldInfo(std::string name, size_t size, size_t offset) : name_(name), size_(size), offset_(offset) {}
 
         auto getSize() const noexcept
         {
             return size_;
+        }
+
+        auto getOffset() const noexcept
+        {
+            return offset_;
         }
 
         const auto &getName() const noexcept
@@ -87,6 +92,9 @@ class Assembler final {
 
         // Field type size
         size_t size_ = 0;
+
+        // Field offset
+        size_t offset_ = 0;
     };
 
     class ClassInfo final {
@@ -518,7 +526,7 @@ class Assembler final {
 
             auto type_size = typeNameToSize(type);
 
-            fields.emplace_back(field_name, type_size);
+            fields.emplace_back(field_name, type_size, class_size);
 
             class_size += type_size;
         }
@@ -602,7 +610,8 @@ class Assembler final {
         uint32_t start_id = 0;
         for (const auto &klass_field : klass.fields()) {
             auto &name = klass_field.getName();
-            fields.push_back(shrimpfile::File::FileField {start_id++, klass_field.getSize(), name.size(), name});
+            fields.push_back(shrimpfile::File::FileField {start_id++, klass_field.getSize(), klass_field.getOffset(),
+                                                          name.size(), name});
         }
         class_info.num_of_fields = class_info.fields.size();
         out.writeClass(class_info);

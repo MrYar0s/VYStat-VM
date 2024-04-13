@@ -880,16 +880,15 @@ int handleLdfield(ShrimpVM *vm)
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
     auto rs_idx = instr.getRs();
-    auto field_size = instr.getFieldSize();
-    auto field_offset = instr.getFieldOffset();
+    auto field = vm->resolveField(instr.getClassId(), instr.getFieldId());
     uint64_t ld_tmp = 0;
 
     auto class_ptr = bit::getValue<Byte *>(frame.getReg(rs_idx).getValue());
 
     if constexpr (std::endian::native == std::endian::big) {
-        std::memcpy(&ld_tmp + sizeof(ld_tmp) - field_size, class_ptr + field_offset, field_size);
+        std::memcpy(&ld_tmp + sizeof(ld_tmp) - field.size, class_ptr + field.offset, field.size);
     } else {
-        std::memcpy(&ld_tmp, class_ptr + field_offset, field_size);
+        std::memcpy(&ld_tmp, class_ptr + field.offset, field.size);
     }
 
     frame.setReg(ld_tmp, rd_idx);
@@ -906,16 +905,16 @@ int handleStfield(ShrimpVM *vm)
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
     auto rs_idx = instr.getRs();
-    auto field_size = instr.getFieldSize();
-    auto field_offset = instr.getFieldOffset();
+
+    auto field = vm->resolveField(instr.getClassId(), instr.getFieldId());
 
     auto class_ptr = bit::getValue<Byte *>(frame.getReg(rd_idx).getValue());
     uint64_t field_val = frame.getReg(rs_idx).getValue();
 
     if constexpr (std::endian::native == std::endian::big) {
-        std::memcpy(class_ptr + field_offset, &field_val + sizeof(field_val) - field_size, field_size);
+        std::memcpy(class_ptr + field.offset, &field_val + sizeof(field_val) - field.size, field.size);
     } else {
-        std::memcpy(class_ptr + field_offset, &field_val, field_size);
+        std::memcpy(class_ptr + field.offset, &field_val, field.size);
     }
 
     LOG_INFO(instr.toString(), vm->getLogLevel());

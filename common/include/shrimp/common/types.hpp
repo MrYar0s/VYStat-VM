@@ -49,6 +49,7 @@ using FuncAccessor = std::unordered_map<FuncId, RuntimeFunc>;
 
 struct RuntimeField final {
     uint64_t size = 0;
+    uint64_t offset = 0;
     std::string name = "";
 };
 
