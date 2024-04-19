@@ -298,3 +298,28 @@ CMP.LL.I32:
     size: "HWord"
     fields:
         rs: [8, 15]
+
+OBJ.NEW:
+    desc: "Create new object and place ref to rd"
+    opcode: 40
+    fields:
+        rd: [8, 15]
+        class_id: [32, 63]
+
+LDFIELD:
+    desc: "Load obj field to rd by ref in rs"
+    opcode: 41
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
+        class_id: [24, 47]
+        field_id: [48, 63]
+
+STFIELD:
+    desc: "Store rs value to obj field by ref in rd"
+    opcode: 42
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
+        class_id: [24, 47]
+        field_id: [48, 63]

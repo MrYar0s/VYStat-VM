@@ -52,7 +52,7 @@ def write_instr_to_string(out: TextIOWrapper, instr: Instr) :
 
             case "imm_i32" :
                 out.write("bit::getValue<int32_t>(get%s())" % camel_field_name)
-            case "imm_i64" | "jump_offset" | "func_id" | "str_id" :
+            case "imm_i64" | "jump_offset" | "func_id" | "str_id" | "class_id" | "field_id" :
                 out.write("get%s()" % camel_field_name)
             case "imm_f" :
                 out.write("bit::getValue<float>(get%s())" % camel_field_name)

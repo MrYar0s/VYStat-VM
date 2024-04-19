@@ -76,6 +76,7 @@ File::File(const std::string &file_name)
         for (auto &field : fields) {
             ownRead(&field.id, sizeof(field.id), 1, file);
             ownRead(&field.size, sizeof(field.size), 1, file);
+            ownRead(&field.offset, sizeof(field.offset), 1, file);
             ownRead(&field.name_size, sizeof(field.name_size), 1, file);
             std::vector<char> vec_of_str_field(field.name_size);
             ownRead(vec_of_str_field.data(), sizeof(char), vec_of_str_field.size(), file);
@@ -177,7 +178,8 @@ void File::fillClassesHeader()
         classesHeader.size += sizeof(klass.id) + sizeof(klass.size) + sizeof(klass.name_size) + klass.name.size() +
                               sizeof(klass.num_of_fields);
         for (auto &field : klass.fields) {
-            classesHeader.size += sizeof(field.id) + sizeof(field.size) + sizeof(field.name_size) + field.name.size();
+            classesHeader.size += sizeof(field.id) + sizeof(field.size) + sizeof(field.offset) +
+                                  sizeof(field.name_size) + field.name.size();
         }
     }
 }
@@ -270,6 +272,7 @@ void File::serializeClasses(std::FILE *out)
         for (auto &field : klass.fields) {
             ownWrite(&field.id, sizeof(field.id), 1, out);
             ownWrite(&field.size, sizeof(field.size), 1, out);
+            ownWrite(&field.offset, sizeof(field.offset), 1, out);
             ownWrite(&field.name_size, sizeof(field.name_size), 1, out);
             ownWrite(field.name.data(), sizeof(char), field.name_size, out);
         }
@@ -373,6 +376,7 @@ void File::dumpClasses(std::stringstream &ss)
         for (auto &field : klass.fields) {
             ss << "FieldId : " << field.id << std::endl;
             ss << "Field size : " << field.size << std::endl;
+            ss << "Field offset : " << field.offset << std::endl;
             ss << "Field name_size : " << field.name_size << std::endl;
             ss << "Field name : " << field.name << std::endl;
         }
