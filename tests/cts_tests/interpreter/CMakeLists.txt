@@ -48,9 +48,12 @@ set(TEST_FILES
 	"call_3arg"
 	"call_4arg"
 	"arr_lda_sta_i32"
+	"arr_lda_sta_ref"
 	"cmp_eq_i32"
 	"cmp_gg_i32"
 	"cmp_ll_i32"
+	"obj_new"
+	"fields"
 )
 
 foreach(file IN LISTS TEST_FILES)

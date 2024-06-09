@@ -417,7 +417,8 @@ class Assembler final {
             }
 
             default:
-                assert(0);
+                std::abort();
+                // assert(0);
         }
     }
 
@@ -492,9 +493,9 @@ class Assembler final {
     size_t typeNameToSize(const std::string &str)
     {
         if (str == "i32") {
-            return 4U;
+            return 8U;
         } else if (str == "f") {
-            return 4U;
+            return 8U;
         } else if (auto it = class_name_to_id_.find(str); it != class_name_to_id_.end()) {
             return 8U;
         } else {
@@ -512,6 +513,7 @@ class Assembler final {
         std::vector<FieldInfo> fields {};
 
         size_t class_size = 0;
+        size_t counter = 0;
 
         while (lexer_.yylex() == Lexer::LEXING_OK) {
             if (lexer_.currLexemType() == Lexer::LexemType::FUNC || lexer_.currLexemType() == Lexer::LexemType::CLASS) {
@@ -526,7 +528,9 @@ class Assembler final {
 
             auto type_size = typeNameToSize(type);
 
-            fields.emplace_back(field_name, type_size, class_size);
+            fields.emplace_back(field_name, type_size, counter);
+
+            counter++;
 
             class_size += type_size;
         }

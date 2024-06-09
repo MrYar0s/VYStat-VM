@@ -1,0 +1,88 @@
+class Bar
+    i32 a
+
+class Foo
+    i32 x
+    Bar y
+
+func dump(a0)                   # a0 = foo: Foo[]
+    lda.str "Foo:null"
+    sta r2
+    lda.str "Foo.Bar:null"
+    sta r3
+    mov.imm.i32 r0, 0           # i
+    mov.imm.i32 r7, 1           # inc size
+    mov.imm.i32 r1, 0           # zero ref
+    arr.length a0               # foo.length
+    sta r15
+    jump.eq r0, for_end         # check if foo.length == 0
+for_start:
+    arr.lda.ref a0, r0          # acc = foo[i]
+    jump.eq r1, foo_null        # acc == null (foo[i] == null)
+    sta r5                      # r5 = acc (r5 = foo[i])
+    ldfield r4, r5, Foo, y      # r4 = foo[i].y (b = foo[i].y)
+    lda r4                      # acc = r4  (acc = b)
+    jump.eq r1, bar_null        # acc == null (b == null)
+    ldfield r6, r4, Bar, a      # r4 = bar.a (b.a)
+    intrinsic print.i32, r6     # print(b.a)
+    jump for_outro
+foo_null:
+    intrinsic print.str, r2     # print(Foo:null)
+    jump for_outro
+bar_null:
+    intrinsic print.str, r3     # print(Foo.Bar:null)
+for_outro:
+    lda r0
+    add.i32 r7
+    sta r0
+    jump.ll r15, for_start
+for_end:
+    lda.imm.i32 0
+    ret
+
+func foo(a0, a1)                # a0 = N, a1 = M
+    arr.new.ref r0, a1, Foo   # Foo[M]
+    mov.imm.i32 r4, 0           # zero for cmp
+    mov.imm.i32 r6, 1           # sub value for store
+    mov.imm.i32 r1, 1           # i = 1
+    mov.imm.i32 r15, 1           # inc size
+    mov.imm.i32 r2, 3           # for mod
+    mov.imm.i32 r3, 5           # for mod
+    lda r1                      # acc = i
+    jump.gg a0, for_end         # i > N
+for_start:
+    obj.new r5, Foo
+    stfield r5, r1, Foo, x
+    lda r1
+    mod r2
+    jump.not.eq r4, if_1
+    lda r1
+    mod a1
+    sub.i32 r6
+    sta r7
+    lda r5
+    arr.sta.ref r0, r7
+if_1:
+    obj.new r8, Bar
+    stfield r8, r1, Bar, a
+    lda r1
+    mod r3
+    jump.not.eq r4, if_2
+    stfield r5, r8, Foo, y
+if_2:
+    call.1arg dump, r0
+    lda r1
+    add.i32 r15
+    sta r1
+    sub.i32 r6
+    jump.ll a0, for_start
+for_end:
+    lda.imm.i32 0
+    ret
+
+func main()
+    mov.imm.i32 r0, 2000     # num of iters
+    mov.imm.i32 r1, 1000     # num of elements in array
+    call.2arg foo, r0, r1
+    lda.imm.i32 0
+    ret

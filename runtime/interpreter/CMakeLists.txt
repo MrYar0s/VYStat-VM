@@ -14,7 +14,7 @@ shrimp_add_instr_dep_gen(${CMAKE_CURRENT_SOURCE_DIR}/gen_instr.py ${SHRIMP_INTER
     runtime runtime_interpreter_instr_gen
 )
 
-shrimp_add_instr_dep_gen(${CMAKE_CURRENT_SOURCE_DIR}/gen_dispatch_table.py ${SHRIMP_INTERPRETER_GEN_ROOT}/dispatch_table.gen.hpp
+shrimp_add_instr_dep_gen(${CMAKE_CURRENT_SOURCE_DIR}/gen_dispatch_table.py ${SHRIMP_INTERPRETER_GEN_ROOT}/dispatch_table.gen.inl
     runtime runtime_interpreter_dispatch_gen
 )
 
