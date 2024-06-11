@@ -22,8 +22,9 @@ public:
     static Class *AllocateClass(uint32_t size, ShrimpVM *vm)
     {
         auto ptr = reinterpret_cast<Class *>(vm->getAllocator().allocate(sizeof(ObjectHeader) + size));
-        vm->getAllocatedObjects().push_back(reinterpret_cast<uint64_t>(ptr));
-        memset(ptr->data_, 0, size);
+        if (ptr != nullptr) {
+            memset(ptr->data_, 0, size);
+        }
         LOG_INFO("ptr : " << ptr, vm->getLogLevel());
         LOG_INFO("size : " << size, vm->getLogLevel());
         return ptr;

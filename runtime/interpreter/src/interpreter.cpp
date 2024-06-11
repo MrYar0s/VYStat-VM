@@ -490,7 +490,6 @@ handleCall2arg : {
     vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
     auto &frame = vm->currFrame();
 
-
     auto func_0arg = reg0.getValue();
     auto func_1arg = reg1.getValue();
     // TODO(VasiliyMatr): replace magic number to function
@@ -519,7 +518,6 @@ handleCall3arg : {
     auto reg2 = prev_frame.getReg(func_2arg_idx);
     vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
     auto &frame = vm->currFrame();
-
 
     auto func_0arg = reg0.getValue();
     auto func_1arg = reg1.getValue();
@@ -554,7 +552,6 @@ handleCall4arg : {
     auto reg3 = prev_frame.getReg(func_3arg_idx);
     vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
     auto &frame = vm->currFrame();
-
 
     auto func_0arg = reg0.getValue();
     auto func_1arg = reg1.getValue();

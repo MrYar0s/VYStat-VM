@@ -126,11 +126,6 @@ public:
         return arrays_;
     }
 
-    auto &getAllocatedObjects() noexcept
-    {
-        return allocatedObjects_;
-    }
-
     void triggerGCIfNeed();
 
 private:
@@ -147,13 +142,10 @@ private:
     FuncAccessor funcs_;
     ClassAccessor classes_;
     ArrayAccessor arrays_;
-    std::list<uint64_t> allocatedObjects_;
 
-    std::vector<void*> allocated_{};
-
-    static constexpr size_t MEM_LIMIT = 0x10000000; // 16Mb
-    LimitedArena arena_{MEM_LIMIT};
-    LimitedMemRes allocator_{arena_};
+    static constexpr size_t MEM_LIMIT = 0x2000000;  // 32Mb
+    LimitedArena arena_ {MEM_LIMIT};
+    LimitedMemRes allocator_ {arena_};
 };
 
 }  // namespace shrimp::runtime
