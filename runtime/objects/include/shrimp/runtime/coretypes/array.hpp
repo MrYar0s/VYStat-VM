@@ -5,24 +5,29 @@
 #include <cstring>
 #include <shrimp/runtime/memory/object_header.hpp>
 #include <shrimp/runtime/shrimp_vm.hpp>
+#include "shrimp/common/types.hpp"
 #include "shrimp/runtime/memory/class_word.hpp"
 
 namespace shrimp::runtime {
 
 class Array : public ObjectHeader {
 public:
-    static Array *AllocateArrayRef(ClassWord classStruct, uint32_t size, ShrimpVM *vm)
+    static Array *AllocateArrayRef(const RuntimeClass &classStruct, uint32_t size, ShrimpVM *vm)
     {
-        auto ptr = AllocateArray(size, vm);
-        ptr->setClassWord(classStruct);
+        auto ptr = AllocateArray(reinterpret_cast<ClassWord>(&classStruct), size, vm);
         return ptr;
     }
-    static Array *AllocateArray(uint32_t size, ShrimpVM *vm)
+    static Array *AllocateArray(ClassWord classWord, uint32_t size, ShrimpVM *vm)
     {
         auto ptr = reinterpret_cast<Array *>(
             vm->getAllocator().allocate(sizeof(ObjectHeader) + sizeof(size) + size * sizeof(uint64_t)));
+        vm->getAllocatedObjects().push_back(reinterpret_cast<uint64_t>(ptr));
+        vm->getArrays().push_back(
+            RuntimeArray {{BaseClassType::ARRAY}, size, reinterpret_cast<RuntimeClass *>(classWord)});
+        ClassWord arrayClassWord = reinterpret_cast<ClassWord>(&vm->getArrays().back());
         if (ptr != nullptr) {
             ptr->setSize(size);
+            ptr->setClassWord(arrayClassWord);
         }
         LOG_INFO("ptr : " << ptr, vm->getLogLevel());
         LOG_INFO("size : " << size, vm->getLogLevel());

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 using std::size_t;
 
@@ -48,20 +49,33 @@ struct RuntimeFunc final {
 using FuncAccessor = std::unordered_map<FuncId, RuntimeFunc>;
 
 struct RuntimeField final {
+    uint8_t is_ref = 0;
     uint64_t size = 0;
     uint64_t offset = 0;
     std::string name = "";
 };
 
-using FieldAccessor = std::unordered_map<FieldId, RuntimeField>;
+using FieldAccessor = std::vector<RuntimeField>;
 
-struct RuntimeClass final {
+enum BaseClassType { STRING = 0, ARRAY = 1, DEFAULT = 2 };
+
+struct BaseClass {
+    enum BaseClassType type;
+};
+
+struct RuntimeClass final : BaseClass {
     uint64_t size = 0;
     std::string name = "";
     FieldAccessor fields = {};
 };
 
-using ClassAccessor = std::unordered_map<ClassId, RuntimeClass>;
+struct RuntimeArray final : BaseClass {
+    uint64_t size = 0;
+    RuntimeClass *klass = nullptr;
+};
+
+using ArrayAccessor = std::vector<RuntimeArray>;
+using ClassAccessor = std::vector<RuntimeClass>;
 
 }  // namespace shrimp
 

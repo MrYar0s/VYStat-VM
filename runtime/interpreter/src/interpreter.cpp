@@ -85,7 +85,7 @@ Byte getOpcode(const Byte *pc)
 
 int runImpl(ShrimpVM *vm)
 {
-    #include <shrimp/runtime/interpreter/dispatch_table.gen.inl>
+#include <shrimp/runtime/interpreter/dispatch_table.gen.inl>
 
     goto *dispatch_table[getOpcode(vm->pc())];
 
@@ -106,8 +106,9 @@ handleMov : {
     auto rd_idx = instr.getRd();
     auto rs_idx = instr.getRs();
 
-    auto res = frame.getReg(rs_idx).getValue();
-    frame.setReg(res, rd_idx);
+    auto rs_reg = frame.getReg(rs_idx);
+    auto res = rs_reg.getValue();
+    frame.setReg(res, rd_idx, rs_reg.getRefMark());
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -120,7 +121,7 @@ handleMovImmI32 : {
     auto rd_idx = instr.getRd();
     auto imm_i32 = bit::getValue<int32_t>(instr.getImmI32());
 
-    frame.setReg(imm_i32, rd_idx);
+    frame.setReg(imm_i32, rd_idx, false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -133,7 +134,7 @@ handleMovImmF : {
     auto rd_idx = instr.getRd();
     auto imm_f = bit::getValue<float>(instr.getImmF());
 
-    frame.setReg(bit::castToWritable(imm_f), rd_idx);
+    frame.setReg(bit::castToWritable(imm_f), rd_idx, false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -145,8 +146,9 @@ handleLda : {
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
 
-    auto res = frame.getReg(rs_idx).getValue();
-    vm->acc().setValue(res);
+    auto res_reg = frame.getReg(rs_idx);
+    auto res = res_reg.getValue();
+    vm->acc().setValue(res, res_reg.getRefMark());
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -157,7 +159,7 @@ handleLdaImmI32 : {
     auto instr = Instr<InstrOpcode::LDA_IMM_I32>(vm->pc());
     auto imm_i32 = bit::getValue<int32_t>(instr.getImmI32());
 
-    vm->acc().setValue(imm_i32);
+    vm->acc().setValue(imm_i32, false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -168,7 +170,7 @@ handleLdaImmF : {
     auto instr = Instr<InstrOpcode::LDA_IMM_F>(vm->pc());
     auto imm_f = bit::getValue<float>(instr.getImmF());
 
-    vm->acc().setValue(bit::castToWritable(imm_f));
+    vm->acc().setValue(bit::castToWritable(imm_f), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -180,8 +182,9 @@ handleSta : {
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
 
-    auto res = vm->acc().getValue();
-    frame.setReg(res, rd_idx);
+    auto acc = vm->acc();
+    auto res = acc.getValue();
+    frame.setReg(res, rd_idx, acc.getRefMark());
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -195,7 +198,7 @@ handleAddI32 : {
 
     int32_t acc_i32 = vm->acc().getValue();
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
-    vm->acc().setValue(acc_i32 + rs_i32);
+    vm->acc().setValue(acc_i32 + rs_i32, false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -211,7 +214,7 @@ handleAddF : {
     auto rs = frame.getReg(rs_idx).getValue();
     float acc_f = bit::getValue<float>(acc);
     float rs_f = bit::getValue<float>(rs);
-    vm->acc().setValue(bit::castToWritable<float>(acc_f + rs_f));
+    vm->acc().setValue(bit::castToWritable<float>(acc_f + rs_f), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -225,7 +228,7 @@ handleSubI32 : {
 
     int32_t acc_i32 = vm->acc().getValue();
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
-    vm->acc().setValue(bit::castToWritable(acc_i32 - rs_i32));
+    vm->acc().setValue(bit::castToWritable(acc_i32 - rs_i32), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -241,7 +244,7 @@ handleSubF : {
     auto rs = frame.getReg(rs_idx).getValue();
     auto acc_f = bit::getValue<float>(acc);
     auto rs_f = bit::getValue<float>(rs);
-    vm->acc().setValue(bit::castToWritable(acc_f - rs_f));
+    vm->acc().setValue(bit::castToWritable(acc_f - rs_f), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -256,7 +259,7 @@ handleMod : {
     int32_t acc_i32 = vm->acc().getValue();
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
     auto res = bit::signExtend<DWord, 31>(acc_i32 % rs_i32);
-    vm->acc().setValue(bit::castToWritable(res));
+    vm->acc().setValue(bit::castToWritable(res), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -271,7 +274,7 @@ handleDivI32 : {
     int32_t acc_i32 = vm->acc().getValue();
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
     auto res = bit::signExtend<DWord, 31>(acc_i32 / rs_i32);
-    vm->acc().setValue(bit::castToWritable(res));
+    vm->acc().setValue(bit::castToWritable(res), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -287,7 +290,7 @@ handleDivF : {
     auto rs = frame.getReg(rs_idx).getValue();
     auto acc_f = bit::getValue<float>(acc);
     auto rs_f = bit::getValue<float>(rs);
-    vm->acc().setValue(bit::castToWritable(acc_f / rs_f));
+    vm->acc().setValue(bit::castToWritable(acc_f / rs_f), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -303,7 +306,7 @@ handleMulI32 : {
     int32_t rs_i32 = frame.getReg(rs_idx).getValue();
 
     auto res = bit::signExtend<DWord, 31>(acc_i32 * rs_i32);
-    vm->acc().setValue(bit::castToWritable(res));
+    vm->acc().setValue(bit::castToWritable(res), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -319,7 +322,7 @@ handleMulF : {
     auto rs = frame.getReg(rs_idx).getValue();
     auto acc_f = bit::getValue<float>(acc);
     auto rs_f = bit::getValue<float>(rs);
-    vm->acc().setValue(bit::castToWritable(acc_f * rs_f));
+    vm->acc().setValue(bit::castToWritable(acc_f * rs_f), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -361,6 +364,7 @@ handleIntrinsic : {
             break;
         }
         case IntrinsicCode::CONCAT: {
+            vm->triggerGCIfNeed();
             auto ptr0 = frame.getReg(arg0_idx).getValue();
             auto strObj0 = reinterpret_cast<String *>(bit::getValue<int32_t *>(ptr0));
             auto ptr1 = frame.getReg(arg1_idx).getValue();
@@ -370,10 +374,11 @@ handleIntrinsic : {
 
             auto ptr = std::bit_cast<int32_t *>(strObj);
 
-            vm->acc().setValue(bit::castToWritable(ptr));
+            vm->acc().setValue(bit::castToWritable(ptr), true);
             break;
         }
         case IntrinsicCode::SUBSTR: {
+            vm->triggerGCIfNeed();
             auto pos = frame.getReg(arg0_idx).getValue();
             auto len = frame.getReg(arg1_idx).getValue();
             auto ptr = vm->acc().getValue();
@@ -382,20 +387,20 @@ handleIntrinsic : {
             auto newStrObj = String::SubStr(strObj, pos, len, vm);
 
             auto newPtr = std::bit_cast<int32_t *>(newStrObj);
-            vm->acc().setValue(bit::castToWritable(newPtr));
+            vm->acc().setValue(bit::castToWritable(newPtr), true);
 
             break;
         }
         case IntrinsicCode::SCAN_I32: {
             auto res = intrinsics::ScanI();
 
-            vm->acc().setValue(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res), false);
             break;
         }
         case IntrinsicCode::SCAN_F: {
             auto res = intrinsics::ScanF();
 
-            vm->acc().setValue(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res), false);
             break;
         }
         case IntrinsicCode::SIN: {
@@ -403,7 +408,7 @@ handleIntrinsic : {
             auto value = bit::getValue<float>(value_raw);
 
             auto res = intrinsics::SinF(value);
-            vm->acc().setValue(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res), false);
             break;
         }
         case IntrinsicCode::COS: {
@@ -411,7 +416,7 @@ handleIntrinsic : {
             auto value = bit::getValue<float>(value_raw);
 
             auto res = intrinsics::CosF(value);
-            vm->acc().setValue(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res), false);
             break;
         }
         case IntrinsicCode::SQRT: {
@@ -419,7 +424,7 @@ handleIntrinsic : {
             auto value = bit::getValue<float>(value_raw);
 
             auto res = intrinsics::SqrtF(value);
-            vm->acc().setValue(bit::castToWritable(res));
+            vm->acc().setValue(bit::castToWritable(res), false);
             break;
         }
         default: {
@@ -437,7 +442,7 @@ handleCall0arg : {
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
-    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
 
     auto &frame = vm->currFrame();
 
@@ -456,12 +461,13 @@ handleCall1arg : {
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     auto &prev_frame = vm->currFrame();
-    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto reg0 = prev_frame.getReg(func_0arg_idx);
+    vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
     auto &frame = vm->currFrame();
 
-    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
+    auto func_0arg = reg0.getValue();
     // TODO(VasiliyMatr): replace magic number to function
-    frame.setReg(func_0arg, 255);
+    frame.setReg(func_0arg, 255, reg0.getRefMark());
 
     ByteOffset offset = frame.getOffsetToFunc();
     frame.setRetPc(vm->pc() + instr.getByteSize());
@@ -479,14 +485,17 @@ handleCall2arg : {
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     auto &prev_frame = vm->currFrame();
-    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto reg0 = prev_frame.getReg(func_0arg_idx);
+    auto reg1 = prev_frame.getReg(func_1arg_idx);
+    vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
     auto &frame = vm->currFrame();
 
-    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
-    auto func_1arg = prev_frame.getReg(func_1arg_idx).getValue();
+
+    auto func_0arg = reg0.getValue();
+    auto func_1arg = reg1.getValue();
     // TODO(VasiliyMatr): replace magic number to function
-    frame.setReg(func_0arg, 255);
-    frame.setReg(func_1arg, 254);
+    frame.setReg(func_0arg, 255, reg0.getRefMark());
+    frame.setReg(func_1arg, 254, reg1.getRefMark());
 
     ByteOffset offset = frame.getOffsetToFunc();
     frame.setRetPc(vm->pc() + instr.getByteSize());
@@ -505,16 +514,21 @@ handleCall3arg : {
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     auto &prev_frame = vm->currFrame();
-    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto reg0 = prev_frame.getReg(func_0arg_idx);
+    auto reg1 = prev_frame.getReg(func_1arg_idx);
+    auto reg2 = prev_frame.getReg(func_2arg_idx);
+    vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
     auto &frame = vm->currFrame();
 
-    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
-    auto func_1arg = prev_frame.getReg(func_1arg_idx).getValue();
-    auto func_2arg = prev_frame.getReg(func_2arg_idx).getValue();
+
+    auto func_0arg = reg0.getValue();
+    auto func_1arg = reg1.getValue();
+    auto func_2arg = reg2.getValue();
+
     // TODO(VasiliyMatr): replace magic number to function
-    frame.setReg(func_0arg, 255);
-    frame.setReg(func_1arg, 254);
-    frame.setReg(func_2arg, 253);
+    frame.setReg(func_0arg, 255, reg0.getRefMark());
+    frame.setReg(func_1arg, 254, reg1.getRefMark());
+    frame.setReg(func_2arg, 253, reg2.getRefMark());
 
     ByteOffset offset = frame.getOffsetToFunc();
     frame.setRetPc(vm->pc() + instr.getByteSize());
@@ -534,18 +548,24 @@ handleCall4arg : {
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     auto &prev_frame = vm->currFrame();
-    vm->stack().push(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
+    auto reg0 = prev_frame.getReg(func_0arg_idx);
+    auto reg1 = prev_frame.getReg(func_1arg_idx);
+    auto reg2 = prev_frame.getReg(func_2arg_idx);
+    auto reg3 = prev_frame.getReg(func_3arg_idx);
+    vm->stack().push_back(Frame {std::make_shared<RuntimeFunc>(vm->resolveFunc(func_id))});
     auto &frame = vm->currFrame();
 
-    auto func_0arg = prev_frame.getReg(func_0arg_idx).getValue();
-    auto func_1arg = prev_frame.getReg(func_1arg_idx).getValue();
-    auto func_2arg = prev_frame.getReg(func_2arg_idx).getValue();
-    auto func_3arg = prev_frame.getReg(func_3arg_idx).getValue();
+
+    auto func_0arg = reg0.getValue();
+    auto func_1arg = reg1.getValue();
+    auto func_2arg = reg2.getValue();
+    auto func_3arg = reg3.getValue();
+
     // TODO(VasiliyMatr): replace magic number to function
-    frame.setReg(func_0arg, 255);
-    frame.setReg(func_1arg, 254);
-    frame.setReg(func_2arg, 253);
-    frame.setReg(func_3arg, 252);
+    frame.setReg(func_0arg, 255, reg0.getRefMark());
+    frame.setReg(func_1arg, 254, reg1.getRefMark());
+    frame.setReg(func_2arg, 253, reg2.getRefMark());
+    frame.setReg(func_3arg, 252, reg3.getRefMark());
 
     ByteOffset offset = frame.getOffsetToFunc();
     frame.setRetPc(vm->pc() + instr.getByteSize());
@@ -562,7 +582,7 @@ handleRet : {
     auto *ret_pc = frame.getRetPc();
     if (ret_pc != nullptr) {
         vm->pc() = ret_pc;
-        vm->stack().pop();
+        vm->stack().pop_back();
         goto *dispatch_table[getOpcode(vm->pc())];
     }
 
@@ -634,7 +654,7 @@ handleI32tof : {
 
     int32_t acc_i32 = vm->acc().getValue();
     float acc_f = acc_i32;
-    vm->acc().setValue(bit::castToWritable(acc_f));
+    vm->acc().setValue(bit::castToWritable(acc_f), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -647,7 +667,7 @@ handleFtoi32 : {
     auto acc = vm->acc().getValue();
     auto acc_f = bit::getValue<float>(acc);
     int32_t acc_i = acc_f;
-    vm->acc().setValue(bit::castToWritable(acc_i));
+    vm->acc().setValue(bit::castToWritable(acc_i), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -655,6 +675,7 @@ handleFtoi32 : {
     goto *dispatch_table[getOpcode(vm->pc())];
 }
 handleLdaStr : {
+    vm->triggerGCIfNeed();
     auto instr = Instr<InstrOpcode::LDA_STR>(vm->pc());
 
     auto str_id = instr.getStrId();
@@ -663,7 +684,7 @@ handleLdaStr : {
 
     auto ptr = std::bit_cast<int32_t *>(strObj);
 
-    vm->acc().setValue(bit::castToWritable(ptr));
+    vm->acc().setValue(bit::castToWritable(ptr), true);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -679,7 +700,7 @@ handleArrLength : {
 
     auto arrObj = std::bit_cast<Array *>(frame.getReg(rs_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(arrObj->getSize()));
+    vm->acc().setValue(bit::castToWritable(arrObj->getSize()), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -687,6 +708,7 @@ handleArrLength : {
     goto *dispatch_table[getOpcode(vm->pc())];
 }
 handleArrNewI32 : {
+    vm->triggerGCIfNeed();
     auto instr = Instr<InstrOpcode::ARR_NEW_I32>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -696,11 +718,11 @@ handleArrNewI32 : {
 
     auto size = frame.getReg(rs_idx).getValue();
 
-    auto arrObj = Array::AllocateArray(size, vm);
+    auto arrObj = Array::AllocateArray(0, size, vm);
 
     int32_t *ptr = std::bit_cast<int32_t *>(arrObj);
 
-    frame.setReg(bit::castToWritable(ptr), rd_idx);
+    frame.setReg(bit::castToWritable(ptr), rd_idx, true);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -714,7 +736,7 @@ handleCmpEqI32 : {
 
     auto eq = bit::getValue<int32_t>(vm->acc().getValue()) == bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(eq)));
+    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(eq)), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -722,6 +744,7 @@ handleCmpEqI32 : {
     goto *dispatch_table[getOpcode(vm->pc())];
 }
 handleArrNewF : {
+    vm->triggerGCIfNeed();
     auto instr = Instr<InstrOpcode::ARR_NEW_F>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -731,11 +754,11 @@ handleArrNewF : {
 
     auto size = frame.getReg(rs_idx).getValue();
 
-    auto arrObj = Array::AllocateArray(size, vm);
+    auto arrObj = Array::AllocateArray(0, size, vm);
 
     int32_t *ptr = std::bit_cast<int32_t *>(arrObj);
 
-    frame.setReg(bit::castToWritable(ptr), rd_idx);
+    frame.setReg(bit::castToWritable(ptr), rd_idx, true);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -749,7 +772,7 @@ handleCmpGgI32 : {
 
     auto gg = bit::getValue<int32_t>(vm->acc().getValue()) > bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(gg)));
+    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(gg)), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -757,6 +780,7 @@ handleCmpGgI32 : {
     goto *dispatch_table[getOpcode(vm->pc())];
 }
 handleArrNewRef : {
+    vm->triggerGCIfNeed();
     auto instr = Instr<InstrOpcode::ARR_NEW_REF>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -767,18 +791,13 @@ handleArrNewRef : {
 
     auto size = frame.getReg(rs_idx).getValue();
 
-    auto klass = vm->getClasses().find(class_id);
+    const auto &klass = vm->getClasses()[class_id];
 
-    if (klass == vm->getClasses().end()) {
-        LOG_INFO("Klass was not find during ArrNewRef", vm->getLogLevel());
-        return 0;
-    }
-
-    auto arrObj = Array::AllocateArrayRef(reinterpret_cast<uint64_t>(&klass->second), size, vm);
+    auto arrObj = Array::AllocateArrayRef(klass, size, vm);
 
     int32_t *ptr = std::bit_cast<int32_t *>(arrObj);
 
-    frame.setReg(bit::castToWritable(ptr), rd_idx);
+    frame.setReg(bit::castToWritable(ptr), rd_idx, true);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -796,7 +815,7 @@ handleArrLdaI32 : {
     auto pos = frame.getReg(rs2_idx).getValue();
     auto ptr = std::bit_cast<Array *>(frame.getReg(rs1_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)));
+    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -815,7 +834,7 @@ handleArrLdaF : {
 
     auto ptr = std::bit_cast<Array *>(frame.getReg(rs1_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)));
+    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -834,14 +853,14 @@ handleArrLdaRef : {
 
     auto ptr = std::bit_cast<Array *>(frame.getReg(rs1_idx).getValue());
 
-    auto runtimeClassFromArr = reinterpret_cast<RuntimeClass *>(ptr->getClassWord());
+    auto runtimeClassFromArr = reinterpret_cast<RuntimeArray *>(ptr->getClassWord());
     if (runtimeClassFromArr != nullptr) {
-        LOG_INFO("Name of class from array : " + runtimeClassFromArr->name, vm->getLogLevel());
+        LOG_INFO("Name of class from array : " + runtimeClassFromArr->klass->name, vm->getLogLevel());
     } else {
         return -1;
     }
 
-    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)));
+    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)), true);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -930,7 +949,7 @@ handleCmpLlI32 : {
 
     auto ll = bit::getValue<int32_t>(vm->acc().getValue()) < bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(ll)));
+    vm->acc().setValue(bit::castToWritable(static_cast<uint32_t>(ll)), false);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -938,25 +957,19 @@ handleCmpLlI32 : {
     goto *dispatch_table[getOpcode(vm->pc())];
 }
 handleObjNew : {
+    vm->triggerGCIfNeed();
     Instr<InstrOpcode::OBJ_NEW> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
 
     auto class_id = instr.getClassId();
 
-    auto klass = vm->getClasses().find(class_id);
+    const auto &klass = vm->getClasses()[class_id];
 
-    if (klass == vm->getClasses().end()) {
-        LOG_INFO("Klass was not find during ArrNewRef", vm->getLogLevel());
-        return 0;
-    }
-
-    const auto &class_info = klass->second;
-
-    auto class_obj = Class::AllocateClassRef(reinterpret_cast<uint64_t>(&class_info), class_info.size, vm);
+    auto class_obj = Class::AllocateClassRef(reinterpret_cast<uint64_t>(&klass), klass.size, vm);
     auto ptr = reinterpret_cast<int32_t *>(class_obj);
 
-    frame.setReg(bit::castToWritable(ptr), rd_idx);
+    frame.setReg(bit::castToWritable(ptr), rd_idx, true);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
@@ -981,7 +994,7 @@ handleLdfield : {
 
     uint64_t ld_tmp = class_ptr->getField(field);
 
-    frame.setReg(ld_tmp, rd_idx);
+    frame.setReg(ld_tmp, rd_idx, field.is_ref);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 

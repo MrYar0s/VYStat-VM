@@ -7,17 +7,23 @@ namespace shrimp::runtime {
 
 class Register final {
 public:
-    uint64_t getValue()
+    uint64_t getValue() const
     {
         return val_;
     }
-    void setValue(uint64_t val)
+    void setValue(uint64_t val, bool refMark)
     {
         val_ = val;
+        refMark_ = refMark;
+    }
+    bool getRefMark() const
+    {
+        return refMark_;
     }
 
 private:
     uint64_t val_ = 0;
+    bool refMark_ = false;
 };
 
 }  // namespace shrimp::runtime

@@ -69,7 +69,15 @@ class Assembler final {
 
     class FieldInfo final {
     public:
-        FieldInfo(std::string name, size_t size, size_t offset) : name_(name), size_(size), offset_(offset) {}
+        FieldInfo(std::string name, size_t size, size_t offset, uint8_t is_ref)
+            : name_(name), size_(size), offset_(offset), is_ref_(is_ref)
+        {
+        }
+
+        auto isRef() const noexcept
+        {
+            return is_ref_;
+        }
 
         auto getSize() const noexcept
         {
@@ -95,6 +103,9 @@ class Assembler final {
 
         // Field offset
         size_t offset_ = 0;
+
+        // Field is_ref
+        uint8_t is_ref_ = 0;
     };
 
     class ClassInfo final {
@@ -490,6 +501,20 @@ class Assembler final {
         }
     }
 
+    uint8_t isRefType(const std::string &str)
+    {
+        if (str == "i32") {
+            return 0U;
+        } else if (str == "f") {
+            return 0U;
+        } else if (auto it = class_name_to_id_.find(str); it != class_name_to_id_.end()) {
+            return 1U;
+        } else {
+            assertParseError(0);
+            return 0U;
+        }
+    }
+
     size_t typeNameToSize(const std::string &str)
     {
         if (str == "i32") {
@@ -528,7 +553,7 @@ class Assembler final {
 
             auto type_size = typeNameToSize(type);
 
-            fields.emplace_back(field_name, type_size, counter);
+            fields.emplace_back(field_name, type_size, counter, isRefType(type));
 
             counter++;
 
@@ -614,8 +639,8 @@ class Assembler final {
         uint32_t start_id = 0;
         for (const auto &klass_field : klass.fields()) {
             auto &name = klass_field.getName();
-            fields.push_back(shrimpfile::File::FileField {start_id++, klass_field.getSize(), klass_field.getOffset(),
-                                                          name.size(), name});
+            fields.push_back(shrimpfile::File::FileField {start_id++, klass_field.isRef(), klass_field.getSize(),
+                                                          klass_field.getOffset(), name.size(), name});
         }
         class_info.num_of_fields = class_info.fields.size();
         out.writeClass(class_info);

@@ -24,9 +24,9 @@ public:
     {
         return regs_[idx];
     }
-    void setReg(uint64_t val, uint8_t reg_num)
+    void setReg(uint64_t val, uint8_t reg_num, bool refMark)
     {
-        regs_[reg_num].setValue(val);
+        regs_[reg_num].setValue(val, refMark);
     }
     ByteOffset getOffsetToFunc() const noexcept
     {

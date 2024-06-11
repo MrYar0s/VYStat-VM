@@ -25,10 +25,12 @@ public:
     {
         auto ptr = reinterpret_cast<String *>(
             vm->getAllocator().allocate(sizeof(ObjectHeader) + sizeof(size) + sizeof(hashCode_) + size));
+        vm->getAllocatedObjects().push_back(reinterpret_cast<uint64_t>(ptr));
         if (ptr != nullptr) {
             ptr->setSize(size);
             ptr->setHashCode(0xd09c);
             ptr->setData(data);
+            ptr->setClassWord(0);
         }
         return ptr;
     }

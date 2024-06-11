@@ -1,6 +1,7 @@
 #ifndef SHRIMP_RUNTIME_SHRIMP_VM_HPP
 #define SHRIMP_RUNTIME_SHRIMP_VM_HPP
 
+#include <list>
 #include <vector>
 #include <cstdint>
 #include <stack>
@@ -35,9 +36,9 @@ public:
         for (auto &&klass : classes) {
             FieldAccessor fields;
             for (auto &&field : klass.fields) {
-                fields.emplace(field.id, RuntimeField {field.size, field.offset, field.name});
+                fields.push_back(RuntimeField {field.is_ref, field.size, field.offset, field.name});
             }
-            classes_.emplace(klass.id, RuntimeClass {klass.size, klass.name, std::move(fields)});
+            classes_.push_back(RuntimeClass {{BaseClassType::DEFAULT}, klass.size, klass.name, std::move(fields)});
         }
         auto is_main = [](const std::pair<const unsigned int, shrimp::RuntimeFunc> &func_pair) {
             return func_pair.second.name == "main";
@@ -48,8 +49,8 @@ public:
             std::abort();
         }
         FuncId entry_id = it->first;
-        stack_.emplace(std::make_shared<RuntimeFunc>(funcs_[entry_id]));
-        pc_ += stack_.top().getOffsetToFunc();
+        stack_.push_back(Frame {std::make_shared<RuntimeFunc>(funcs_[entry_id])});
+        pc_ += stack_.back().getOffsetToFunc();
     }
 
     int runImpl();
@@ -79,9 +80,9 @@ public:
         return stack_;
     }
 
-    auto &currFrame() noexcept
+    inline auto &currFrame() noexcept
     {
-        return stack_.top();
+        return stack_.back();
     }
 
     const std::string &resolveString(StrId str_id) noexcept
@@ -120,6 +121,18 @@ public:
         return classes_;
     }
 
+    auto &getArrays() noexcept
+    {
+        return arrays_;
+    }
+
+    auto &getAllocatedObjects() noexcept
+    {
+        return allocatedObjects_;
+    }
+
+    void triggerGCIfNeed();
+
 private:
     Runtime *runtime_ = nullptr;
     LogLevel log_level_ = LogLevel::NONE;
@@ -128,11 +141,13 @@ private:
     const Byte *pc_ = code_.data();
 
     Register acc_ {};
-    std::stack<Frame> stack_ {};
+    std::vector<Frame> stack_ {};
 
     StringAccessor strings_;
     FuncAccessor funcs_;
     ClassAccessor classes_;
+    ArrayAccessor arrays_;
+    std::list<uint64_t> allocatedObjects_;
 
     ArenaAllocator allocator_;
 };
