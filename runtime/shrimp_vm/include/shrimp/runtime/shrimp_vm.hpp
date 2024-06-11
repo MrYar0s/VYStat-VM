@@ -16,7 +16,7 @@
 #include <shrimp/shrimpfile.hpp>
 #include <shrimp/common/types.hpp>
 
-#include <shrimp/runtime/memory/arena_allocator.hpp>
+#include <shrimp/runtime/memory/memory_resource.hpp>
 
 namespace shrimp::runtime {
 
@@ -149,7 +149,11 @@ private:
     ArrayAccessor arrays_;
     std::list<uint64_t> allocatedObjects_;
 
-    ArenaAllocator allocator_;
+    std::vector<void*> allocated_{};
+
+    static constexpr size_t MEM_LIMIT = 0x10000000; // 16Mb
+    LimitedArena arena_{MEM_LIMIT};
+    LimitedMemRes allocator_{arena_};
 };
 
 }  // namespace shrimp::runtime
