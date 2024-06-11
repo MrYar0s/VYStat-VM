@@ -83,42 +83,49 @@ SUB.F:
     fields:
         rs: [8, 15]
 
+MOD:
+    descr: "acc = (acc as i32) % (rs as i32)"
+    opcode: 13
+    size: "HWord"
+    fields:
+        rs: [8, 15]
+
 DIV.I32:
     descr: "acc = (acc as i32) / (rs as i32)"
-    opcode: 13
+    opcode: 14
     size: "HWord"
     fields:
         rs: [8, 15]
 
 DIV.F:
     descr: "acc = (acc as float) / (rs as float)"
-    opcode: 14
+    opcode: 15
     size: "HWord"
     fields:
         rs: [8, 15]
 
 MUL.I32:
     descr: "acc = (acc as i32) * (rs as i32)"
-    opcode: 15
+    opcode: 16
     size: "HWord"
     fields:
         rs: [8, 15]
 
 MUL.F:
     descr: "acc = (acc as float) * (rs as float)"
-    opcode: 16
+    opcode: 17
     size: "HWord"
     fields:
         rs: [8, 15]
 
 RET:
     descr: "Return from current frame. Return value is passed in acc"
-    opcode: 17
+    opcode: 18
     size: "Byte"
 
 INTRINSIC:
     descr: "call intrinsic"
-    opcode: 18
+    opcode: 19
     gen_parser: false
     fields:
         intrinsic_code: [8, 23]
@@ -129,7 +136,7 @@ INTRINSIC:
 
 JUMP:
     descr: "pc = pc + offset"
-    opcode: 19
+    opcode: 20
     is_jump: true
     fields:
         jump_offset:
@@ -138,7 +145,7 @@ JUMP:
 
 JUMP.GG:
     descr: "acc > rs ? pc = pc + offset : pc = pc + 8"
-    opcode: 20
+    opcode: 21
     is_jump: true
     fields:
         rs: [8, 15]
@@ -148,7 +155,17 @@ JUMP.GG:
 
 JUMP.EQ:
     descr: "acc == rs ? pc = pc + offset : pc = pc + 8"
-    opcode: 21
+    opcode: 22
+    is_jump: true
+    fields:
+        rs: [8, 15]
+        jump_offset:
+            is_signed: true
+            bits: [16, 63]
+
+JUMP.NOT.EQ:
+    descr: "acc != rs ? pc = pc + offset : pc = pc + 8"
+    opcode: 23
     is_jump: true
     fields:
         rs: [8, 15]
@@ -158,7 +175,7 @@ JUMP.EQ:
 
 JUMP.LL:
     descr: "acc < rs ? pc = pc + offset : pc = pc + 8"
-    opcode: 22
+    opcode: 24
     is_jump: true
     fields:
         rs: [8, 15]
@@ -168,21 +185,21 @@ JUMP.LL:
 
 CALL.0ARG:
     desct: "call function with no arguments"
-    opcode: 23
+    opcode: 25
     size: "Word"
     fields:
         func_id: [8, 31]
 
 CALL.1ARG:
     desct: "call function with one argument"
-    opcode: 24
+    opcode: 26
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
 
 CALL.2ARG:
     desct: "call function with two arguments"
-    opcode: 25
+    opcode: 27
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
@@ -190,7 +207,7 @@ CALL.2ARG:
 
 CALL.3ARG:
     desct: "call function with three arguments"
-    opcode: 26
+    opcode: 28
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
@@ -199,7 +216,7 @@ CALL.3ARG:
 
 CALL.4ARG:
     desct: "call function with four arguments"
-    opcode: 27
+    opcode: 29
     fields:
         func_id: [8, 31]
         func_arg0: [32, 39]
@@ -209,42 +226,56 @@ CALL.4ARG:
 
 I32TOF:
     descr: "acc = (acc as float)"
-    opcode: 28
+    opcode: 30
     size: "Byte"
 
 FTOI32:
     descr: "acc = (acc as i32)"
-    opcode: 29
+    opcode: 31
     size: "Byte"
 
 LDA.STR:
     desc: "Load string in accumulator."
-    opcode: 30
+    opcode: 32
     size: "Word"
     fields:
         str_id: [8, 23]
 
+ARR.LENGTH:
+    descr: "Get size of array in rs and copy into acc"
+    opcode: 33
+    size: "HWord"
+    fields:
+        rs: [8, 15]
+
 ARR.NEW.I32:
     descr: "Create new i32 array of size rs"
-    opcode: 31
+    opcode: 34
     size: "Word"
     fields:
         rd: [8, 15]
         rs: [16, 23]
-        # dim: [24, 31]
 
 ARR.NEW.F:
     descr: "Create new f array of size rs"
-    opcode: 32
+    opcode: 35
     size: "Word"
     fields:
         rd: [8, 15]
         rs: [16, 23]
-        # dim: [24, 31]
+
+ARR.NEW.REF:
+    descr: "Create new ref array of size rs"
+    opcode: 36
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
+        class_id: [24, 47]
+
 
 ARR.LDA.I32:
     descr: "Load rs1[rs2] to acc"
-    opcode: 33
+    opcode: 37
     size: "Word"
     fields:
         rs1: [8, 15]
@@ -252,17 +283,23 @@ ARR.LDA.I32:
 
 ARR.LDA.F:
     descr: "Load rs1[rs2] to acc"
-    opcode: 34
+    opcode: 38
     size: "Word"
     fields:
         rs1: [8, 15]
         rs2: [16, 23]
 
-# ARR.LDA.REF
+ARR.LDA.REF:
+    descr: "Load rs1[rs2] to acc"
+    opcode: 39
+    size: "Word"
+    fields:
+        rs1: [8, 15]
+        rs2: [16, 23]
 
 ARR.STA.I32:
     descr: "Store acc to rd[rs]"
-    opcode: 35
+    opcode: 40
     size: "Word"
     fields:
         rd: [8, 15]
@@ -270,45 +307,51 @@ ARR.STA.I32:
 
 ARR.STA.F:
     descr: "Store acc to rd[rs]"
-    opcode: 36
+    opcode: 41
     size: "Word"
     fields:
         rd: [8, 15]
         rs: [16, 23]
 
-# ARR.STA.REF
+ARR.STA.REF:
+    descr: "Store acc to rd[rs]"
+    opcode: 42
+    size: "Word"
+    fields:
+        rd: [8, 15]
+        rs: [16, 23]
 
 CMP.EQ.I32:
     desc: "acc == rs ? 1 : 0"
-    opcode: 37
+    opcode: 43
     size: "HWord"
     fields:
         rs: [8, 15]
 
 CMP.GG.I32:
     desc: "acc > rs ? 1 : 0"
-    opcode: 38
+    opcode: 44
     size: "HWord"
     fields:
         rs: [8, 15]
 
 CMP.LL.I32:
     desc: "acc < rs ? 1 : 0"
-    opcode: 39
+    opcode: 45
     size: "HWord"
     fields:
         rs: [8, 15]
 
 OBJ.NEW:
     desc: "Create new object and place ref to rd"
-    opcode: 40
+    opcode: 46
     fields:
         rd: [8, 15]
         class_id: [32, 63]
 
 LDFIELD:
     desc: "Load obj field to rd by ref in rs"
-    opcode: 41
+    opcode: 47
     fields:
         rd: [8, 15]
         rs: [16, 23]
@@ -317,7 +360,7 @@ LDFIELD:
 
 STFIELD:
     desc: "Store rs value to obj field by ref in rd"
-    opcode: 42
+    opcode: 48
     fields:
         rd: [8, 15]
         rs: [16, 23]

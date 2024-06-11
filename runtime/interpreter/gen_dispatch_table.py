@@ -10,39 +10,10 @@ def fix_instr_name(instr_name: str) :
 def instr_name_to_camel(instr_name: str) :
     return "".join(x.capitalize() for x in instr_name.lower().split("."))
 
-def write_file_open(out: TextIOWrapper) :
-    out.write(
-        "#ifndef DISPATCH_TABLE_GEN_HPP\n"
-        "#define DISPATCH_TABLE_GEN_HPP\n\n"
-
-        "#include <array>\n\n"
-
-        "#include <shrimp/common/types.hpp>\n"
-        "#include <shrimp/common/instr_opcode.gen.hpp>\n"
-        "#include <shrimp/runtime/interpreter.hpp>\n\n"
-
-        "namespace shrimp::runtime::interpreter {\n\n"
-
-        "namespace {\n\n"
-    )
-
-def write_handlers_decls(out: TextIOWrapper, instrs: dict) :
-    for instr_name, instr_descr in instrs.items() :
-        if instr_descr.get("gen_handler", True) :
-            out.write("int handle%s(ShrimpVM *vm);" % instr_name_to_camel(instr_name))
-
 def write_dispatch_table(out: TextIOWrapper, instrs: dict) :
-    sorted_instrs = dict(sorted(instrs.items(), key=lambda item: item[1]["opcode"]))
-
-    DISPATCH_LEN = 256
-
-    out.write("using HandlerPtr = int (*)(ShrimpVM *vm);\n\n")
-
-    out.write("static constexpr size_t DISPATCH_LEN = %d;\n\n" % DISPATCH_LEN)
-
     # 0 is invalid opcode
-    out.write("static constexpr std::array<HandlerPtr, DISPATCH_LEN> dispatch_table {\n")
-    out.write("nullptr")
+    out.write("static void *dispatch_table[] = {\n")
+    out.write("&&handleInvalidOpcode")
 
     curr_opcode = 1
 
@@ -50,26 +21,17 @@ def write_dispatch_table(out: TextIOWrapper, instrs: dict) :
         next_instr_opcode = instr_descr["opcode"]
 
         while curr_opcode != next_instr_opcode :
-            out.write(", nullptr")
+            out.write(", &&handleInvalidOpcode")
             curr_opcode = curr_opcode + 1
 
         if instr_descr.get("gen_handler", True) :
-            out.write(", handle%s" % instr_name_to_camel(instr_name))
+            out.write(", &&handle%s" % instr_name_to_camel(instr_name))
         else :
-            out.write(", nullptr")
+            out.write(", &&handleInvalidOpcode")
 
         curr_opcode = curr_opcode + 1
 
     out.write("};\n\n")
-
-def write_file_close(out: TextIOWrapper) :
-    out.write(
-        "}  // namespace\n\n"
-
-        "}  // namespace shrimp::runtime::interpreter\n\n"
-
-        "#endif  // DISPATCH_TABLE_GEN_HPP\n"
-    )
 
 if __name__ == "__main__" :
     IN_NAME = sys.argv[1]
@@ -80,10 +42,7 @@ if __name__ == "__main__" :
 
     out = open(OUT_NAME, 'w')
 
-    write_file_open(out)
-    write_handlers_decls(out, instrs)
     write_dispatch_table(out, instrs)
-    write_file_close(out)
 
     out.close()
 

@@ -1,0 +1,30 @@
+class A
+    i32 a
+    i32 b
+
+func main ()
+    lda.imm.i32 15
+    mov.imm.i32 r3, 15
+    mov.imm.i32 r5, 7
+    mov.imm.i32 r0, 2
+    mov.imm.i32 r7, 1
+    obj.new r4, A
+    stfield r4, r3, A, a
+    stfield r4, r5, A, b
+    arr.new.ref r2, r0, A
+    lda r4
+    arr.sta.ref r2, r7
+    lda.imm.i32 0
+    arr.lda.ref r2, r7
+    sta r8
+    ldfield r9, r8, A, a
+    intrinsic print.i32, r9
+    ldfield r10, r8, A, b
+    intrinsic print.i32, r10
+    jump.eq r4, label_2
+label_1:
+    lda.imm.i32 1
+    ret
+label_2:
+    lda.imm.i32 0
+    ret

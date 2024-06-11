@@ -1,0 +1,27 @@
+class A
+    i32 field0
+    f field1
+
+func main ()
+    mov.imm.i32 r0, 0
+    mov.imm.i32 r1, 0
+    mov.imm.i32 r2, 13
+    mov.imm.f r4, 12.5
+    obj.new r1, A
+    stfield r1, r2, A, field0
+    ldfield r3, r1, A, field0
+    lda r3
+    jump.eq r2, label_2
+label_1:
+    lda.imm.i32 1
+    ret
+label_2:
+    stfield r1, r4, A, field1
+    ldfield r5, r1, A, field1
+    lda r5
+    jump.eq r4, label_3
+    lda.imm.i32 1
+    ret
+label_3:
+    lda.imm.i32 0
+    ret

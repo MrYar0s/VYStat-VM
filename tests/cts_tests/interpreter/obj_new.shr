@@ -1,0 +1,15 @@
+class A
+    i32 field0
+    f field1
+
+func main ()
+    mov.imm.i32 r0, 0
+    mov.imm.i32 r1, 0
+    obj.new r1, A
+    jump.eq r0, label_2
+label_1:
+    lda.imm.i32 1
+    ret
+label_2:
+    lda.imm.i32 0
+    ret

@@ -1,7 +1,9 @@
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <array>
+#include <optional>
 #include <sstream>
 
 #include <shrimp/common/logger.hpp>
@@ -14,8 +16,11 @@
 #include <shrimp/runtime/shrimp_vm.hpp>
 
 #include <shrimp/runtime/interpreter/instr.gen.hpp>
-#include <shrimp/runtime/interpreter/dispatch_table.gen.hpp>
 #include <shrimp/runtime/register.hpp>
+
+#include <shrimp/runtime/coretypes/string.hpp>
+#include <shrimp/runtime/coretypes/array.hpp>
+#include <shrimp/runtime/coretypes/class.hpp>
 
 namespace shrimp::runtime::interpreter {
 
@@ -71,8 +76,6 @@ std::string Instr<InstrOpcode::INTRINSIC>::toString() const
     return out.str();
 }
 
-namespace {
-
 static constexpr Byte OPCODE_MASK = 0xff;
 
 Byte getOpcode(const Byte *pc)
@@ -80,18 +83,24 @@ Byte getOpcode(const Byte *pc)
     return *pc & OPCODE_MASK;
 }
 
-int handleNop(ShrimpVM *vm)
+int runImpl(ShrimpVM *vm)
 {
+    #include <shrimp/runtime/interpreter/dispatch_table.gen.inl>
+
+    goto *dispatch_table[getOpcode(vm->pc())];
+
+handleInvalidOpcode : {
+    return -1;
+}
+handleNop : {
     Instr<InstrOpcode::NOP> instr {vm->pc()};
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleMov(ShrimpVM *vm)
-{
+handleMov : {
     auto instr = Instr<InstrOpcode::MOV>(vm->pc());
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
@@ -103,11 +112,9 @@ int handleMov(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleMovImmI32(ShrimpVM *vm)
-{
+handleMovImmI32 : {
     auto instr = Instr<InstrOpcode::MOV_IMM_I32>(vm->pc());
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
@@ -118,11 +125,9 @@ int handleMovImmI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleMovImmF(ShrimpVM *vm)
-{
+handleMovImmF : {
     auto instr = Instr<InstrOpcode::MOV_IMM_F>(vm->pc());
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
@@ -133,11 +138,9 @@ int handleMovImmF(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleLda(ShrimpVM *vm)
-{
+handleLda : {
     auto instr = Instr<InstrOpcode::LDA>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -148,11 +151,9 @@ int handleLda(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleLdaImmI32(ShrimpVM *vm)
-{
+handleLdaImmI32 : {
     auto instr = Instr<InstrOpcode::LDA_IMM_I32>(vm->pc());
     auto imm_i32 = bit::getValue<int32_t>(instr.getImmI32());
 
@@ -161,11 +162,9 @@ int handleLdaImmI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleLdaImmF(ShrimpVM *vm)
-{
+handleLdaImmF : {
     auto instr = Instr<InstrOpcode::LDA_IMM_F>(vm->pc());
     auto imm_f = bit::getValue<float>(instr.getImmF());
 
@@ -174,11 +173,9 @@ int handleLdaImmF(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleSta(ShrimpVM *vm)
-{
+handleSta : {
     auto instr = Instr<InstrOpcode::STA>(vm->pc());
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
@@ -189,11 +186,9 @@ int handleSta(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleAddI32(ShrimpVM *vm)
-{
+handleAddI32 : {
     auto instr = Instr<InstrOpcode::ADD_I32>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -205,11 +200,9 @@ int handleAddI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleAddF(ShrimpVM *vm)
-{
+handleAddF : {
     auto instr = Instr<InstrOpcode::ADD_F>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -223,11 +216,9 @@ int handleAddF(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleSubI32(ShrimpVM *vm)
-{
+handleSubI32 : {
     auto instr = Instr<InstrOpcode::SUB_I32>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -239,11 +230,9 @@ int handleSubI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleSubF(ShrimpVM *vm)
-{
+handleSubF : {
     auto instr = Instr<InstrOpcode::SUB_F>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -257,11 +246,24 @@ int handleSubF(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
+handleMod : {
+    auto instr = Instr<InstrOpcode::MOD>(vm->pc());
+    auto &frame = vm->currFrame();
+    auto rs_idx = instr.getRs();
 
-int handleDivI32(ShrimpVM *vm)
-{
+    int32_t acc_i32 = vm->acc().getValue();
+    int32_t rs_i32 = frame.getReg(rs_idx).getValue();
+    auto res = bit::signExtend<DWord, 31>(acc_i32 % rs_i32);
+    vm->acc().setValue(bit::castToWritable(res));
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    goto *dispatch_table[getOpcode(vm->pc())];
+}
+handleDivI32 : {
     auto instr = Instr<InstrOpcode::DIV_I32>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -274,11 +276,9 @@ int handleDivI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleDivF(ShrimpVM *vm)
-{
+handleDivF : {
     auto instr = Instr<InstrOpcode::DIV_F>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -292,11 +292,9 @@ int handleDivF(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleMulI32(ShrimpVM *vm)
-{
+handleMulI32 : {
     auto instr = Instr<InstrOpcode::MUL_I32>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -310,11 +308,9 @@ int handleMulI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleMulF(ShrimpVM *vm)
-{
+handleMulF : {
     auto instr = Instr<InstrOpcode::MUL_F>(vm->pc());
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -328,11 +324,9 @@ int handleMulF(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleIntrinsic(ShrimpVM *vm)
-{
+handleIntrinsic : {
     auto instr = Instr<InstrOpcode::INTRINSIC>(vm->pc());
     auto &frame = vm->currFrame();
 
@@ -359,35 +353,36 @@ int handleIntrinsic(ShrimpVM *vm)
             break;
         }
         case IntrinsicCode::PRINT_STR: {
-            auto str_id = frame.getReg(arg0_idx).getValue();
-            const std::string &str = vm->resolveString(str_id);
+            auto ptr = frame.getReg(arg0_idx).getValue();
+            auto strObj = reinterpret_cast<String *>(bit::getValue<int32_t *>(ptr));
+            const std::string &str = strObj->getData();
 
             intrinsics::PrintStr(str);
             break;
         }
         case IntrinsicCode::CONCAT: {
-            auto str0_id = frame.getReg(arg0_idx).getValue();
-            auto str1_id = frame.getReg(arg1_idx).getValue();
-            const std::string &str0 = vm->resolveString(str0_id);
-            const std::string &str1 = vm->resolveString(str1_id);
+            auto ptr0 = frame.getReg(arg0_idx).getValue();
+            auto strObj0 = reinterpret_cast<String *>(bit::getValue<int32_t *>(ptr0));
+            auto ptr1 = frame.getReg(arg1_idx).getValue();
+            auto strObj1 = reinterpret_cast<String *>(bit::getValue<int32_t *>(ptr1));
 
-            const std::string &str = intrinsics::Concat(str0, str1);
-            uint64_t str_id = vm->addStringToAccessor(str);
+            auto strObj = String::ConcatStrings(strObj0, strObj1, vm);
 
-            vm->acc().setValue(bit::castToWritable(str_id));
+            auto ptr = std::bit_cast<int32_t *>(strObj);
 
+            vm->acc().setValue(bit::castToWritable(ptr));
             break;
         }
         case IntrinsicCode::SUBSTR: {
             auto pos = frame.getReg(arg0_idx).getValue();
             auto len = frame.getReg(arg1_idx).getValue();
-            auto str_id = vm->acc().getValue();
-            const std::string &str = vm->resolveString(str_id);
+            auto ptr = vm->acc().getValue();
+            auto strObj = reinterpret_cast<String *>(bit::getValue<int32_t *>(ptr));
 
-            const std::string &substr = intrinsics::Substr(str, pos, len);
-            uint64_t substr_id = vm->addStringToAccessor(substr);
+            auto newStrObj = String::SubStr(strObj, pos, len, vm);
 
-            vm->acc().setValue(bit::castToWritable(substr_id));
+            auto newPtr = std::bit_cast<int32_t *>(newStrObj);
+            vm->acc().setValue(bit::castToWritable(newPtr));
 
             break;
         }
@@ -428,16 +423,14 @@ int handleIntrinsic(ShrimpVM *vm)
             break;
         }
         default: {
-            LOG_ERROR("Unsupported intrinsic", vm->getLogLevel());
+            LOG_INFO("Unsupported intrinsic", vm->getLogLevel());
             std::abort();
         }
     }
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleCall0arg(ShrimpVM *vm)
-{
+handleCall0arg : {
     Instr<InstrOpcode::CALL_0ARG> instr {vm->pc()};
 
     auto func_id = instr.getFuncId();
@@ -452,11 +445,9 @@ int handleCall0arg(ShrimpVM *vm)
     frame.setRetPc(vm->pc() + instr.getByteSize());
     vm->pc() = vm->getPcFromStart(offset);
 
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleCall1arg(ShrimpVM *vm)
-{
+handleCall1arg : {
     Instr<InstrOpcode::CALL_1ARG> instr {vm->pc()};
 
     auto func_id = instr.getFuncId();
@@ -476,11 +467,9 @@ int handleCall1arg(ShrimpVM *vm)
     frame.setRetPc(vm->pc() + instr.getByteSize());
     vm->pc() = vm->getPcFromStart(offset);
 
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleCall2arg(ShrimpVM *vm)
-{
+handleCall2arg : {
     Instr<InstrOpcode::CALL_2ARG> instr {vm->pc()};
 
     auto func_id = instr.getFuncId();
@@ -503,11 +492,9 @@ int handleCall2arg(ShrimpVM *vm)
     frame.setRetPc(vm->pc() + instr.getByteSize());
     vm->pc() = vm->getPcFromStart(offset);
 
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleCall3arg(ShrimpVM *vm)
-{
+handleCall3arg : {
     Instr<InstrOpcode::CALL_3ARG> instr {vm->pc()};
 
     auto func_id = instr.getFuncId();
@@ -533,11 +520,9 @@ int handleCall3arg(ShrimpVM *vm)
     frame.setRetPc(vm->pc() + instr.getByteSize());
     vm->pc() = vm->getPcFromStart(offset);
 
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleCall4arg(ShrimpVM *vm)
-{
+handleCall4arg : {
     Instr<InstrOpcode::CALL_4ARG> instr {vm->pc()};
 
     auto func_id = instr.getFuncId();
@@ -566,11 +551,9 @@ int handleCall4arg(ShrimpVM *vm)
     frame.setRetPc(vm->pc() + instr.getByteSize());
     vm->pc() = vm->getPcFromStart(offset);
 
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleRet(ShrimpVM *vm)
-{
+handleRet : {
     Instr<InstrOpcode::RET> instr {vm->pc()};
     auto &frame = vm->currFrame();
 
@@ -580,25 +563,21 @@ int handleRet(ShrimpVM *vm)
     if (ret_pc != nullptr) {
         vm->pc() = ret_pc;
         vm->stack().pop();
-        return dispatch_table[getOpcode(vm->pc())](vm);
+        goto *dispatch_table[getOpcode(vm->pc())];
     }
 
     return 0;
 }
-
-int handleJump(ShrimpVM *vm)
-{
+handleJump : {
     Instr<InstrOpcode::JUMP> instr {vm->pc()};
     int64_t offset = instr.getJumpOffset();
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += offset;
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleJumpGg(ShrimpVM *vm)
-{
+handleJumpGg : {
     Instr<InstrOpcode::JUMP_GG> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -609,11 +588,22 @@ int handleJumpGg(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += gg ? offset : instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
+handleJumpNotEq : {
+    Instr<InstrOpcode::JUMP_EQ> instr {vm->pc()};
+    auto &frame = vm->currFrame();
+    auto rs_idx = instr.getRs();
+    auto offset = instr.getJumpOffset();
 
-int handleJumpEq(ShrimpVM *vm)
-{
+    auto eq = bit::getValue<int32_t>(vm->acc().getValue()) != bit::getValue<int32_t>(frame.getReg(rs_idx).getValue());
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += eq ? offset : instr.getByteSize();
+    goto *dispatch_table[getOpcode(vm->pc())];
+}
+handleJumpEq : {
     Instr<InstrOpcode::JUMP_EQ> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -624,11 +614,9 @@ int handleJumpEq(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += eq ? offset : instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleJumpLl(ShrimpVM *vm)
-{
+handleJumpLl : {
     Instr<InstrOpcode::JUMP_LL> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -639,11 +627,9 @@ int handleJumpLl(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += ll ? offset : instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleI32tof(ShrimpVM *vm)
-{
+handleI32tof : {
     auto instr = Instr<InstrOpcode::I32TOF>(vm->pc());
 
     int32_t acc_i32 = vm->acc().getValue();
@@ -653,11 +639,9 @@ int handleI32tof(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleFtoi32(ShrimpVM *vm)
-{
+handleFtoi32 : {
     auto instr = Instr<InstrOpcode::FTOI32>(vm->pc());
 
     auto acc = vm->acc().getValue();
@@ -668,24 +652,41 @@ int handleFtoi32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleLdaStr(ShrimpVM *vm)
-{
+handleLdaStr : {
     auto instr = Instr<InstrOpcode::LDA_STR>(vm->pc());
 
     auto str_id = instr.getStrId();
-    vm->acc().setValue(bit::castToWritable(str_id));
+    const auto &str = vm->resolveString(str_id);
+    auto strObj = String::AllocateString(str.size(), str.data(), vm);
+
+    auto ptr = std::bit_cast<int32_t *>(strObj);
+
+    vm->acc().setValue(bit::castToWritable(ptr));
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
+handleArrLength : {
+    auto instr = Instr<InstrOpcode::ARR_LENGTH>(vm->pc());
 
-int handleArrNewI32(ShrimpVM *vm)
-{
+    auto &frame = vm->currFrame();
+
+    auto rs_idx = instr.getRs();
+
+    auto arrObj = std::bit_cast<Array *>(frame.getReg(rs_idx).getValue());
+
+    vm->acc().setValue(bit::castToWritable(arrObj->getSize()));
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    goto *dispatch_table[getOpcode(vm->pc())];
+}
+handleArrNewI32 : {
     auto instr = Instr<InstrOpcode::ARR_NEW_I32>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -695,18 +696,18 @@ int handleArrNewI32(ShrimpVM *vm)
 
     auto size = frame.getReg(rs_idx).getValue();
 
-    int32_t *ptr = std::bit_cast<int32_t *>(vm->getAllocator().allocate(size));
+    auto arrObj = Array::AllocateArray(size, vm);
+
+    int32_t *ptr = std::bit_cast<int32_t *>(arrObj);
 
     frame.setReg(bit::castToWritable(ptr), rd_idx);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleCmpEqI32(ShrimpVM *vm)
-{
+handleCmpEqI32 : {
     Instr<InstrOpcode::CMP_EQ_I32> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -718,11 +719,9 @@ int handleCmpEqI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleArrNewF(ShrimpVM *vm)
-{
+handleArrNewF : {
     auto instr = Instr<InstrOpcode::ARR_NEW_F>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -732,17 +731,18 @@ int handleArrNewF(ShrimpVM *vm)
 
     auto size = frame.getReg(rs_idx).getValue();
 
-    float *ptr = std::bit_cast<float *>(vm->getAllocator().allocate(size));
+    auto arrObj = Array::AllocateArray(size, vm);
+
+    int32_t *ptr = std::bit_cast<int32_t *>(arrObj);
 
     frame.setReg(bit::castToWritable(ptr), rd_idx);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-int handleCmpGgI32(ShrimpVM *vm)
-{
+handleCmpGgI32 : {
     Instr<InstrOpcode::CMP_GG_I32> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -754,11 +754,38 @@ int handleCmpGgI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
+handleArrNewRef : {
+    auto instr = Instr<InstrOpcode::ARR_NEW_REF>(vm->pc());
 
-int handleArrLdaI32(ShrimpVM *vm)
-{
+    auto &frame = vm->currFrame();
+
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+    auto class_id = instr.getClassId();
+
+    auto size = frame.getReg(rs_idx).getValue();
+
+    auto klass = vm->getClasses().find(class_id);
+
+    if (klass == vm->getClasses().end()) {
+        LOG_INFO("Klass was not find during ArrNewRef", vm->getLogLevel());
+        return 0;
+    }
+
+    auto arrObj = Array::AllocateArrayRef(reinterpret_cast<uint64_t>(&klass->second), size, vm);
+
+    int32_t *ptr = std::bit_cast<int32_t *>(arrObj);
+
+    frame.setReg(bit::castToWritable(ptr), rd_idx);
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    goto *dispatch_table[getOpcode(vm->pc())];
+}
+handleArrLdaI32 : {
     auto instr = Instr<InstrOpcode::ARR_LDA_I32>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -767,18 +794,16 @@ int handleArrLdaI32(ShrimpVM *vm)
     auto rs2_idx = instr.getRs2();
 
     auto pos = frame.getReg(rs2_idx).getValue();
-    auto ptr = std::bit_cast<int32_t *>(frame.getReg(rs1_idx).getValue());
+    auto ptr = std::bit_cast<Array *>(frame.getReg(rs1_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(ptr[pos]));
+    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)));
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleArrLdaF(ShrimpVM *vm)
-{
+handleArrLdaF : {
     auto instr = Instr<InstrOpcode::ARR_LDA_F>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -787,18 +812,43 @@ int handleArrLdaF(ShrimpVM *vm)
     auto rs2_idx = instr.getRs2();
 
     auto pos = frame.getReg(rs2_idx).getValue();
-    auto ptr = std::bit_cast<float *>(frame.getReg(rs1_idx).getValue());
 
-    vm->acc().setValue(bit::castToWritable(ptr[pos]));
+    auto ptr = std::bit_cast<Array *>(frame.getReg(rs1_idx).getValue());
+
+    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)));
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
+handleArrLdaRef : {
+    auto instr = Instr<InstrOpcode::ARR_LDA_REF>(vm->pc());
 
-int handleArrStaI32(ShrimpVM *vm)
-{
+    auto &frame = vm->currFrame();
+
+    auto rs1_idx = instr.getRs1();
+    auto rs2_idx = instr.getRs2();
+
+    auto pos = frame.getReg(rs2_idx).getValue();
+
+    auto ptr = std::bit_cast<Array *>(frame.getReg(rs1_idx).getValue());
+
+    auto runtimeClassFromArr = reinterpret_cast<RuntimeClass *>(ptr->getClassWord());
+    if (runtimeClassFromArr != nullptr) {
+        LOG_INFO("Name of class from array : " + runtimeClassFromArr->name, vm->getLogLevel());
+    } else {
+        return -1;
+    }
+
+    vm->acc().setValue(bit::castToWritable(ptr->getElem(pos)));
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    goto *dispatch_table[getOpcode(vm->pc())];
+}
+handleArrStaI32 : {
     auto instr = Instr<InstrOpcode::ARR_STA_I32>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -809,18 +859,16 @@ int handleArrStaI32(ShrimpVM *vm)
     auto acc_val = vm->acc().getValue();
 
     auto pos = frame.getReg(rs_idx).getValue();
-    auto ptr = std::bit_cast<int32_t *>(frame.getReg(rd_idx).getValue());
+    auto ptr = std::bit_cast<Array *>(frame.getReg(rd_idx).getValue());
 
-    ptr[pos] = acc_val;
+    ptr->setElem(acc_val, pos);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleArrStaF(ShrimpVM *vm)
-{
+handleArrStaF : {
     auto instr = Instr<InstrOpcode::ARR_STA_F>(vm->pc());
 
     auto &frame = vm->currFrame();
@@ -831,18 +879,51 @@ int handleArrStaF(ShrimpVM *vm)
     auto acc_val = vm->acc().getValue();
 
     auto pos = frame.getReg(rs_idx).getValue();
-    auto ptr = std::bit_cast<float *>(frame.getReg(rd_idx).getValue());
+    auto ptr = std::bit_cast<Array *>(frame.getReg(rd_idx).getValue());
 
-    ptr[pos] = acc_val;
+    ptr->setElem(acc_val, pos);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
+handleArrStaRef : {
+    auto instr = Instr<InstrOpcode::ARR_STA_REF>(vm->pc());
 
-int handleCmpLlI32(ShrimpVM *vm)
-{
+    auto &frame = vm->currFrame();
+
+    auto rd_idx = instr.getRd();
+    auto rs_idx = instr.getRs();
+
+    auto acc_val = vm->acc().getValue();
+
+    auto pos = frame.getReg(rs_idx).getValue();
+    auto ptr = std::bit_cast<Array *>(frame.getReg(rd_idx).getValue());
+
+    auto accAsClass = reinterpret_cast<Class *>(acc_val);
+
+    auto runtimeClassFromArr = reinterpret_cast<RuntimeClass *>(ptr->getClassWord());
+    auto runtimeClassFromAcc = reinterpret_cast<RuntimeClass *>(accAsClass->getClassWord());
+    if (runtimeClassFromArr != nullptr && runtimeClassFromAcc != nullptr) {
+        if (runtimeClassFromArr->name != runtimeClassFromAcc->name) {
+            LOG_INFO("Name of class from array : " + runtimeClassFromArr->name, vm->getLogLevel());
+            LOG_INFO("Name of class from accumulator : " + runtimeClassFromAcc->name, vm->getLogLevel());
+        }
+    } else {
+        return -1;
+    }
+
+    LOG_INFO("pos to save : " << pos, vm->getLogLevel());
+
+    ptr->setElem(acc_val, pos);
+
+    LOG_INFO(instr.toString(), vm->getLogLevel());
+
+    vm->pc() += instr.getByteSize();
+    goto *dispatch_table[getOpcode(vm->pc())];
+}
+handleCmpLlI32 : {
     Instr<InstrOpcode::CMP_LL_I32> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rs_idx = instr.getRs();
@@ -854,80 +935,77 @@ int handleCmpLlI32(ShrimpVM *vm)
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleObjNew(ShrimpVM *vm)
-{
+handleObjNew : {
     Instr<InstrOpcode::OBJ_NEW> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
 
-    auto class_size = vm->getClasses().find(instr.getClassId())->second.size;
-    auto new_obj_ptr = vm->getAllocator().allocate(class_size);
+    auto class_id = instr.getClassId();
 
-    frame.setReg(bit::castToWritable(new_obj_ptr), rd_idx);
+    auto klass = vm->getClasses().find(class_id);
+
+    if (klass == vm->getClasses().end()) {
+        LOG_INFO("Klass was not find during ArrNewRef", vm->getLogLevel());
+        return 0;
+    }
+
+    const auto &class_info = klass->second;
+
+    auto class_obj = Class::AllocateClassRef(reinterpret_cast<uint64_t>(&class_info), class_info.size, vm);
+    auto ptr = reinterpret_cast<int32_t *>(class_obj);
+
+    frame.setReg(bit::castToWritable(ptr), rd_idx);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleLdfield(ShrimpVM *vm)
-{
+handleLdfield : {
     Instr<InstrOpcode::LDFIELD> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
     auto rs_idx = instr.getRs();
-    auto field = vm->resolveField(instr.getClassId(), instr.getFieldId());
-    uint64_t ld_tmp = 0;
+    const auto &field = vm->resolveField(instr.getClassId(), instr.getFieldId());
 
-    auto class_ptr = bit::getValue<Byte *>(frame.getReg(rs_idx).getValue());
+    const auto &classIdFromInstr = vm->getClasses()[instr.getClassId()];
+    LOG_INFO("Name of class from instr : " << classIdFromInstr.name, vm->getLogLevel());
 
-    if constexpr (std::endian::native == std::endian::big) {
-        std::memcpy(&ld_tmp + sizeof(ld_tmp) - field.size, class_ptr + field.offset, field.size);
-    } else {
-        std::memcpy(&ld_tmp, class_ptr + field.offset, field.size);
-    }
+    auto class_ptr = std::bit_cast<Class *>(frame.getReg(rs_idx).getValue());
+    LOG_INFO("Class ptr from reg : " << class_ptr, vm->getLogLevel());
+
+    LOG_INFO("Name of class from ptr : " << reinterpret_cast<RuntimeClass *>(class_ptr->getClassWord())->name,
+             vm->getLogLevel());
+
+    uint64_t ld_tmp = class_ptr->getField(field);
 
     frame.setReg(ld_tmp, rd_idx);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-int handleStfield(ShrimpVM *vm)
-{
+handleStfield : {
     Instr<InstrOpcode::STFIELD> instr {vm->pc()};
     auto &frame = vm->currFrame();
     auto rd_idx = instr.getRd();
     auto rs_idx = instr.getRs();
 
-    auto field = vm->resolveField(instr.getClassId(), instr.getFieldId());
-
-    auto class_ptr = bit::getValue<Byte *>(frame.getReg(rd_idx).getValue());
+    const auto &field = vm->resolveField(instr.getClassId(), instr.getFieldId());
     uint64_t field_val = frame.getReg(rs_idx).getValue();
 
-    if constexpr (std::endian::native == std::endian::big) {
-        std::memcpy(class_ptr + field.offset, &field_val + sizeof(field_val) - field.size, field.size);
-    } else {
-        std::memcpy(class_ptr + field.offset, &field_val, field.size);
-    }
+    auto class_ptr = std::bit_cast<Class *>(frame.getReg(rd_idx).getValue());
+
+    class_ptr->setField(field, field_val);
 
     LOG_INFO(instr.toString(), vm->getLogLevel());
 
     vm->pc() += instr.getByteSize();
-    return dispatch_table[getOpcode(vm->pc())](vm);
+    goto *dispatch_table[getOpcode(vm->pc())];
 }
-
-}  // namespace
-
-int runImpl(ShrimpVM *vm)
-{
-    return dispatch_table[getOpcode(vm->pc())](vm);
 }
 
 }  // namespace shrimp::runtime::interpreter
