@@ -8,6 +8,7 @@
 #include "shrimp/runtime/coretypes/class.hpp"
 #include "shrimp/runtime/memory/class_word.hpp"
 #include "shrimp/runtime/memory/mark_word.hpp"
+#include "shrimp/runtime/memory/memory_resource.hpp"
 #include "shrimp/runtime/memory/object_header.hpp"
 #include "shrimp/runtime/shrimp_vm.hpp"
 
@@ -18,6 +19,7 @@ public:
     GC(ShrimpVM *vm) : vm_(vm) {}
     void run()
     {
+        LOG_DEBUG("[BEFORE GC] Allocated : " << vm_->getAllocator().getAllocated(), vm_->getLogLevel());
         collectRoots();
         LOG_DEBUG("Start of marking", vm_->getLogLevel());
         mark(MarkWord::GCState::MARKED);
@@ -26,6 +28,7 @@ public:
         LOG_DEBUG("Start of post-marking", vm_->getLogLevel());
         mark(MarkWord::GCState::UNMARKED);
         LOG_DEBUG("End of post-marking", vm_->getLogLevel());
+        LOG_DEBUG("[AFTER GC] Allocated : " << vm_->getAllocator().getAllocated(), vm_->getLogLevel());
     }
 
 private:
@@ -36,11 +39,13 @@ private:
             for (size_t i = 0; i < 256; i++) {
                 const auto &reg = stack.getReg(i);
                 if (reg.getRefMark() == 1) {
+                    LOG_DEBUG("Register : " << i << "; Value : " << reg.getValue(), vm_->getLogLevel());
                     roots_.push_back(reinterpret_cast<ObjectHeader *>(reg.getValue()));
                 }
             }
         }
         if (vm_->acc().getRefMark() == 1) {
+            LOG_DEBUG("Register : Acc; Value : " << vm_->acc().getValue(), vm_->getLogLevel());
             roots_.push_back(reinterpret_cast<ObjectHeader *>(vm_->acc().getValue()));
         }
         LOG_DEBUG("End of collecting", vm_->getLogLevel());
@@ -94,6 +99,10 @@ private:
     {
         for (auto &root : roots_) {
             LOG_DEBUG("ObjectHeader " << root, vm_->getLogLevel());
+            if (root == 0) {
+                LOG_DEBUG("nullptr in root", vm_->getLogLevel());
+                continue;
+            }
             if (root->getGCState() == state) {
                 continue;
             }
@@ -118,16 +127,33 @@ private:
     }
     void sweep()
     {
+        LOG_DEBUG("[BEFORE SWEEP] Amount of allocations : " << vm_->getAllocator().getAllocations().size(),
+                  vm_->getLogLevel());
+        auto &allocator = vm_->getAllocator();
         LOG_DEBUG("Start of sweeping", vm_->getLogLevel());
-        for (auto &object : vm_->getAllocatedObjects()) {
-            LOG_DEBUG("FOUND IN HEAP : " << std::hex << "0x" << object << std::dec, vm_->getLogLevel());
+        for (auto &objectInfo : allocator.getAllocations()) {
+            auto object = objectInfo.ptr;
+            auto size = objectInfo.size;
+            LOG_DEBUG("FOUND IN HEAP : " << std::hex << object << std::dec, vm_->getLogLevel());
             bool is_marked = isMarked(reinterpret_cast<ObjectHeader *>(object));
             if (is_marked) {
                 continue;
             }
-            LOG_DEBUG("DEAD : " << std::hex << "0x" << object << std::dec, vm_->getLogLevel());
-            // Need to add dealocation of dead object
+            LOG_DEBUG("DEAD : " << std::hex << object << std::dec, vm_->getLogLevel());
+            allocator.deallocate(object, size);
+            objectInfo.isFree = true;
         }
+        auto &allocations = allocator.getAllocations();
+        std::list<AllocationInfo>::iterator iter = allocations.begin();
+        while (iter != allocations.end()) {
+            if (iter->isFree) {
+                iter = allocations.erase(iter);
+            } else {
+                iter++;
+            }
+        }
+        LOG_DEBUG("[AFTER SWEEP] Amount of allocations : " << vm_->getAllocator().getAllocations().size(),
+                  vm_->getLogLevel());
         LOG_DEBUG("End of sweeping", vm_->getLogLevel());
     }
 

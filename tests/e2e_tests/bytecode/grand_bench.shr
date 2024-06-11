@@ -17,6 +17,8 @@ func dump(a0)                   # a0 = foo: Foo[]
     sta r15
     jump.eq r0, for_end         # check if foo.length == 0
 for_start:
+    obj.new r20, Foo
+    lda r20
     arr.lda.ref a0, r0          # acc = foo[i]
     jump.eq r1, foo_null        # acc == null (foo[i] == null)
     sta r5                      # r5 = acc (r5 = foo[i])
@@ -24,13 +26,13 @@ for_start:
     lda r4                      # acc = r4  (acc = b)
     jump.eq r1, bar_null        # acc == null (b == null)
     ldfield r6, r4, Bar, a      # r4 = bar.a (b.a)
-#    intrinsic print.i32, r6     # print(b.a)
+    intrinsic print.i32, r6     # print(b.a)
     jump for_outro
 foo_null:
-#    intrinsic print.str, r2     # print(Foo:null)
+    intrinsic print.str, r2     # print(Foo:null)
     jump for_outro
 bar_null:
-#    intrinsic print.str, r3     # print(Foo.Bar:null)
+    intrinsic print.str, r3     # print(Foo.Bar:null)
 for_outro:
     lda r0
     add.i32 r7
@@ -42,6 +44,7 @@ for_end:
 
 func foo(a0, a1)                # a0 = N, a1 = M
     arr.new.ref r0, a1, Foo   # Foo[M]
+    obj.new r20, Foo            # outer
     mov.imm.i32 r4, 0           # zero for cmp
     mov.imm.i32 r6, 1           # sub value for store
     mov.imm.i32 r1, 1           # i = 1
@@ -69,6 +72,7 @@ if_1:
     jump.not.eq r4, if_2
     stfield r5, r8, Foo, y
 if_2:
+    mov r5, r20
     call.1arg dump, r0
     lda r1
     add.i32 r15
@@ -80,8 +84,8 @@ for_end:
     ret
 
 func main()
-    mov.imm.i32 r0, 20000     # num of iters
-    mov.imm.i32 r1, 1000     # num of elements in array
+    mov.imm.i32 r0, 20000       # num of iters
+    mov.imm.i32 r1, 1000        # num of elements in array
     call.2arg foo, r0, r1
     lda.imm.i32 0
     ret

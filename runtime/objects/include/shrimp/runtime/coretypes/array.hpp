@@ -21,7 +21,6 @@ public:
     {
         auto ptr = reinterpret_cast<Array *>(
             vm->getAllocator().allocate(sizeof(ObjectHeader) + sizeof(size) + size * sizeof(uint64_t)));
-        vm->getAllocatedObjects().push_back(reinterpret_cast<uint64_t>(ptr));
         vm->getArrays().push_back(
             RuntimeArray {{BaseClassType::ARRAY}, size, reinterpret_cast<RuntimeClass *>(classWord)});
         ClassWord arrayClassWord = reinterpret_cast<ClassWord>(&vm->getArrays().back());
