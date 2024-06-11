@@ -53,6 +53,7 @@ public:
 
     struct FileField {
         FieldId id = 0;
+        uint8_t is_ref = 0;
         uint64_t size = 0;
         uint64_t offset = 0;
         uint64_t name_size = 0;

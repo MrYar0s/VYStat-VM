@@ -15,7 +15,7 @@ public:
         INVALID,
     };
 
-    ObjectState GetState() const
+    ObjectState getState() const
     {
         switch ((value_ >> STATUS_SHIFT) & STATUS_MASK) {
             case STATUS_UNLOCKED:
@@ -28,6 +28,35 @@ public:
                 LOG_ERROR("Undefined object state", ERROR);
                 return ObjectState::INVALID;
         }
+    }
+
+    enum class GCState {
+        UNMARKED,
+        MARKED,
+        INVALID,
+    };
+
+    GCState getGCState() const
+    {
+        switch ((value_ & GC_STATUS_MASK_IN_PLACE) >> GC_STATUS_SHIFT) {
+            case GC_UNLOCKED:
+                return GCState::UNMARKED;
+            case GC_LOCKED:
+                return GCState::MARKED;
+            default:
+                LOG_ERROR("Undefined GC state in getter", ERROR);
+                return GCState::INVALID;
+        }
+    }
+
+    void setGCMarked()
+    {
+        value_ = (value_ & (~GC_STATUS_MASK_IN_PLACE)) | GC_STATUS_MASK_IN_PLACE;
+    }
+
+    void setGCUnmarked()
+    {
+        value_ = value_ & (~GC_STATUS_MASK_IN_PLACE);
     }
 
 private:
@@ -56,7 +85,7 @@ private:
 
         // GC status masks and shifts
         GC_STATUS_SHIFT = READB_STATUS_SHIFT - GC_STATUS_SIZE,
-        GC_STATUS_MASK = (1 << GC_STATUS_SHIFT) - 1,
+        GC_STATUS_MASK = (1 << (GC_STATUS_SHIFT - 1)) - 1,
         GC_STATUS_MASK_IN_PLACE = GC_STATUS_MASK << GC_STATUS_SHIFT,
 
         // Status masks and shifts
@@ -73,10 +102,14 @@ private:
         STATUS_UNLOCKED = 0,
         STATUS_HASHED = 2,
         STATUS_GC = 3,
+
+        // GC marks
+        GC_UNLOCKED = 0,
+        GC_LOCKED = 1,
     };
 
 private:
-    MarkWordUtils value_ {0};
+    uint32_t value_ {0};
 };
 
 }  // namespace shrimp::runtime

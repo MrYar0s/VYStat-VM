@@ -16,6 +16,28 @@ public:
     {
         return classWord_;
     }
+    auto getState() const
+    {
+        return markWord_.getState();
+    }
+    auto getGCState() const
+    {
+        return markWord_.getGCState();
+    }
+    void setGCState(MarkWord::GCState state)
+    {
+        switch (state) {
+            case MarkWord::GCState::UNMARKED:
+                markWord_.setGCUnmarked();
+                break;
+            case MarkWord::GCState::MARKED:
+                markWord_.setGCMarked();
+                break;
+            default:
+                LOG_ERROR("Undefined GC state in setter", ERROR);
+                break;
+        }
+    }
 
 private:
     MarkWord markWord_;

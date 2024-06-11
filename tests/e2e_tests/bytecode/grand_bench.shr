@@ -24,13 +24,13 @@ for_start:
     lda r4                      # acc = r4  (acc = b)
     jump.eq r1, bar_null        # acc == null (b == null)
     ldfield r6, r4, Bar, a      # r4 = bar.a (b.a)
-    intrinsic print.i32, r6     # print(b.a)
+#    intrinsic print.i32, r6     # print(b.a)
     jump for_outro
 foo_null:
-    intrinsic print.str, r2     # print(Foo:null)
+#    intrinsic print.str, r2     # print(Foo:null)
     jump for_outro
 bar_null:
-    intrinsic print.str, r3     # print(Foo.Bar:null)
+#    intrinsic print.str, r3     # print(Foo.Bar:null)
 for_outro:
     lda r0
     add.i32 r7
@@ -58,7 +58,6 @@ for_start:
     jump.not.eq r4, if_1
     lda r1
     mod a1
-    sub.i32 r6
     sta r7
     lda r5
     arr.sta.ref r0, r7
@@ -81,7 +80,7 @@ for_end:
     ret
 
 func main()
-    mov.imm.i32 r0, 2000     # num of iters
+    mov.imm.i32 r0, 20000     # num of iters
     mov.imm.i32 r1, 1000     # num of elements in array
     call.2arg foo, r0, r1
     lda.imm.i32 0

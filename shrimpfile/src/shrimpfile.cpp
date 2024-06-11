@@ -75,6 +75,7 @@ File::File(const std::string &file_name)
         std::vector<FileField> fields(class_info.num_of_fields);
         for (auto &field : fields) {
             ownRead(&field.id, sizeof(field.id), 1, file);
+            ownRead(&field.is_ref, sizeof(field.is_ref), 1, file);
             ownRead(&field.size, sizeof(field.size), 1, file);
             ownRead(&field.offset, sizeof(field.offset), 1, file);
             ownRead(&field.name_size, sizeof(field.name_size), 1, file);
@@ -178,7 +179,7 @@ void File::fillClassesHeader()
         classesHeader.size += sizeof(klass.id) + sizeof(klass.size) + sizeof(klass.name_size) + klass.name.size() +
                               sizeof(klass.num_of_fields);
         for (auto &field : klass.fields) {
-            classesHeader.size += sizeof(field.id) + sizeof(field.size) + sizeof(field.offset) +
+            classesHeader.size += sizeof(field.id) + sizeof(field.size) + sizeof(field.is_ref) + sizeof(field.offset) +
                                   sizeof(field.name_size) + field.name.size();
         }
     }
@@ -271,6 +272,7 @@ void File::serializeClasses(std::FILE *out)
         ownWrite(&klass.num_of_fields, sizeof(klass.num_of_fields), 1, out);
         for (auto &field : klass.fields) {
             ownWrite(&field.id, sizeof(field.id), 1, out);
+            ownWrite(&field.is_ref, sizeof(field.is_ref), 1, out);
             ownWrite(&field.size, sizeof(field.size), 1, out);
             ownWrite(&field.offset, sizeof(field.offset), 1, out);
             ownWrite(&field.name_size, sizeof(field.name_size), 1, out);
@@ -375,6 +377,7 @@ void File::dumpClasses(std::stringstream &ss)
         ss << "## Start dump of Fields ##" << std::endl;
         for (auto &field : klass.fields) {
             ss << "FieldId : " << field.id << std::endl;
+            ss << "Field is_ref : " << field.is_ref << std::endl;
             ss << "Field size : " << field.size << std::endl;
             ss << "Field offset : " << field.offset << std::endl;
             ss << "Field name_size : " << field.name_size << std::endl;
