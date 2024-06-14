@@ -49,7 +49,7 @@ struct RuntimeFunc final {
 using FuncAccessor = std::unordered_map<FuncId, RuntimeFunc>;
 
 struct RuntimeField final {
-    uint8_t is_ref = 0;
+    bool is_ref = 0;
     uint64_t size = 0;
     uint64_t offset = 0;
     std::string name = "";
@@ -57,7 +57,7 @@ struct RuntimeField final {
 
 using FieldAccessor = std::vector<RuntimeField>;
 
-enum BaseClassType { STRING = 0, ARRAY = 1, DEFAULT = 2 };
+enum BaseClassType { STRING = 1, ARRAY = 2, DEFAULT = 3 };
 
 struct BaseClass {
     enum BaseClassType type;
