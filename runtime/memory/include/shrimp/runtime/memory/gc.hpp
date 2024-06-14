@@ -16,9 +16,13 @@ namespace shrimp::runtime::mem {
 
 class GC {
 public:
-    GC(ShrimpVM *vm) : vm_(vm) {}
+    GC(ShrimpVM *vm) : vm_(vm)
+    {
+        stringClassWord_ = reinterpret_cast<ClassWord>(&vm_->getStringClass());
+    }
     void run()
     {
+        LOG_DEBUG("[BEFORE GC] Allocations: " << vm_->getAllocator().getAllocations().size(), vm_->getLogLevel());
         LOG_DEBUG("[BEFORE GC] Allocated : " << vm_->getAllocator().getAllocated(), vm_->getLogLevel());
         collectRoots();
         LOG_DEBUG("Start of marking", vm_->getLogLevel());
@@ -29,6 +33,7 @@ public:
         mark(MarkWord::GCState::UNMARKED);
         LOG_DEBUG("End of post-marking", vm_->getLogLevel());
         LOG_DEBUG("[AFTER GC] Allocated : " << vm_->getAllocator().getAllocated(), vm_->getLogLevel());
+        LOG_DEBUG("[AFTER GC] Allocations: " << vm_->getAllocator().getAllocations().size(), vm_->getLogLevel());
     }
 
 private:
@@ -61,7 +66,7 @@ private:
         auto runtimeClass = reinterpret_cast<RuntimeClass *>(classWord);
 
         for (const auto &field : runtimeClass->fields) {
-            if (field.is_ref == 0) {
+            if (!field.is_ref) {
                 continue;
             }
             auto refField = reinterpret_cast<Class *>(klass->getField(field));
@@ -107,7 +112,9 @@ private:
                 continue;
             }
             auto classWord = root->getClassWord();
-            if (classWord == 0) {
+            if (classWord == stringClassWord_) {
+                // If we met string from root, we can not access anything else from it
+                // just mark string as alive object and move forward
                 root->setGCState(state);
                 continue;
             }
@@ -131,25 +138,19 @@ private:
                   vm_->getLogLevel());
         auto &allocator = vm_->getAllocator();
         LOG_DEBUG("Start of sweeping", vm_->getLogLevel());
-        for (auto &objectInfo : allocator.getAllocations()) {
-            auto object = objectInfo.ptr;
-            auto size = objectInfo.size;
+        auto &allocations = allocator.getAllocations();
+        std::list<AllocationInfo>::iterator objectInfo = allocations.begin();
+        while (objectInfo != allocations.end()) {
+            auto object = objectInfo->ptr;
+            auto size = objectInfo->size;
             LOG_DEBUG("FOUND IN HEAP : " << std::hex << object << std::dec, vm_->getLogLevel());
             bool is_marked = isMarked(reinterpret_cast<ObjectHeader *>(object));
             if (is_marked) {
-                continue;
-            }
-            LOG_DEBUG("DEAD : " << std::hex << object << std::dec, vm_->getLogLevel());
-            allocator.deallocate(object, size);
-            objectInfo.isFree = true;
-        }
-        auto &allocations = allocator.getAllocations();
-        std::list<AllocationInfo>::iterator iter = allocations.begin();
-        while (iter != allocations.end()) {
-            if (iter->isFree) {
-                iter = allocations.erase(iter);
+                objectInfo++;
             } else {
-                iter++;
+                objectInfo = allocations.erase(objectInfo);
+                LOG_DEBUG("DEAD : " << std::hex << object << std::dec, vm_->getLogLevel());
+                allocator.deallocate(object, size);
             }
         }
         LOG_DEBUG("[AFTER SWEEP] Amount of allocations : " << vm_->getAllocator().getAllocations().size(),
@@ -159,6 +160,7 @@ private:
 
     std::vector<ObjectHeader *> roots_ {};
     ShrimpVM *vm_;
+    ClassWord stringClassWord_;
 };
 
 }  // namespace shrimp::runtime::mem

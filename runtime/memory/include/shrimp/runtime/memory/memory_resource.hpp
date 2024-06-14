@@ -60,7 +60,6 @@ public:
 struct AllocationInfo final {
     void *ptr = nullptr;
     size_t size = 0;
-    bool isFree = true;
 };
 
 class LimitedMemRes final : public std::pmr::memory_resource {
@@ -73,7 +72,7 @@ class LimitedMemRes final : public std::pmr::memory_resource {
         void *out = allocator_.allocate(bytes, alignment);
 
         if (out != nullptr) {
-            allocations_.push_back(AllocationInfo{out, bytes, false});
+            allocations_.push_back(AllocationInfo {out, bytes});
             allocated_ += bytes;
         }
 

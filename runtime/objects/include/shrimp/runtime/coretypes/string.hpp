@@ -29,7 +29,7 @@ public:
             ptr->setSize(size);
             ptr->setHashCode(0xd09c);
             ptr->setData(data);
-            ptr->setClassWord(0);
+            ptr->setClassWord(reinterpret_cast<ClassWord>(&vm->getStringClass()));
         }
         return ptr;
     }

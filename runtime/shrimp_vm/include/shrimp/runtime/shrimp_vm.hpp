@@ -36,7 +36,7 @@ public:
         for (auto &&klass : classes) {
             FieldAccessor fields;
             for (auto &&field : klass.fields) {
-                fields.push_back(RuntimeField {field.is_ref, field.size, field.offset, field.name});
+                fields.push_back(RuntimeField {field.is_ref == 1, field.size, field.offset, field.name});
             }
             classes_.push_back(RuntimeClass {{BaseClassType::DEFAULT}, klass.size, klass.name, std::move(fields)});
         }
@@ -50,6 +50,7 @@ public:
         }
         FuncId entry_id = it->first;
         stack_.push_back(Frame {std::make_shared<RuntimeFunc>(funcs_[entry_id])});
+        stringClass_ = BaseClass {STRING};
         pc_ += stack_.back().getOffsetToFunc();
     }
 
@@ -126,6 +127,11 @@ public:
         return arrays_;
     }
 
+    auto &getStringClass() noexcept
+    {
+        return stringClass_;
+    }
+
     void triggerGCIfNeed();
 
 private:
@@ -142,6 +148,8 @@ private:
     FuncAccessor funcs_;
     ClassAccessor classes_;
     ArrayAccessor arrays_;
+
+    BaseClass stringClass_;
 
     static constexpr size_t MEM_LIMIT = 0x2000000;  // 32Mb
     LimitedArena arena_ {MEM_LIMIT};
